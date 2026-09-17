@@ -132,4 +132,4 @@ Projeto em desenvolvimento.
 
 ## Licença
 
-Licenciado, à sua escolha, sob a [Apache License, Version 2.0](LICENSE-APACHE) ou a [licença MIT](LICENSE-MIT).
+Este projeto é licenciado sob a [Licença Apache 2.0](LICENSE-APACHE) ou a [Licença MIT](LICENSE-MIT), à escolha de quem o utiliza.

@@ -81,23 +81,32 @@ O projeto não inclui medição de consumo energético.
 - Git
 - GitHub
 
-## Estrutura prevista
+## Estrutura
 
 ```text
 SenseBridge/
-├── src/
-│   ├── lib.rs
-│   ├── sensor/
-│   ├── weather/
-│   ├── validation/
-│   └── state/
-├── examples/
-├── tests/
-├── data/
+├── Cargo.toml          # workspace
+├── sense-bridge/       # biblioteca publicável no crates.io (no_std, independente de hardware)
+│   ├── src/
+│   ├── tests/          # cenários C1–C5 com fontes simuladas
+│   ├── examples/
+│   └── README.md       # documentação da crate
+├── firmware/           # casos de uso, um projeto por placa (não publicados)
+│   └── esp32/          # DHT11 + Open-Meteo (esqueleto)
+├── data/               # dados brutos dos experimentos (a criar)
 ├── docs/
-├── README.md
-├── Cargo.toml
-└── LICENSE
+├── README.md           # este arquivo: o projeto de pesquisa
+├── LICENSE-APACHE
+└── LICENSE-MIT
+```
+
+A documentação de uso da biblioteca está em [`sense-bridge/README.md`](sense-bridge/README.md).
+
+Os firmwares ficam fora do workspace porque cada um usa a toolchain da sua placa. Na raiz, os comandos abaixo rodam apenas a biblioteca, no computador de desenvolvimento:
+
+```sh
+cargo test                                     # testes unitários e cenários C1–C5
+cargo run -p sense_bridge --example simulate   # imprime os cenários em CSV
 ```
 
 ## Autores
@@ -120,3 +129,7 @@ Linha de Sistemas Embarcados e Distribuídos — SED
 Projeto em desenvolvimento.
 
 **Entrega prevista:** 26 de novembro de 2026.
+
+## Licença
+
+Licenciado, à sua escolha, sob a [Apache License, Version 2.0](LICENSE-APACHE) ou a [licença MIT](LICENSE-MIT).

@@ -1,0 +1,9 @@
+[package]
+name = "sense_bridge_esp32"
+version = "0.1.0"
+edition = "2024"
+# Caso de uso da biblioteca no ESP32: não é publicado no crates.io.
+publish = false
+
+[dependencies]
+sense_bridge = { path = "../../sense-bridge" }

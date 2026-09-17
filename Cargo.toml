@@ -1,6 +1,6 @@
-[package]
-name = "sense_bridge"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
+[workspace]
+members = ["sense-bridge"]
+# Cada firmware em firmware/ compila com a toolchain da sua placa; fica fora do workspace
+# para que `cargo test` na raiz rode apenas no host.
+exclude = ["firmware"]
+resolver = "3"

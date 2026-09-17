@@ -1,0 +1,13 @@
+[package]
+name = "sense_bridge"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Integração resiliente de dados ambientais locais e externos para sistemas embarcados"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/msc-sed-ufrr/SenseBridge"
+readme = "README.md"
+keywords = ["embedded", "no-std", "iot", "sensor", "fault-tolerance"]
+categories = ["embedded", "no-std", "no-std::no-alloc"]
+
+[dependencies]

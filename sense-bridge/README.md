@@ -61,6 +61,30 @@ assert_eq!(record.external, Err(ExternalFailure::Timeout));
 
 `Config` define as faixas aceitas para cada fonte e o intervalo entre consultas externas. Dentro desse intervalo, a última leitura externa válida é reutilizada e o registro informa a sua idade.
 
+## Open-Meteo
+
+O módulo `open_meteo` monta o caminho da consulta e interpreta a resposta da API, sem alocar memória. A implementação de `ExternalSource` fica apenas com o transporte: envia a requisição, aplica o tempo limite e entrega o status e o corpo a `interpret`.
+
+```rust
+use sense_bridge::{ExternalFailure, ExternalReading, ExternalSource, open_meteo};
+
+struct OpenMeteo {/* cliente HTTP */}
+
+impl ExternalSource for OpenMeteo {
+    fn fetch(&mut self) -> Result<ExternalReading, ExternalFailure> {
+        // GET em `open_meteo::HOST`, no caminho escrito por `open_meteo::write_path`.
+        // Sem rede: `NoConnectivity`; tempo limite excedido: `Timeout`.
+        let status = 200;
+        let body = br#"{"current":{"temperature_2m":27.5,"relative_humidity_2m":70}}"#;
+        open_meteo::interpret(status, body)
+    }
+}
+
+assert_eq!(OpenMeteo {}.fetch(), Ok(ExternalReading::new(27.5, 70.0)));
+```
+
+Um status diferente de 200 resulta em `ServiceError`. Um corpo sem `current.temperature_2m` e `current.relative_humidity_2m` numéricos resulta em `MalformedResponse`. A faixa dos valores continua sendo verificada no ciclo, como para qualquer fonte externa.
+
 ## Testes sem hardware
 
 O módulo `sim` oferece fontes simuladas cujo resultado pode ser alterado entre ciclos, permitindo reproduzir falhas e recuperações em testes no computador de desenvolvimento.

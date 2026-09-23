@@ -2,6 +2,7 @@
 #![doc = include_str!("../README.md")]
 
 pub mod bridge;
+pub mod open_meteo;
 pub mod reading;
 pub mod record;
 pub mod sim;

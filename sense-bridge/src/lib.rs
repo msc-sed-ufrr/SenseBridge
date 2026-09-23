@@ -1,3 +1,6 @@
+#![no_std]
+#![doc = include_str!("../README.md")]
+
 pub mod bridge;
 pub mod reading;
 pub mod record;

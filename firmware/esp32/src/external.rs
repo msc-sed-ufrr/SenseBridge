@@ -57,11 +57,8 @@ impl<'d> OpenMeteo<'d> {
 impl ExternalSource for OpenMeteo<'_> {
     fn fetch(&mut self) -> Result<ExternalReading, ExternalFailure> {
         if !self.is_online() {
-            // Sem rede, a consulta falha no próprio ciclo. A reassociação segue em segundo
-            // plano, e a fonte volta no primeiro ciclo depois dela.
-            if !self.wifi.is_connected().unwrap_or(false) {
-                self.wifi.connect().ok();
-            }
+            // Sem rede, a consulta falha no próprio ciclo. A reassociação corre em segundo
+            // plano (ver `main`), e a fonte volta no primeiro ciclo depois dela.
             return Err(ExternalFailure::NoConnectivity);
         }
 

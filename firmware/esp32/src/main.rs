@@ -20,7 +20,7 @@ use esp_idf_svc::hal::gpio::{PinDriver, Pull};
 use esp_idf_svc::hal::peripherals::Peripherals;
 use esp_idf_svc::nvs::EspDefaultNvsPartition;
 use esp_idf_svc::sys::{self, EspError};
-use esp_idf_svc::wifi::{self, AuthMethod, ClientConfiguration, EspWifi};
+use esp_idf_svc::wifi::{self, AuthMethod, ClientConfiguration, EspWifi, WifiEvent};
 use log::{info, warn};
 use sense_bridge::{Config, SenseBridge};
 
@@ -31,8 +31,9 @@ use crate::timed::Timed;
 
 type Bridge = SenseBridge<Timed<Dht11<'static>>, Timed<OpenMeteo<'static>>>;
 
-/// Espera máxima pela rede antes do primeiro ciclo.
-const NETWORK_WAIT: Duration = Duration::from_secs(15);
+/// Espera máxima pela rede antes do primeiro ciclo. Um ponto de acesso pode levar vários
+/// segundos para recusar a primeira autenticação.
+const NETWORK_WAIT: Duration = Duration::from_secs(30);
 
 /// O DHT11 precisa de 1 s depois de energizado antes da primeira leitura.
 const DHT11_POWER_UP: Duration = Duration::from_secs(1);
@@ -49,7 +50,19 @@ fn main() -> Result<(), EspError> {
     // DHT11 no GPIO4, ligação descrita no README do firmware.
     let dht11 = Dht11::new(PinDriver::input_output_od(peripherals.pins.gpio4, Pull::Up)?)?;
 
-    let wifi = start_wifi(EspWifi::new(peripherals.modem, sysloop, Some(nvs))?)?;
+    // O ESP-IDF não reassocia sozinho: a cada queda, ou tentativa frustrada, uma nova
+    // associação começa em segundo plano, sem depender do ciclo. A inscrição vale enquanto
+    // `main` não retorna.
+    let _reconnect = sysloop.subscribe::<WifiEvent, _>(|event| {
+        if let WifiEvent::StaDisconnected(disconnected) = event {
+            warn!(
+                "Wi-Fi desconectado (motivo {}); nova associação em segundo plano",
+                disconnected.reason()
+            );
+            unsafe { sys::esp_wifi_connect() };
+        }
+    })?;
+    let wifi = start_wifi(EspWifi::new(peripherals.modem, sysloop.clone(), Some(nvs))?)?;
     let open_meteo = OpenMeteo::new(
         wifi,
         config::LATITUDE,

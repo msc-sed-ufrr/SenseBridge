@@ -93,4 +93,4 @@ As colunas do protocolo experimental (cenário, repetição, estado esperado) de
 | Status HTTP diferente de 200 | `ServiceError` |
 | Corpo incompleto ou sem temperatura e umidade | `MalformedResponse` |
 
-Sem conexão, o firmware pede nova associação ao Wi-Fi a cada ciclo, sem bloquear; a fonte externa volta no primeiro ciclo após a reconexão.
+A cada queda do Wi-Fi, ou tentativa de associação frustrada, o firmware inicia outra em segundo plano, sem depender do ciclo nem bloqueá-lo. A fonte externa volta no primeiro ciclo após a reconexão.

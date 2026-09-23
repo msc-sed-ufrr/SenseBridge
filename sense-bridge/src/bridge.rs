@@ -21,7 +21,7 @@ impl Default for Config {
         Self {
             local_limits: Limits::DHT11,
             external_limits: Limits::PLAUSIBLE,
-            // Provisório: PRD, D5.
+            // Intervalo fechado em 15 min: PRD, D5a.
             external_refresh_ms: 15 * 60 * 1000,
         }
     }

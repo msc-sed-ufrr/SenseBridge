@@ -146,10 +146,15 @@ impl Capture {
 }
 
 fn run(options: &Options) -> io::Result<()> {
+    let terminal = io::stdout().is_terminal();
     let style = Style {
-        color: io::stdout().is_terminal() && std::env::var_os("NO_COLOR").is_none(),
+        color: terminal && std::env::var_os("NO_COLOR").is_none(),
     };
-    let mut out = io::stdout().lock();
+    let mut out: Box<dyn Write> = if terminal {
+        Box::new(CrLf(io::stdout().lock()))
+    } else {
+        Box::new(io::stdout().lock())
+    };
     let mut capture = match &options.out {
         Some(prefix) => {
             let capture = Capture::create(prefix)?;
@@ -231,6 +236,32 @@ fn run(options: &Options) -> io::Result<()> {
     Ok(())
 }
 
+/// Termina cada linha com `\r\n`.
+///
+/// O `espflash monitor` põe em modo bruto o terminal que divide com o console, mesmo com
+/// `--non-interactive`, e o terminal deixa de converter `\n` em `\r\n`. Sem o `\r`, cada
+/// linha começaria na coluna em que a anterior terminou.
+struct CrLf<W>(W);
+
+impl<W: Write> Write for CrLf<W> {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        for chunk in buf.split_inclusive(|&byte| byte == b'\n') {
+            match chunk.strip_suffix(b"\n") {
+                Some(line) => {
+                    self.0.write_all(line)?;
+                    self.0.write_all(b"\r\n")?;
+                }
+                None => self.0.write_all(chunk)?,
+            }
+        }
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.0.flush()
+    }
+}
+
 /// Fecha o resumo do boot anterior e marca o reinício.
 fn restart(
     out: &mut impl Write,
@@ -258,6 +289,16 @@ mod tests {
         assert_eq!(utc_stamp(0), "1970-01-01T00-00-00");
         assert_eq!(utc_stamp(951_782_400), "2000-02-29T00-00-00");
         assert_eq!(utc_stamp(1_790_125_505), "2026-09-23T01-05-05");
+    }
+
+    #[test]
+    fn ends_lines_with_carriage_return() {
+        let mut out = CrLf(Vec::new());
+        write!(out, "0  Normal\n   ↳ Normal → DegradedLocal\nsem fim").unwrap();
+        assert_eq!(
+            out.0,
+            "0  Normal\r\n   ↳ Normal → DegradedLocal\r\nsem fim".as_bytes()
+        );
     }
 
     #[test]

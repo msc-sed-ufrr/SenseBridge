@@ -59,7 +59,7 @@ Para observar falha e recuperação da fonte externa sem esperar 15 minutos, red
 
 ```sh
 cargo build --release
-espflash flash --release --monitor
+espflash flash --monitor target/xtensa-esp32-espidf/release/sense_bridge_esp32
 ```
 
 Ou apenas `cargo run --release`, que grava e abre o monitor serial.

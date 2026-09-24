@@ -1,8 +1,10 @@
 //! Fonte local: sensor DHT11 lido por um pino GPIO.
 
 use dht_sensor::{DhtError, dht11};
+use embedded_hal::delay::DelayNs;
 use esp_idf_svc::hal::delay::Ets;
 use esp_idf_svc::hal::gpio::{InputOutput, PinDriver};
+use esp_idf_svc::hal::interrupt::{IsrCriticalSection, IsrCriticalSectionGuard};
 use esp_idf_svc::sys::EspError;
 use sense_bridge::{LocalFailure, LocalReading, LocalSource};
 
@@ -25,9 +27,11 @@ impl<'d> Dht11<'d> {
 
 impl LocalSource for Dht11<'_> {
     fn read(&mut self) -> Result<LocalReading, LocalFailure> {
-        // `Ets` espera ativamente: o protocolo mede pulsos de dezenas de microssegundos, bem
-        // abaixo da resolução do escalonador.
-        match dht11::blocking::read(&mut Ets, &mut self.pin) {
+        let critical = IsrCriticalSection::new();
+        let mut delay = FrameDelay { critical: &critical, guard: None };
+        let result = dht11::blocking::read(&mut delay, &mut self.pin);
+        drop(delay);
+        match result {
             Ok(reading) => Ok(LocalReading::new(
                 f32::from(reading.temperature),
                 f32::from(reading.relative_humidity),
@@ -35,5 +39,34 @@ impl LocalSource for Dht11<'_> {
             Err(DhtError::ChecksumMismatch) => Err(LocalFailure::Checksum),
             Err(DhtError::Timeout | DhtError::PinError(_)) => Err(LocalFailure::NoResponse),
         }
+    }
+}
+
+/// Atraso do protocolo que mascara as interrupções durante o quadro de dados.
+///
+/// O quadro dura cerca de 4 ms, com bits distinguidos por pulsos de 24 µs e 71 µs e lidos
+/// por espera ativa. Uma preempção pela tarefa do Wi-Fi, no mesmo núcleo, pode passar de
+/// 1 ms e corromper a leitura. Na `dht-sensor` 0.3, o único `delay_ms` é o pulso de início
+/// (18 ms); o quadro começa logo depois, então a seção crítica abre ao fim desse atraso e
+/// fecha quando o adaptador é descartado. O pulso de início fica fora dela.
+struct FrameDelay<'a> {
+    critical: &'a IsrCriticalSection,
+    guard: Option<IsrCriticalSectionGuard<'a>>,
+}
+
+impl DelayNs for FrameDelay<'_> {
+    // `Ets` espera ativamente: o protocolo mede pulsos de dezenas de microssegundos, bem
+    // abaixo da resolução do escalonador.
+    fn delay_ns(&mut self, ns: u32) {
+        Ets.delay_ns(ns);
+    }
+
+    fn delay_us(&mut self, us: u32) {
+        Ets::delay_us(us);
+    }
+
+    fn delay_ms(&mut self, ms: u32) {
+        Ets::delay_ms(ms);
+        self.guard.get_or_insert_with(|| self.critical.enter());
     }
 }

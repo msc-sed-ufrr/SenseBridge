@@ -1149,6 +1149,7 @@ name = "sense_bridge_esp32"
 version = "0.1.0"
 dependencies = [
  "dht-sensor",
+ "embedded-hal 1.0.0",
  "embuild",
  "esp-idf-svc",
  "log",

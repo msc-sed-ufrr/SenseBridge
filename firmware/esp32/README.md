@@ -86,6 +86,25 @@ grep -E '^(cycle,|[0-9]+,)' captura.txt > ciclos.csv
 
 As colunas do protocolo experimental (cenário, repetição, estado esperado) dependem de D7 e ainda não fazem parte desta saída.
 
+### Console
+
+Para acompanhar os ciclos ao vivo, o console do host ([`tools/console`](../../tools/console)) lê a saída do monitor e mostra cada ciclo em uma linha. O estado aparece em cor, com as transições destacadas e um resumo a cada 12 ciclos (contagem por estado, falhas por tipo, heap, pilha e ciclo mais longo). Da raiz do repositório:
+
+```sh
+espflash monitor --non-interactive | cargo run -q -p sense_bridge_console
+```
+
+```text
+    #  tempo     estado            local         externo                  ciclo
+    0  00:00:00  Normal            27.0°C 41%    29.1°C 76%  ↻ 1.46 s    1.48 s
+    1  00:00:05  DegradedLocal     NoResponse    29.1°C 76%  (4 s)        22 ms
+       ↳ Normal → DegradedLocal
+```
+
+`↻` marca um ciclo que consultou a Open-Meteo, com a duração da consulta; nos demais aparece a idade da leitura reutilizada. Logs de aviso e de erro do ESP-IDF e os logs do próprio firmware continuam visíveis; `--logs` mostra também os demais.
+
+Por padrão, a captura é gravada em `capturas/<data UTC>.txt` (a saída bruta, compatível com o `grep` acima) e `.csv` (cabeçalho e ciclos), ignorados pelo git. `--out <prefixo>` escolhe o nome, por exemplo `--out capturas/c2-r1`, e `--no-save` desliga a gravação. Uma captura antiga pode ser revista com `cargo run -q -p sense_bridge_console --no-save < captura.txt`.
+
 ## Mapeamento de falhas
 
 | Situação | Falha registrada |

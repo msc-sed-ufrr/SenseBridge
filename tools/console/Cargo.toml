@@ -1,0 +1,11 @@
+[package]
+name = "sense_bridge_console"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Console de host que acompanha os ciclos do firmware SenseBridge pela serial"
+license = "MIT OR Apache-2.0"
+# Ferramenta dos experimentos: não é publicada no crates.io.
+publish = false
+
+[dependencies]

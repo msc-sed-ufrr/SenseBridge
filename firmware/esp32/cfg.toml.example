@@ -20,3 +20,8 @@ http_timeout_ms = 3000
 # Intervalo entre consultas à Open-Meteo (PRD, D5a: 15 min). Valores menores servem para
 # observar falha e recuperação externas sem esperar a próxima consulta (PRD, D10).
 external_refresh_ms = 900000
+
+# GPIO de dados do DHT11 (padrão: 4, rotulado D4 no DevKit). O build aceita só GPIOs
+# bidirecionais fora da Flash e da serial, e avisa quando o pino é de strapping (0, 2, 5, 12,
+# 15): o pull-up do DHT11 nesses pinos pode impedir a gravação ou o boot.
+dht11_gpio = 4

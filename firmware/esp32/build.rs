@@ -13,6 +13,16 @@ const CFG_FILE: &str = "cfg.toml";
 /// Intervalo mínimo de amostragem do DHT11, segundo o manual do sensor.
 const DHT11_MIN_SAMPLING_MS: i64 = 1000;
 
+/// GPIOs do ESP32 que servem ao DHT11: bidirecionais, com pull-up interno, fora da Flash
+/// (6–11) e da UART0 (1 e 3), que transporta o CSV. Os de 34 a 39 são só de entrada.
+const DHT11_GPIOS: [i64; 20] = [
+    0, 2, 4, 5, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 26, 27, 32, 33,
+];
+
+/// Pinos de strapping: o nível no reset escolhe o modo de boot ou a tensão da Flash, e o
+/// pull-up do DHT11 pode impedir a gravação ou o boot.
+const STRAPPING_GPIOS: [i64; 5] = [0, 2, 5, 12, 15];
+
 fn main() {
     embuild::espidf::sysenv::output();
 
@@ -43,6 +53,7 @@ struct Config {
     cycle_interval_ms: i64,
     http_timeout_ms: i64,
     external_refresh_ms: i64,
+    dht11_gpio: i64,
 }
 
 impl Config {
@@ -61,6 +72,7 @@ impl Config {
                 "external_refresh_ms",
                 15 * 60 * 1000,
             ),
+            dht11_gpio: integer(take("dht11_gpio"), "dht11_gpio", 4),
         };
 
         if let Some(key) = table.keys().next() {
@@ -95,6 +107,16 @@ impl Config {
         if self.external_refresh_ms < 0 {
             fail("external_refresh_ms não pode ser negativo");
         }
+        if !DHT11_GPIOS.contains(&self.dht11_gpio) {
+            fail(&format!("dht11_gpio deve ser um destes GPIOs: {DHT11_GPIOS:?}"));
+        }
+        if STRAPPING_GPIOS.contains(&self.dht11_gpio) {
+            println!(
+                "cargo:warning=dht11_gpio = {} é pino de strapping: se a gravação ou o boot \
+                 falharem, desconecte o DATA do DHT11 durante o reset ou escolha outro GPIO",
+                self.dht11_gpio
+            );
+        }
     }
 
     fn to_rust(&self) -> String {
@@ -105,7 +127,10 @@ impl Config {
              pub const LONGITUDE: f32 = {:?};\n\
              pub const CYCLE_INTERVAL_MS: u64 = {};\n\
              pub const HTTP_TIMEOUT_MS: u64 = {};\n\
-             pub const EXTERNAL_REFRESH_MS: u64 = {};\n",
+             pub const EXTERNAL_REFRESH_MS: u64 = {};\n\
+             pub const DHT11_GPIO: u8 = {gpio};\n\
+             pub fn dht11_pin(pins: esp_idf_svc::hal::gpio::Pins) \
+             -> esp_idf_svc::hal::gpio::AnyIOPin<'static> {{ pins.gpio{gpio}.into() }}\n",
             self.wifi_ssid,
             self.wifi_password,
             self.latitude as f32,
@@ -113,6 +138,7 @@ impl Config {
             self.cycle_interval_ms,
             self.http_timeout_ms,
             self.external_refresh_ms,
+            gpio = self.dht11_gpio,
         )
     }
 }

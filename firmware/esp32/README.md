@@ -9,10 +9,14 @@ Este diretório fica fora do workspace da raiz: usa a toolchain Xtensa e compila
 | DHT11 | ESP32 |
 | --- | --- |
 | VCC | 3V3 |
-| DATA | GPIO4 |
+| DATA | GPIO4 (D4), ou o definido em `dht11_gpio` |
 | GND | GND |
 
-O firmware ativa o pull-up interno do GPIO4. Com o DHT11 de 4 pinos (sem placa), coloque também um resistor de 4,7–10 kΩ entre DATA e 3V3; os módulos de 3 pinos já trazem o resistor.
+O firmware ativa o pull-up interno do GPIO de dados. Com o DHT11 de 4 pinos (sem placa), coloque também um resistor de 4,7–10 kΩ entre DATA e 3V3; os módulos de 3 pinos já trazem o resistor.
+
+O GPIO de dados é configurável (ver [Configuração](#configuração)). O build aceita os GPIOs bidirecionais fora da Flash (6–11) e da UART0 (1 e 3, que levam o CSV): 0, 2, 4, 5, 12–19, 21–23, 25–27, 32 e 33. Os de 34 a 39 são só de entrada e não servem ao DHT11.
+
+Os pinos de strapping (0, 2, 5, 12 e 15) funcionam, mas o build avisa: o nível no reset escolhe o modo de boot ou a tensão da Flash, e o pull-up do DHT11 pode impedir a gravação ou o boot. No GPIO2 (D2), por exemplo, o `espflash` não consegue conectar enquanto o DATA está ligado; desconecte-o para gravar e religue-o depois. No DevKit, o GPIO2 também aciona o LED azul da placa.
 
 A rede Wi-Fi precisa ser de 2,4 GHz.
 
@@ -47,6 +51,7 @@ Preencha `wifi_ssid` e `wifi_password`. O `cfg.toml` é ignorado pelo git; as cr
 | `cycle_interval_ms` | 5000 | D5b, em aberto |
 | `http_timeout_ms` | 3000 | D5c, em aberto |
 | `external_refresh_ms` | 900000 (15 min) | D5a, fechada |
+| `dht11_gpio` | 4 | — |
 
 Para observar falha e recuperação da fonte externa sem esperar 15 minutos, reduza `external_refresh_ms` (por exemplo, para 30000). Uma falha de rede durante a reutilização só aparece na consulta seguinte (PRD, D10).
 

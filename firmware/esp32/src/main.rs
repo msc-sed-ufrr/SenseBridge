@@ -47,8 +47,10 @@ fn main() -> Result<(), EspError> {
     let sysloop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
 
-    // DHT11 no GPIO4, ligação descrita no README do firmware.
-    let dht11 = Dht11::new(PinDriver::input_output_od(peripherals.pins.gpio4, Pull::Up)?)?;
+    // DHT11 no GPIO escolhido em `cfg.toml` (padrão: GPIO4), ligação descrita no README.
+    info!("DHT11 no GPIO{}", config::DHT11_GPIO);
+    let dht11_pin = config::dht11_pin(peripherals.pins);
+    let dht11 = Dht11::new(PinDriver::input_output_od(dht11_pin, Pull::Up)?)?;
 
     // O ESP-IDF não reassocia sozinho: a cada queda, ou tentativa frustrada, uma nova
     // associação começa em segundo plano, sem depender do ciclo. A inscrição vale enquanto

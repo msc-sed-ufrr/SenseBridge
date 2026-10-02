@@ -1,2 +1,5 @@
-// Esqueleto: toolchain, alvo e stack serão configurados após a escolha da variante do ESP32.
-fn main() {}
+fn main() {
+    esp_idf_sys::link_patches();
+
+    println!("SenseBridge ESP32 iniciado com sucesso!");
+}

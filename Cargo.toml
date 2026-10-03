@@ -1,5 +1,5 @@
 [workspace]
-members = ["sense-bridge"]
+members = ["sense-bridge", "tools/console"]
 # Cada firmware em firmware/ compila com a toolchain da sua placa; fica fora do workspace
 # para que `cargo test` na raiz rode apenas no host.
 exclude = ["firmware"]

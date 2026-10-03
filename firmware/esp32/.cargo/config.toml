@@ -3,11 +3,15 @@ target = "xtensa-esp32-espidf"
 
 [target.xtensa-esp32-espidf]
 linker = "ldproxy"
-rustflags = ["-C", "default-linker-libraries"]
+runner = "espflash flash --monitor"
+rustflags = ["--cfg", "espidf_time64"]
 
 [unstable]
 build-std = ["std", "panic_abort"]
 
 [env]
 MCU = "esp32"
-ESP_IDF_VERSION = "v5.4"
+# Fixa a versão do ESP-IDF (a padrão do esp-idf-sys 0.38) para builds reprodutíveis.
+ESP_IDF_VERSION = "v5.5.5"
+# Instala o ESP-IDF em ~/.espressif, fora do repositório e compartilhado entre projetos.
+ESP_IDF_TOOLS_INSTALL_DIR = "global"

@@ -2,11 +2,29 @@
 name = "sense_bridge_esp32"
 version = "0.1.0"
 edition = "2024"
+# Caso de uso da biblioteca no ESP32: não é publicado no crates.io.
 publish = false
+
+[[bin]]
+name = "sense_bridge_esp32"
+# O alvo não tem o test harness da biblioteca padrão.
+harness = false
+
+[profile.release]
+opt-level = "s"
+
+[profile.dev]
+# Símbolos não ocupam Flash; otimizar por tamanho mantém o firmware de depuração pequeno.
+debug = true
+opt-level = "z"
 
 [dependencies]
 sense_bridge = { path = "../../sense-bridge" }
-esp-idf-sys = { version = "0.36", features = ["binstart"] }
+esp-idf-svc = "0.53"
+dht-sensor = "0.3"
+embedded-hal = "1"
+log = "0.4"
 
 [build-dependencies]
 embuild = "0.33"
+toml = "1"

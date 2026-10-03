@@ -1,0 +1,27 @@
+# Configuração do firmware. Copie para cfg.toml (ignorado pelo git) e preencha.
+# O build valida os valores e recompila quando este arquivo muda.
+
+# Rede Wi-Fi de 2,4 GHz. Senha vazia: rede aberta.
+wifi_ssid = ""
+wifi_password = ""
+
+# Local da consulta à Open-Meteo, em graus (PRD, D6 — em aberto; padrão: Boa Vista/RR).
+latitude = 2.82
+longitude = -60.67
+
+# Intervalo entre ciclos (PRD, D5b — em aberto). Mínimo de 1000 ms, o intervalo de
+# amostragem do DHT11.
+cycle_interval_ms = 5000
+
+# Tempo limite da consulta à Open-Meteo (PRD, D5c — em aberto). Deve ser menor que o
+# intervalo entre ciclos, para que uma consulta lenta não atrase o ciclo seguinte.
+http_timeout_ms = 3000
+
+# Intervalo entre consultas à Open-Meteo (PRD, D5a: 15 min). Valores menores servem para
+# observar falha e recuperação externas sem esperar a próxima consulta (PRD, D10).
+external_refresh_ms = 900000
+
+# GPIO de dados do DHT11 (padrão: 4, rotulado D4 no DevKit). O build aceita só GPIOs
+# bidirecionais fora da Flash e da serial, e avisa quando o pino é de strapping (0, 2, 5, 12,
+# 15): o pull-up do DHT11 nesses pinos pode impedir a gravação ou o boot.
+dht11_gpio = 4

@@ -1,2 +1,2 @@
-CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
-CONFIG_PARTITION_TABLE_SINGLE_APP=n
+# Pilha da tarefa principal, onde rodam o ciclo, o cliente HTTP e a formatação do CSV.
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=16384

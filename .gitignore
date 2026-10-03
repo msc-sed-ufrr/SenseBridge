@@ -1,2 +1,4 @@
 target/
-.obsidian/firmware/esp32/.embuild/
+.obsidian/
+capturas/
+firmware/esp32/.embuild/

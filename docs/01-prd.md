@@ -70,7 +70,7 @@ Sistemas IoT embarcados que combinam leituras de sensores locais com informaçõ
 | Interpretação da Open-Meteo | ✅ 100% | Parser implementado; respostas válidas, truncadas, inválidas e de erro cobertas por testes |
 | Consulta real à Open-Meteo via Wi-Fi | ✅ 100% | Executada com sucesso no ESP32, com HTTP e tempo limite |
 | Firmware Rust no ESP32 | ✅ 100% | Toolchain configurada, firmware compilado, gravado e executado no hardware |
-| Integração do DHT11 | 🔶 70% | Driver e abstração integrados; o shield ESP-01S DHT11 v1.0 disponível não respondeu eletricamente ao ESP32 |
+| Integração do DHT11 | ✅ 100% | Driver, abstração e leitura real do DHT11 concluídos e validados; SB-10 encerrada |
 | Testes automatizados | ✅ 100% | 53 testes aprovados: 18 unitários, 7 Open-Meteo, 12 cenários, 14 console e 2 doctests |
 | Análise estática | 🔶 75% | Estrutura preparada; execução final deve ser repetida antes da entrega |
 | Instrumentação de latência | ✅ 100% | `read_us`, `fetch_us` e `cycle_us` registrados pelo firmware |
@@ -78,7 +78,7 @@ Sistemas IoT embarcados que combinam leituras de sensores locais com informaçõ
 | Medição de Flash | 🔶 85% | Firmware completo medido; falta produzir o firmware-base previsto em D8 para obter o custo incremental |
 | Registro experimental em CSV | 🔶 75% | Console grava CSV e TXT; C2 real foi capturado; ainda falta padronizar cenário, repetição e estado esperado no CSV final |
 | Cenários C1–C5 automatizados | ✅ 100% | Todos os cinco cenários aprovados |
-| Cenários C1–C5 em hardware | 🔶 20% | C2 observado diretamente no ESP32; C1 depende de uma leitura local física válida e os demais ainda precisam de execução física controlada |
+| Cenários C1–C5 em hardware | 🔶 30% | A leitura real do DHT11 já foi validada e C2 foi observado diretamente no ESP32; ainda falta executar o protocolo físico final e repetido de C1–C5 |
 | Documentação da API e exemplos | 🔶 80% | README, documentação da crate, exemplos e doctests existentes; revisão final de reprodutibilidade pendente |
 | Avaliação experimental | ✅ 100% | Documento `docs/03-avaliacao-experimental.md` criado com resultados atuais |
 | Entregáveis finais | 🔶 65% | Código, testes e resultados principais existentes; faltam fechamento experimental, README final, relatório completo e vídeo |
@@ -100,7 +100,6 @@ A implementação atual apresenta:
 
 | Pendência | Severidade | Área |
 | --- | --- | --- |
-| Obter leitura local válida em hardware com um DHT11 convencional ou sensor compatível | Alta | Aquisição local |
 | Executar e registrar C1–C5 no ESP32 segundo o protocolo final | Alta | Experimentos |
 | Definir formalmente o número de repetições por cenário (D7) | Alta | Protocolo |
 | Fechar D10 sobre identificação de falha externa durante período de reutilização | Média | Resiliência |
@@ -400,7 +399,7 @@ A suíte atual possui 53 testes aprovados.
 
 Os cenários C1–C5 estão validados de forma automatizada. O cenário C2 também foi observado em execução real no ESP32, quando o sensor local permaneceu indisponível e a fonte Open-Meteo continuou operacional.
 
-O principal bloqueio físico é o módulo ESP-01S DHT11 v1.0 disponível para os experimentos, que recebe alimentação, mas não respondeu ao protocolo de leitura quando conectado ao ESP32. A integração será repetida com um módulo DHT11 convencional ou sensor compatível.
+A integração real do DHT11 já foi concluída e validada. Em uma montagem posterior, um shield ESP-01S DHT11 v1.0 específico recebeu alimentação, mas não respondeu ao protocolo de leitura; esse fato é mantido apenas como registro experimental e não representa bloqueio do SenseBridge.
 
 ### Cronograma de fechamento
 
@@ -410,7 +409,7 @@ O principal bloqueio físico é o módulo ESP-01S DHT11 v1.0 disponível para os
 | Implementação do núcleo | ✅ Concluída | Apenas correções identificadas na revisão final |
 | Firmware ESP32 | ✅ Concluído | Manter configuração reproduzível |
 | Open-Meteo | ✅ Concluída | Apenas documentação final |
-| DHT11 físico | 🔶 Parcial | Repetir com módulo adequado |
+| DHT11 físico | ✅ Concluído | Leitura real validada; SB-10 encerrada |
 | Testes automatizados | ✅ 53/53 | Reexecutar na versão final |
 | Instrumentação | ✅ Concluída | Completar baseline de RAM/Flash |
 | Experimentos | 🔶 Parcial | Executar protocolo físico final C1–C5 |
@@ -543,13 +542,13 @@ Em cada repetição do cenário de recuperação:
 4. observar os 7 ciclos seguintes;
 5. o primeiro ciclo em que ambas as fontes estiverem válidas deve apresentar estado `Normal` e recuperação.
 
-### Limitação experimental do DHT11 disponível
+### Registro experimental do DHT11 disponível
 
-O shield ESP-01S DHT11 v1.0 disponível durante a integração recebe alimentação, mas não produziu resposta válida na linha de dados quando conectado ao ESP32.
+A integração e a leitura real do DHT11 já foram concluídas e validadas no projeto, permitindo o encerramento da SB-10.
 
-A limitação é tratada como característica do hardware disponível e não altera a especificação da biblioteca.
+Em uma montagem posterior, o shield ESP-01S DHT11 v1.0 utilizado em outro conjunto físico recebeu alimentação, mas não produziu resposta válida na linha de dados quando conectado ao ESP32.
 
-Para a execução física final de C1 e dos demais cenários dependentes de uma leitura local válida, deverá ser utilizado preferencialmente um módulo DHT11 convencional ou outro sensor diretamente compatível com o ESP32.
+Esse episódio é mantido apenas como evidência de uma condição específica de hardware/montagem e não representa pendência da implementação do SenseBridge nem reabre a SB-10.
 
 ### Configuração atual do firmware
 

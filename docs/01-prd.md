@@ -1,7 +1,7 @@
 # Documento de Requisitos de Produto — SenseBridge
 
 > **Base:** Projeto de Pesquisa PTT4 — *Biblioteca Rust para Sistemas IoT Embarcados Context-Aware: Integração de Dados Ambientais e Tolerância a Falhas* (PPCA/UFRR, semestre 2026.2).
-> **Atualizado em:** 23/09/2026 · **Entrega final:** 26/11/2026
+> **Atualizado em:** 04/10/2026 · **Entrega final:** 26/11/2026
 
 ---
 
@@ -54,41 +54,62 @@ Sistemas IoT embarcados que combinam leituras de sensores locais com informaçõ
 
 ## 5. Escopo
 
-### Estado atual
+### Estado atual — 04/10/2026
 
-| Capacidade                                                                              | Status | Notas                                                                                                                                                                                                            |
-| --------------------------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Separação entre biblioteca e caso de uso no repositório                                 | 🔶 70% | Workspace com a biblioteca em `sense-bridge/`, pronta para empacotamento no crates.io; `firmware/` fora do workspace, com um projeto por placa (`firmware/esp32/`, só esqueleto, marcado para não ser publicado) |
-| Núcleo independente de hardware                                                         | 🔶 80% | Não usa a biblioteca padrão nem dependências, mas `lib.rs` ainda não declara `#![no_std]`, então a restrição não é verificada pelo compilador; compilação para o alvo ESP32 ainda não verificada                                                                                                            |
-| Modelo das leituras e das falhas por fonte                                              | ✅ 100% | Tipos distintos para local e externa; falhas com tipo identificado (sem resposta, integridade, sem conectividade, tempo limite, erro do serviço, resposta malformada, leitura inválida)                          |
-| Estados de operação                                                                     | ✅ 100% | Normal, Degradado — falha local, Degradado — falha externa e Erro                                                                                                                                                |
-| Transições de estado e recuperação                                                      | ✅ 100% | Estado anterior guardado; transição emitida só quando o estado muda; recuperação identificada; sem transição no primeiro ciclo                                                                                   |
-| Validação de dados                                                                      | 🔶 70% | Faixa (limites inclusivos) e valores não numéricos implementados; faixas provisórias (D3, D4); completude da resposta externa depende da interpretação da resposta                                               |
-| Registro integrado (origem, validade, estado, ciclo)                                    | ✅ 100% | Um registro por ciclo com identificador, instante, leitura ou falha de cada fonte, idade da leitura externa e transição; estado derivado das próprias leituras                                                   |
-| Intervalo de consulta externa e descarte após falha                                     | ✅ 100% | Leitura externa reutilizada dentro do intervalo; falha descarta a leitura anterior; intervalo padrão de 15 min fechado (D5a); ciclo local e tempo limite em aberto (D5b, D5c)                                                                                             |
-| Fontes simuladas para testes sem hardware                                               | ✅ 100% | Resultado ajustável entre ciclos e contagem de consultas                                                                                                                                                         |
-| Interpretação da resposta da Open-Meteo e respostas gravadas                            | 🔴 0%  | Planejada na biblioteca, para ser testada sem rede                                                                                                                                                               |
-| Leitura do DHT11 no ESP32                                                               | 🔴 0%  | Firmware só com esqueleto; toolchain e alvo ESP32 ainda não configurados                                                                                                                                         |
-| Consulta à Open-Meteo via Wi-Fi (com tempo limite)                                      | 🔴 0%  | Responsabilidade da fonte externa do firmware; a biblioteca já representa a falha por tempo limite                                                                                                               |
-| Testes automatizados                                                                    | 🔶 60% | 22 testes passando sem hardware: 10 unitários e 12 de cenários (C1–C5, validação, transições, intervalo de consulta); os exemplos da documentação e do README não rodam como doc-test, porque `lib.rs` não inclui o README; faltam respostas gravadas e testes no ESP32     |
-| Análise estática                                                                        | 🔶 50% | Clippy sem avisos com avisos tratados como erro; ainda não automatizado                                                                                                                                          |
-| Instrumentação de latência                                                              | 🔴 0%  | A biblioteca recebe o instante do ciclo; a medição fica no firmware                                                                                                                                              |
-| Medição de RAM e Flash                                                                  | 🔴 0%  | Inexistente                                                                                                                                                                                                      |
-| Registro dos experimentos em CSV                                                        | 🔶 15% | Exemplo de simulação imprime um registro por ciclo em CSV, ainda sem as colunas do protocolo (repetição, estado esperado, latências)                                                                             |
-| Documentação da API e exemplos                                                          | 🔶 50% | API pública documentada; README próprio da crate com exemplo de uso; exemplos da documentação e do README ainda não verificados automaticamente; exemplo `simulate` (C1–C5); falta exemplo de uso no firmware                 |
-| Entregáveis-base (licença, README de reprodutibilidade, dados brutos, vídeo, relatório) | 🔶 25% | Licença dupla MIT/Apache-2.0; README do projeto descreve a estrutura e os comandos de teste; faltam instruções de hardware, dados, vídeo e relatório                                                             |
-
-### Bloqueios para a entrega
-
-| Bloqueio | Severidade | Área |
+| Capacidade | Status | Notas |
 | --- | --- | --- |
-| Pilha do ESP32 não escolhida (D12); firmware só com esqueleto, toolchain e alvo não configurados | Crítica | Plataforma |
-| Nenhuma leitura real do DHT11 | Crítica | Aquisição local |
-| Nenhuma integração com a Open-Meteo (consulta, tempo limite, interpretação da resposta) | Crítica | Aquisição externa |
-| Instrumentação de latência, RAM e Flash inexistente | Alta | Experimentos |
-| Saída CSV no formato do protocolo inexistente | Alta | Experimentos |
-| Faixa do DHT11 não confirmada no manual e faixa externa sem fonte declarada (D3, D4); ciclo local e tempo limite sem valor (D5b, D5c) | Média | Validação |
-| Respostas externas gravadas ausentes (Plano B contra instabilidade de rede) | Média | Testes |
+| Separação entre biblioteca e firmware | ✅ 100% | Biblioteca em `sense-bridge/`; firmware de referência em `firmware/esp32/`; console experimental em `tools/console/` |
+| Núcleo independente de hardware | ✅ 100% | O núcleo é testado no computador sem ESP32, sensor ou rede; `no_std` declarado e doctests executáveis |
+| Modelo das leituras e das falhas por fonte | ✅ 100% | Tipos distintos para fonte local e externa, com falhas explicitamente identificadas |
+| Estados de operação | ✅ 100% | `Normal`, `DegradedLocal`, `DegradedExternal` e `Error` |
+| Transições de estado e recuperação | ✅ 100% | Transições emitidas apenas quando há mudança de estado; recuperação identificada no retorno a `Normal` |
+| Validação de dados | 🔶 90% | Validação implementada e testada; permanecem pendentes apenas as referências formais das faixas D3 e D4 |
+| Registro integrado por ciclo | ✅ 100% | Ciclo, instante, estado, leituras/falhas, idade da leitura externa, transição e recuperação |
+| Intervalo de consulta externa e cache | ✅ 100% | `external_refresh_ms = 900000` ms (15 min); leitura externa válida pode ser reutilizada |
+| Fontes simuladas | ✅ 100% | Utilizadas nos testes determinísticos dos cenários C1–C5 |
+| Interpretação da Open-Meteo | ✅ 100% | Parser implementado; respostas válidas, truncadas, inválidas e de erro cobertas por testes |
+| Consulta real à Open-Meteo via Wi-Fi | ✅ 100% | Executada com sucesso no ESP32, com HTTP e tempo limite |
+| Firmware Rust no ESP32 | ✅ 100% | Toolchain configurada, firmware compilado, gravado e executado no hardware |
+| Integração do DHT11 | 🔶 70% | Driver e abstração integrados; o shield ESP-01S DHT11 v1.0 disponível não respondeu eletricamente ao ESP32 |
+| Testes automatizados | ✅ 100% | 53 testes aprovados: 18 unitários, 7 Open-Meteo, 12 cenários, 14 console e 2 doctests |
+| Análise estática | 🔶 75% | Estrutura preparada; execução final deve ser repetida antes da entrega |
+| Instrumentação de latência | ✅ 100% | `read_us`, `fetch_us` e `cycle_us` registrados pelo firmware |
+| Medição de RAM | ✅ 100% | Heap e stack monitorados em execução; segmentos estáticos também medidos |
+| Medição de Flash | 🔶 85% | Firmware completo medido; falta produzir o firmware-base previsto em D8 para obter o custo incremental |
+| Registro experimental em CSV | 🔶 75% | Console grava CSV e TXT; C2 real foi capturado; ainda falta padronizar cenário, repetição e estado esperado no CSV final |
+| Cenários C1–C5 automatizados | ✅ 100% | Todos os cinco cenários aprovados |
+| Cenários C1–C5 em hardware | 🔶 20% | C2 observado diretamente no ESP32; C1 depende de uma leitura local física válida e os demais ainda precisam de execução física controlada |
+| Documentação da API e exemplos | 🔶 80% | README, documentação da crate, exemplos e doctests existentes; revisão final de reprodutibilidade pendente |
+| Avaliação experimental | ✅ 100% | Documento `docs/03-avaliacao-experimental.md` criado com resultados atuais |
+| Entregáveis finais | 🔶 65% | Código, testes e resultados principais existentes; faltam fechamento experimental, README final, relatório completo e vídeo |
+
+### Resultados já obtidos
+
+A implementação atual apresenta:
+
+- 53 testes automatizados aprovados e nenhuma falha;
+- validação dos cenários C1–C5 com fontes simuladas;
+- integração real do ESP32 com Wi-Fi e Open-Meteo;
+- observação real do cenário C2 (`DegradedLocal`) em hardware;
+- captura experimental estruturada em CSV/TXT;
+- latência estável média no C2 de aproximadamente 18,59 ms;
+- medição de Flash, RAM estática, heap e stack;
+- documentação específica da avaliação experimental.
+
+### Pendências para a entrega
+
+| Pendência | Severidade | Área |
+| --- | --- | --- |
+| Obter leitura local válida em hardware com um DHT11 convencional ou sensor compatível | Alta | Aquisição local |
+| Executar e registrar C1–C5 no ESP32 segundo o protocolo final | Alta | Experimentos |
+| Definir formalmente o número de repetições por cenário (D7) | Alta | Protocolo |
+| Fechar D10 sobre identificação de falha externa durante período de reutilização | Média | Resiliência |
+| Confirmar e referenciar formalmente as faixas de validação D3 e D4 | Média | Validação |
+| Produzir firmware-base sem SenseBridge para comparação de RAM/Flash prevista em D8 | Média | Métricas |
+| Completar as colunas finais do CSV experimental | Média | Evidências |
+| Executar análise estática final | Média | Qualidade |
+| Atualizar README completo de reprodutibilidade | Média | Documentação |
+| Consolidar relatório técnico e vídeo de demonstração | Alta | Entrega |
 
 ---
 
@@ -369,47 +390,55 @@ Sistemas IoT embarcados que combinam leituras de sensores locais com informaçõ
 
 ## 9. Roadmap
 
-### Estado atual (setembro de 2026 — fase de revisão e protocolo)
+### Estado atual — 04/10/2026
 
-O repositório está organizado como workspace, com a biblioteca em `sense-bridge/` separada do caso de uso (`firmware/esp32/`, por enquanto só um esqueleto que não será publicado; outras placas entrariam como projetos irmãos em `firmware/`). A biblioteca já tem os metadados, o README próprio e a licença dupla MIT/Apache-2.0 exigidos para publicação no crates.io.
+O desenvolvimento está adiantado em relação ao cronograma original.
 
-Parte do núcleo previsto para a fase de implementação foi antecipada. A biblioteca, independente de hardware, já implementa o modelo de leituras e falhas por fonte, a validação por faixa e por valores não numéricos, os estados de operação com transições e recuperação, o registro integrado por ciclo, a reutilização da leitura externa dentro do intervalo de consulta e as fontes simuladas. São 22 testes passando no computador de desenvolvimento, cobrindo os cenários C1–C5, e a análise estática não aponta avisos. As faixas de validação continuam provisórias (D3, D4); o intervalo entre consultas externas foi fechado em 15 min (D5a), enquanto o intervalo do ciclo local e o tempo limite seguem sem valor (D5b, D5c). Ainda não há firmware funcional, alvo ESP32 configurado, aquisição real, interpretação da resposta da Open-Meteo nem instrumentação.
+O núcleo da biblioteca, os estados de operação, as transições, a recuperação, as fontes simuladas, a integração com a Open-Meteo, o firmware ESP32, o console de captura e a instrumentação já estão implementados.
 
-### Cronograma
+A suíte atual possui 53 testes aprovados.
 
-Datas aproximadas, contadas para trás a partir da entrega de 26/11/2026 (11 semanas).
+Os cenários C1–C5 estão validados de forma automatizada. O cenário C2 também foi observado em execução real no ESP32, quando o sensor local permaneceu indisponível e a fonte Open-Meteo continuou operacional.
 
-| Fase | Semanas | Período aproximado | Atividades principais |
-| --- | --- | --- | --- |
-| Revisão e protocolo | 1–2 | 10/09 – 23/09 | Revisão técnica; definição da API, requisitos, estados, cenários e métricas |
-| Implementação | 3–5 | 24/09 – 14/10 | Leitura do DHT11; integração com a Open-Meteo; modelo de dados; estados e recuperação |
-| Testes e instrumentação | 6–7 | 15/10 – 28/10 | Testes automatizados; instrumentação de latência; levantamento de RAM e Flash; validação dos cenários |
-| Execução dos experimentos | 8–9 | 29/10 – 11/11 | Execução repetida de C1–C5; coleta dos dados |
-| Análise e redação | 10 | 12/11 – 18/11 | Análise das métricas; documentação da API; README e relatório técnico |
-| Vídeo e entrega final | 11 | 19/11 – 26/11 | Demonstração funcional; revisão do repositório; entrega |
+O principal bloqueio físico é o módulo ESP-01S DHT11 v1.0 disponível para os experimentos, que recebe alimentação, mas não respondeu ao protocolo de leitura quando conectado ao ESP32. A integração será repetida com um módulo DHT11 convencional ou sensor compatível.
 
-### Curto prazo (semanas 2–7)
+### Cronograma de fechamento
 
-- Fechar as decisões que continuam em aberto — ver [Decisões de projeto](#12-decisões-de-projeto) — D3, D4, D5b, D5c, D6, D7, D10 e D12, e o protocolo experimental.
-- Criar o firmware em `firmware/esp32/` com toolchain e alvo ESP32, compilando a biblioteca para o alvo.
-- Implementar na biblioteca a interpretação da resposta da Open-Meteo, testada com respostas gravadas.
-- Integrar no firmware a leitura do DHT11 e a consulta à Open-Meteo com tempo limite.
-- Definir as colunas do CSV do protocolo e gerá-lo no firmware.
-- Instrumentar latência e medir RAM e Flash.
-- Automatizar a execução dos testes e da análise estática.
-- Declarar `#![no_std]` na biblioteca e incluir o README da crate como doc-test, para que o compilador verifique o que a documentação afirma.
+| Fase | Situação em 04/10 | Próxima ação |
+| --- | --- | --- |
+| Revisão e protocolo | ✅ Concluída em grande parte | Fechar D3, D4, D7 e D10 |
+| Implementação do núcleo | ✅ Concluída | Apenas correções identificadas na revisão final |
+| Firmware ESP32 | ✅ Concluído | Manter configuração reproduzível |
+| Open-Meteo | ✅ Concluída | Apenas documentação final |
+| DHT11 físico | 🔶 Parcial | Repetir com módulo adequado |
+| Testes automatizados | ✅ 53/53 | Reexecutar na versão final |
+| Instrumentação | ✅ Concluída | Completar baseline de RAM/Flash |
+| Experimentos | 🔶 Parcial | Executar protocolo físico final C1–C5 |
+| Análise de resultados | 🔶 Avançada | Consolidar todas as repetições |
+| Documentação | 🔶 Avançada | Atualizar README, PRD e arquitetura |
+| Relatório | 🔶 Em andamento | Incorporar resultados finais |
+| Vídeo | 🔴 Pendente | Produzir após congelamento do firmware |
 
-### Médio prazo (semanas 8–11)
+### Próximas atividades
 
-- Executar C1–C5 repetidamente no ESP32 e versionar os CSVs brutos.
-- Analisar corretude, detecção de falhas, recuperação, latência, RAM e Flash.
-- Escrever a documentação da API, os exemplos de uso e o README de reprodutibilidade.
-- Escrever o relatório técnico e gravar o vídeo de demonstração (3–5 min).
+1. Revisar PRD e arquitetura contra a implementação real.
+2. Fechar as decisões D3, D4, D7 e D10.
+3. Completar a integração física da fonte local.
+4. Definir o número de repetições do protocolo experimental.
+5. Executar C1–C5 em hardware conforme o protocolo final.
+6. Gerar os CSVs finais com cenário, repetição, estado esperado e estado observado.
+7. Produzir firmware-base e calcular o custo incremental de RAM/Flash.
+8. Executar a análise estática final.
+9. Consolidar resultados no relatório técnico.
+10. Atualizar o README de reprodutibilidade.
+11. Produzir o vídeo de demonstração de 3–5 minutos.
 
-### Longo prazo (pós-disciplina)
+### Pós-disciplina
 
-- Publicar o código em repositório público e, se a maturidade permitir, publicar a biblioteca como crate.
-- Avaliar o registro de software e a publicação do conjunto de dados experimentais.
+- avaliar publicação da biblioteca como crate;
+- avaliar registro de software;
+- avaliar publicação do conjunto de dados experimental;
+- testar outros sensores e plataformas sem alterar o núcleo da biblioteca.
 
 ---
 
@@ -462,30 +491,51 @@ Datas aproximadas, contadas para trás a partir da entrega de 26/11/2026 (11 sem
 
 ## 12. Decisões de projeto
 
-Registro das decisões que moldam o comportamento da biblioteca e o protocolo experimental. As fechadas ficam aqui para consulta e não devem ser reabertas sem revisar as regras de negócio e os critérios de sucesso que dependem delas.
+Registro das decisões que moldam o comportamento da biblioteca e o protocolo experimental. As decisões fechadas não devem ser reabertas sem revisar as regras de negócio e os critérios de sucesso que dependem delas.
 
 ### Decisões fechadas
 
-| # | Decisão | Resolução | Onde está sustentada |
+| # | Decisão | Resolução |
+| --- | --- | --- |
+| D1 | Recuperação como estado ou evento | Recuperação é evento de transição para `Normal`; a máquina possui quatro estados |
+| D2 | Histerese para falha/recuperação | Não; reação no próprio ciclo (`N = 1`) |
+| D5a | Intervalo entre consultas à Open-Meteo | 15 min (`900000 ms`), configurável em `external_refresh_ms` |
+| D5b | Intervalo do ciclo local | 5 s (`5000 ms`) no firmware experimental |
+| D5c | Tempo limite da Open-Meteo | 3 s (`3000 ms`) no firmware experimental |
+| D6 | Coordenadas da Open-Meteo | Configuráveis em `cfg.toml`; experimento atual utiliza latitude `2.82` e longitude `-60.67` |
+| D8 | Referência para RAM e Flash | Relatar firmware completo e diferença contra firmware-base sem a biblioteca |
+| D9 | Licença | Licença dupla `MIT OR Apache-2.0` |
+| D11 | Nova tentativa após falha externa | Nova tentativa em cada ciclo enquanto a fonte estiver indisponível |
+| D12 | Pilha ESP32 | `esp-idf` / `esp-idf-svc`, com suporte a `std`, Wi-Fi, TLS e HTTP |
+
+### Decisões ainda abertas
+
+| # | Decisão | Estado atual | O que falta |
 | --- | --- | --- | --- |
-| D1 | "Recuperação" deve ser um estado explícito da máquina de estados ou apenas um evento de transição para Normal? | Evento de transição; a máquina mantém 4 estados | Definições e regras de estados de operação (§6); critério "transições de estado sem evento emitido = 0" (§10); `state.rs`, com `Transition::is_recovery()` e teste dedicado |
-| D2 | Adotar histerese (N ciclos consecutivos) para declarar falha ou recuperação? | Não; reação no próprio ciclo (N = 1) | Regra "o estado de cada ciclo é determinado pela disponibilidade das fontes naquele ciclo" (§6); meta de recuperação em 1 ciclo (§10); teste de recuperação de C5 |
-| D5a | Intervalo entre consultas à Open-Meteo | 15 min, configurável em `Config::external_refresh_ms` | Regra de reutilização da leitura externa (§6); `bridge.rs`; testes de reuso dentro do intervalo e de descarte após falha |
-| D8 | Referência para RAM e Flash: firmware completo ou diferença em relação a um firmware base sem a biblioteca? | Relatar os dois | Mitigação do risco de a pilha de rede mascarar o custo próprio da biblioteca (§8); regra de medição de RAM e Flash (§6) |
-| D9 | Licença do repositório | Licença dupla `MIT OR Apache-2.0` | `sense-bridge/Cargo.toml`, `LICENSE-MIT` e `LICENSE-APACHE` na raiz, README do projeto e da crate |
-| D11 | Com que frequência tentar de novo enquanto a fonte externa está indisponível? | A cada ciclo | Regra de nova tentativa (§6); critério de aceite de UC-002; meta de recuperação em 1 ciclo (§10); `bridge.rs` e o teste de C4, que confirma uma consulta por ciclo durante a indisponibilidade |
+| D3 | Faixas de validade do DHT11 | Implementadas como 0–50 °C e 20–90 %UR | Confirmar e citar o manual utilizado |
+| D4 | Faixas físicas plausíveis da fonte externa | Implementadas como −90 a 60 °C e 0–100 %UR | Declarar fonte técnica que sustenta os limites |
+| D7 | Número de repetições e duração por cenário | Ainda não fechado | Definir antes da execução física final dos C1–C5 |
+| D10 | Identificação de falha durante reutilização da leitura externa | Biblioteca identifica na consulta seguinte | Decidir se o firmware invalida antecipadamente o cache ao detectar perda de conectividade ou se o atraso será aceito e medido |
 
-Se a Open-Meteo passar a limitar requisições, o ajuste é no intervalo do ciclo local (D5b), não na frequência de nova tentativa: reduzir a frequência quebraria a meta de recuperação em 1 ciclo.
+### Decisão experimental sobre o DHT11 disponível
 
-### Decisões em aberto
+O shield ESP-01S DHT11 v1.0 utilizado durante a integração não produziu resposta válida na linha de dados quando ligado ao ESP32.
 
-| # | Decisão | Proposta inicial | O que falta |
-| --- | --- | --- | --- |
-| D3 | Faixas de validade do DHT11 | 0–50 °C e 20–90 %UR | Confirmar na versão do manual referenciada; hoje implementada como provisória em `Limits::DHT11` |
-| D4 | Faixas físicas plausíveis para a leitura externa | −90 a 60 °C e 0–100 %UR | Declarar a fonte que sustenta esses limites; hoje implementada como provisória em `Limits::PLAUSIBLE` |
-| D5b | Intervalo do ciclo local | A definir | Valor e justificativa. Fica no firmware, não na biblioteca; condiciona a cadência do DHT11 e o volume de consultas à API |
-| D5c | Tempo limite da consulta à Open-Meteo | Curto, valor a definir | Valor e justificativa. Fica no firmware; condiciona a latência medida em C3 |
-| D6 | Coordenadas usadas na consulta à Open-Meteo | Coordenadas do local dos experimentos | Definir latitude e longitude e onde elas ficam configuradas |
-| D7 | Número de repetições e duração de cada execução por cenário | A definir | Fechar junto com o protocolo experimental; bloqueia a execução de C1–C5 |
-| D10 | Uma falha externa durante a reutilização só é identificada na consulta seguinte. Com intervalo de 15 min, a queda da rede pode levar até 15 min para aparecer, e C3 fica sem identificação imediata. Aceitar e medir esse atraso, usar intervalo curto nos experimentos, ou permitir que o firmware invalide a leitura reutilizada ao detectar perda de conexão? | Permitir a invalidação pelo firmware e medir o tempo de identificação | Decidir antes de definir o estado esperado de C3; hoje a biblioteca só identifica na consulta seguinte, e a meta de correspondência de §10 depende dessa escolha |
-| D12 | Pilha do ESP32: `esp-hal` (`no_std`) ou `esp-idf-hal`/`esp-idf-svc` (com `std`)? | A definir | Decide como entram Wi-Fi, TLS e HTTP no firmware e se há alocador disponível; bloqueia toda a fase de implementação |
+Foram realizados testes temporários de diagnóstico após a alimentação do módulo ser confirmada pelo LED `PWR`. O ESP32 gerou o pulso de início, porém não detectou a resposta lógica esperada do sensor.
+
+Esse comportamento é registrado como limitação do hardware disponível, e não como alteração da especificação do SenseBridge.
+
+Para a avaliação final em condição `Normal`, será utilizado preferencialmente um módulo DHT11 convencional diretamente compatível com o ESP32.
+
+### Situação das decisões na implementação
+
+As decisões de temporização utilizadas atualmente são:
+
+```toml
+cycle_interval_ms = 5000
+http_timeout_ms = 3000
+external_refresh_ms = 900000
+dht11_gpio = 4
+```
+
+Esses parâmetros permanecem configuráveis no firmware de referência.

@@ -406,7 +406,7 @@ O principal bloqueio físico é o módulo ESP-01S DHT11 v1.0 disponível para os
 
 | Fase | Situação em 04/10 | Próxima ação |
 | --- | --- | --- |
-| Revisão e protocolo | ✅ Concluída em grande parte | Fechar D3, D4, D7 e D10 |
+| Revisão e protocolo | ✅ Concluída em grande parte | Decisões D3, D4, D7 e D10 fechadas |
 | Implementação do núcleo | ✅ Concluída | Apenas correções identificadas na revisão final |
 | Firmware ESP32 | ✅ Concluído | Manter configuração reproduzível |
 | Open-Meteo | ✅ Concluída | Apenas documentação final |
@@ -422,8 +422,7 @@ O principal bloqueio físico é o módulo ESP-01S DHT11 v1.0 disponível para os
 ### Próximas atividades
 
 1. Revisar PRD e arquitetura contra a implementação real.
-2. Fechar as decisões D3, D4, D7 e D10.
-3. Completar a integração física da fonte local.
+2. Completar a integração física da fonte local.
 4. Definir o número de repetições do protocolo experimental.
 5. Executar C1–C5 em hardware conforme o protocolo final.
 6. Gerar os CSVs finais com cenário, repetição, estado esperado e estado observado.
@@ -491,7 +490,7 @@ O principal bloqueio físico é o módulo ESP-01S DHT11 v1.0 disponível para os
 
 ## 12. Decisões de projeto
 
-Registro das decisões que moldam o comportamento da biblioteca e o protocolo experimental. As decisões fechadas não devem ser reabertas sem revisar as regras de negócio e os critérios de sucesso que dependem delas.
+Registro das decisões que moldam o comportamento da biblioteca e o protocolo experimental.
 
 ### Decisões fechadas
 
@@ -499,37 +498,60 @@ Registro das decisões que moldam o comportamento da biblioteca e o protocolo ex
 | --- | --- | --- |
 | D1 | Recuperação como estado ou evento | Recuperação é evento de transição para `Normal`; a máquina possui quatro estados |
 | D2 | Histerese para falha/recuperação | Não; reação no próprio ciclo (`N = 1`) |
-| D5a | Intervalo entre consultas à Open-Meteo | 15 min (`900000 ms`), configurável em `external_refresh_ms` |
-| D5b | Intervalo do ciclo local | 5 s (`5000 ms`) no firmware experimental |
-| D5c | Tempo limite da Open-Meteo | 3 s (`3000 ms`) no firmware experimental |
-| D6 | Coordenadas da Open-Meteo | Configuráveis em `cfg.toml`; experimento atual utiliza latitude `2.82` e longitude `-60.67` |
+| D3 | Faixas de validade do DHT11 | 0–50 °C e 20–90 %UR |
+| D4 | Faixas físicas plausíveis da fonte externa | −90 a 60 °C e 0–100 %UR |
+| D5a | Intervalo normal entre consultas à Open-Meteo | 15 min (`900000 ms`), configurável |
+| D5b | Intervalo do ciclo local | 5 s (`5000 ms`) |
+| D5c | Tempo limite da Open-Meteo | 3 s (`3000 ms`) |
+| D6 | Coordenadas da Open-Meteo | Configuráveis em `cfg.toml`; experimento atual usa latitude `2.82` e longitude `-60.67` |
+| D7 | Repetições do protocolo | 5 repetições por cenário, com 10 ciclos por repetição |
 | D8 | Referência para RAM e Flash | Relatar firmware completo e diferença contra firmware-base sem a biblioteca |
 | D9 | Licença | Licença dupla `MIT OR Apache-2.0` |
+| D10 | Falha externa durante reutilização | Não alterar a arquitetura; nos experimentos C3–C5 usar `external_refresh_ms = 5000` para verificar a fonte externa aproximadamente a cada ciclo |
 | D11 | Nova tentativa após falha externa | Nova tentativa em cada ciclo enquanto a fonte estiver indisponível |
-| D12 | Pilha ESP32 | `esp-idf` / `esp-idf-svc`, com suporte a `std`, Wi-Fi, TLS e HTTP |
+| D12 | Pilha ESP32 | `esp-idf` / `esp-idf-svc`, com `std`, Wi-Fi, TLS e HTTP |
 
-### Decisões ainda abertas
+### Protocolo experimental consolidado
 
-| # | Decisão | Estado atual | O que falta |
-| --- | --- | --- | --- |
-| D3 | Faixas de validade do DHT11 | Implementadas como 0–50 °C e 20–90 %UR | Confirmar e citar o manual utilizado |
-| D4 | Faixas físicas plausíveis da fonte externa | Implementadas como −90 a 60 °C e 0–100 %UR | Declarar fonte técnica que sustenta os limites |
-| D7 | Número de repetições e duração por cenário | Ainda não fechado | Definir antes da execução física final dos C1–C5 |
-| D10 | Identificação de falha durante reutilização da leitura externa | Biblioteca identifica na consulta seguinte | Decidir se o firmware invalida antecipadamente o cache ao detectar perda de conectividade ou se o atraso será aceito e medido |
+Para os cenários C1–C5 serão utilizadas:
 
-### Decisão experimental sobre o DHT11 disponível
+- 5 repetições por cenário;
+- 10 ciclos por repetição;
+- intervalo de ciclo de 5 s;
+- 50 ciclos por cenário;
+- 250 ciclos no conjunto C1–C5.
 
-O shield ESP-01S DHT11 v1.0 utilizado durante a integração não produziu resposta válida na linha de dados quando ligado ao ESP32.
+Nos experimentos que exigem observação rápida da fonte externa, será usado:
 
-Foram realizados testes temporários de diagnóstico após a alimentação do módulo ser confirmada pelo LED `PWR`. O ESP32 gerou o pulso de início, porém não detectou a resposta lógica esperada do sensor.
+```toml
+external_refresh_ms = 5000
+```
 
-Esse comportamento é registrado como limitação do hardware disponível, e não como alteração da especificação do SenseBridge.
+A configuração normal da aplicação permanece:
 
-Para a avaliação final em condição `Normal`, será utilizado preferencialmente um módulo DHT11 convencional diretamente compatível com o ESP32.
+```toml
+external_refresh_ms = 900000
+```
 
-### Situação das decisões na implementação
+### Procedimento específico do C5
 
-As decisões de temporização utilizadas atualmente são:
+Em cada repetição do cenário de recuperação:
+
+1. iniciar em condição degradada ou de erro;
+2. manter a falha durante os 3 primeiros ciclos;
+3. restabelecer as fontes;
+4. observar os 7 ciclos seguintes;
+5. o primeiro ciclo em que ambas as fontes estiverem válidas deve apresentar estado `Normal` e recuperação.
+
+### Limitação experimental do DHT11 disponível
+
+O shield ESP-01S DHT11 v1.0 disponível durante a integração recebe alimentação, mas não produziu resposta válida na linha de dados quando conectado ao ESP32.
+
+A limitação é tratada como característica do hardware disponível e não altera a especificação da biblioteca.
+
+Para a execução física final de C1 e dos demais cenários dependentes de uma leitura local válida, deverá ser utilizado preferencialmente um módulo DHT11 convencional ou outro sensor diretamente compatível com o ESP32.
+
+### Configuração atual do firmware
 
 ```toml
 cycle_interval_ms = 5000
@@ -537,5 +559,3 @@ http_timeout_ms = 3000
 external_refresh_ms = 900000
 dht11_gpio = 4
 ```
-
-Esses parâmetros permanecem configuráveis no firmware de referência.

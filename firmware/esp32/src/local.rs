@@ -17,6 +17,10 @@ const POWER_UP: Duration = Duration::from_secs(1);
 /// Pulso de início: o manual pede a linha em nível baixo por pelo menos 18 ms.
 const START_PULSE_MS: u32 = 18;
 
+/// Instante, depois da liberação da linha, em que a resposta do sensor já começou: ela vem
+/// 20–40 µs após a liberação e dura 80 µs.
+const ACK_SAMPLE_US: u32 = 48;
+
 /// Espera máxima por cada borda. As fases do protocolo duram de 20 µs a 80 µs.
 const EDGE_TIMEOUT_US: u32 = 100;
 
@@ -122,10 +126,13 @@ impl<'d> Dht11<'d> {
         let line = Line::new(&self.data);
 
         // Resposta: 20–40 µs depois da liberação, o sensor mantém a linha em nível baixo por
-        // 80 µs e em nível alto por mais 80 µs. A espera pelo nível alto cobre a subida pelo
-        // pull-up, que não pode ser confundida com a resposta.
-        line.wait_for(Level::High).ok_or(Fault::LineLow)?;
-        line.wait_for(Level::Low).ok_or(Fault::NoAck)?;
+        // 80 µs e em nível alto por mais 80 µs. A linha é amostrada no meio do nível baixo, e
+        // não na subida depois da liberação: com um pull-up fraco, a linha pode não chegar ao
+        // nível alto antes de o sensor puxá-la, e o quadro sairia deslocado de um bit.
+        Ets::delay_us(ACK_SAMPLE_US);
+        if self.data.is_high() {
+            return Err(Fault::NoAck);
+        }
         line.wait_for(Level::High).ok_or(Fault::AckBroken)?;
         line.wait_for(Level::Low).ok_or(Fault::AckBroken)?;
 
@@ -172,7 +179,7 @@ impl LocalSource for Dht11<'_> {
 /// Etapa em que a leitura falhou, mais fina que [`LocalFailure`].
 #[derive(Debug, Clone, Copy)]
 pub enum Fault {
-    /// A linha ficou em nível baixo sem o pulso de início, antes dele ou depois da liberação.
+    /// A linha já estava em nível baixo antes do pulso de início.
     LineLow,
     /// O sensor não respondeu ao pulso de início.
     NoAck,

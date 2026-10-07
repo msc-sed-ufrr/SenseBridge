@@ -134,8 +134,8 @@ W (40953) sense_bridge_esp32::local: DHT11: sem resposta ao pulso de início (se
 
 | Log | Etapa | Causa provável | `local_failure` |
 | --- | --- | --- | --- |
-| linha DATA presa em nível baixo | Antes do pulso de início ou depois da liberação da linha | DATA em curto com o GND ou sensor travado | `NoResponse` |
-| sem resposta ao pulso de início | O sensor não puxou a linha em até 100 µs | Sensor sem alimentação, DATA desconectado ou sensor travado | `NoResponse` |
+| linha DATA presa em nível baixo | Antes do pulso de início | DATA em curto com o GND ou sensor travado | `NoResponse` |
+| sem resposta ao pulso de início | A linha seguia em nível alto 48 µs depois da liberação | Sensor sem alimentação, DATA desconectado ou sensor travado | `NoResponse` |
 | resposta ao pulso de início incompleta | A resposta de 80 µs + 80 µs não terminou | Contato intermitente | `NoResponse` |
 | quadro interrompido após N de 40 bits | Algum dos 40 bits não chegou | Contato intermitente ou interferência | `NoResponse` |
 | checksum inválido no quadro [..] | Quadro completo, com os 5 bytes recebidos | Interferência ou bit lido errado | `Checksum` |

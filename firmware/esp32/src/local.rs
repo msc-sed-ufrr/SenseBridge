@@ -1,13 +1,18 @@
 //! Fonte local: sensor DHT11 lido por um pino GPIO.
 
 use std::fmt;
+use std::thread;
+use std::time::{Duration, Instant};
 
 use esp_idf_svc::hal::delay::Ets;
-use esp_idf_svc::hal::gpio::{InputOutput, Level, PinDriver};
+use esp_idf_svc::hal::gpio::{InputOutput, Level, Output, PinDriver};
 use esp_idf_svc::hal::interrupt::IsrCriticalSection;
 use esp_idf_svc::sys::{self, EspError};
 use log::warn;
 use sense_bridge::{LocalFailure, LocalReading, LocalSource};
+
+/// O DHT11 precisa de 1 s depois de energizado antes da primeira leitura.
+const POWER_UP: Duration = Duration::from_secs(1);
 
 /// Pulso de início: o manual pede a linha em nível baixo por pelo menos 18 ms.
 const START_PULSE_MS: u32 = 18;
@@ -18,32 +23,83 @@ const EDGE_TIMEOUT_US: u32 = 100;
 /// Pulsos em nível alto acima deste limite são bits 1 (70 µs); abaixo, bits 0 (26–28 µs).
 const ONE_THRESHOLD_US: u32 = 48;
 
-/// DHT11 ligado a um pino em dreno aberto, com pull-up.
+/// Falhas seguidas que levam a desligar e religar o sensor, quando ele é alimentado por um
+/// GPIO.
+const POWER_CYCLE_AFTER: u32 = 3;
+
+/// Tempo com o sensor desligado em cada reinício.
+const POWER_OFF: Duration = Duration::from_secs(1);
+
+/// DHT11 ligado a um pino em dreno aberto, com pull-up, e opcionalmente alimentado por um
+/// GPIO.
 ///
 /// A leitura distingue a etapa do protocolo em que falhou ([`Fault`]). A biblioteca recebe
 /// apenas `NoResponse` ou `Checksum`; a etapa vai para o log em [`Dht11::after_cycle`], fora
 /// da janela medida. Quem chama `read` respeita o intervalo mínimo de amostragem.
 pub struct Dht11<'d> {
     data: PinDriver<'d, InputOutput>,
+    power: Option<PinDriver<'d, Output>>,
+    powered_at: Instant,
     /// Leituras seguidas sem sucesso.
     failures: u32,
     last_fault: Option<Fault>,
 }
 
 impl<'d> Dht11<'d> {
-    pub fn new(mut data: PinDriver<'d, InputOutput>) -> Result<Self, EspError> {
+    pub fn new(
+        mut data: PinDriver<'d, InputOutput>,
+        mut power: Option<PinDriver<'d, Output>>,
+    ) -> Result<Self, EspError> {
         // A linha fica solta, em nível alto, até a primeira leitura: o sensor interpreta um
         // nível baixo como pedido de leitura.
         data.set_high()?;
-        Ok(Self { data, failures: 0, last_fault: None })
+        if let Some(power) = power.as_mut() {
+            power.set_high()?;
+        }
+        Ok(Self { data, power, powered_at: Instant::now(), failures: 0, last_fault: None })
+    }
+
+    /// Aguarda o sensor ficar pronto depois de energizado. Com VCC no 3V3, conta a partir de
+    /// [`Dht11::new`], depois do boot.
+    pub fn wait_power_up(&self) {
+        if let Some(wait) = POWER_UP.checked_sub(self.powered_at.elapsed()) {
+            thread::sleep(wait);
+        }
     }
 
     /// Chamado depois de cada ciclo, fora da janela medida: registra a etapa em que a última
-    /// leitura falhou.
+    /// leitura falhou e, a cada `POWER_CYCLE_AFTER` falhas seguidas, reinicia o sensor.
     pub fn after_cycle(&mut self) {
-        if let Some(fault) = self.last_fault.take() {
-            warn!("DHT11: {fault} (falha {} seguida)", self.failures);
+        let Some(fault) = self.last_fault.take() else {
+            return;
+        };
+        warn!("DHT11: {fault} (falha {} seguida)", self.failures);
+        if self.power.is_some() && self.failures.is_multiple_of(POWER_CYCLE_AFTER) {
+            self.power_cycle();
         }
+    }
+
+    /// Desliga o sensor por `POWER_OFF` e o religa: um DHT11 travado só volta a responder
+    /// depois de perder a alimentação.
+    fn power_cycle(&mut self) {
+        let Some(power) = self.power.as_mut() else {
+            return;
+        };
+        warn!(
+            "DHT11: {} falhas seguidas; desligando o sensor por {} ms",
+            self.failures,
+            POWER_OFF.as_millis()
+        );
+        // DATA também em nível baixo: pelo pull-up, o sensor continuaria alimentado através do
+        // pino de dados.
+        let off = self.data.set_low().and(power.set_low());
+        thread::sleep(POWER_OFF);
+        let on = power.set_high().and(self.data.set_high());
+        self.powered_at = Instant::now();
+        if let Err(error) = off.and(on) {
+            warn!("DHT11: erro no GPIO ao reiniciar o sensor: {error}");
+        }
+        self.wait_power_up();
     }
 
     /// Lê o quadro de 40 bits: umidade, decimal da umidade, temperatura, decimal da

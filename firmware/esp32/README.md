@@ -18,6 +18,10 @@ O GPIO de dados é configurável (ver [Configuração](#configuração)). O buil
 
 Os pinos de strapping (0, 2, 5, 12 e 15) funcionam, mas o build avisa: o nível no reset escolhe o modo de boot ou a tensão da Flash, e o pull-up do DHT11 pode impedir a gravação ou o boot. No GPIO2 (D2), por exemplo, o `espflash` não consegue conectar enquanto o DATA está ligado; desconecte-o para gravar e religue-o depois. No DevKit, o GPIO2 também aciona o LED azul da placa.
 
+### Alimentação por GPIO (opcional)
+
+Um DHT11 travado só volta a responder depois de perder a alimentação. Para que o firmware possa reiniciá-lo, ligue o VCC do sensor a um GPIO em vez do 3V3 e informe-o em `dht11_power_gpio`. A cada 3 falhas seguidas de leitura, o firmware desliga o sensor por 1 s, com o DATA também em nível baixo, para que o pull-up não o mantenha alimentado; depois o religa e espera mais 1 s. O reinício acontece depois da linha CSV, fora da janela medida, e cabe na espera entre ciclos; com `cycle_interval_ms` abaixo de cerca de 2100 ms, o ciclo seguinte começa atrasado. O DHT11 consome até 2,5 mA, bem abaixo do que um GPIO fornece. Valem os mesmos GPIOs do DATA, e o build avisa também sobre os pinos de strapping.
+
 A rede Wi-Fi precisa ser de 2,4 GHz.
 
 ## Ambiente
@@ -52,6 +56,7 @@ Preencha `wifi_ssid` e `wifi_password`. O `cfg.toml` é ignorado pelo git; as cr
 | `http_timeout_ms` | 3000 | D5c, em aberto |
 | `external_refresh_ms` | 900000 (15 min) | D5a, fechada |
 | `dht11_gpio` | 4 | — |
+| `dht11_power_gpio` | ausente (VCC no 3V3) | — |
 
 Para observar falha e recuperação da fonte externa sem esperar 15 minutos, reduza `external_refresh_ms` (por exemplo, para 30000). Uma falha de rede durante a reutilização só aparece na consulta seguinte (PRD, D10).
 

@@ -149,6 +149,8 @@ fn run(bridge: &mut Bridge) -> ! {
             fetch: bridge.external_mut().take(),
         };
         println!("{}", csv::row(&record, &timing));
+        // Fora da janela medida: o log da etapa em que a leitura do DHT11 falhou.
+        bridge.local_mut().source_mut().after_cycle();
 
         deadline += interval;
         match deadline.checked_duration_since(Instant::now()) {

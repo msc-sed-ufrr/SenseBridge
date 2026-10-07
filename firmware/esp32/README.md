@@ -109,7 +109,7 @@ Por padrão, a captura é gravada em `capturas/<data UTC>.txt` (a saída bruta, 
 
 | Situação | Falha registrada |
 | --- | --- |
-| DHT11 não responde ou pino com erro | `NoResponse` |
+| DHT11 não responde, quadro interrompido ou pino com erro | `NoResponse` |
 | DHT11 com checksum inválido | `Checksum` |
 | Leitura fora da faixa ou não numérica | `Invalid(OutOfRange)`, `Invalid(NotANumber)` |
 | Wi-Fi sem conexão ou sem IP; DNS ou TCP falhando | `NoConnectivity` |
@@ -118,3 +118,22 @@ Por padrão, a captura é gravada em `capturas/<data UTC>.txt` (a saída bruta, 
 | Corpo incompleto ou sem temperatura e umidade | `MalformedResponse` |
 
 A cada queda do Wi-Fi, ou tentativa de associação frustrada, o firmware inicia outra em segundo plano, sem depender do ciclo nem bloqueá-lo. A fonte externa volta no primeiro ciclo após a reconexão.
+
+### Diagnóstico do DHT11
+
+A coluna `local_failure` mantém a taxonomia da biblioteca. A etapa do protocolo em que a leitura falhou vai para um log de aviso, emitido logo depois da linha CSV do ciclo e mostrado pelo console:
+
+```text
+W (40953) sense_bridge_esp32::local: DHT11: sem resposta ao pulso de início (sensor sem alimentação, DATA desconectado ou sensor travado) (falha 3 seguida)
+```
+
+| Log | Etapa | Causa provável | `local_failure` |
+| --- | --- | --- | --- |
+| linha DATA presa em nível baixo | Antes do pulso de início ou depois da liberação da linha | DATA em curto com o GND ou sensor travado | `NoResponse` |
+| sem resposta ao pulso de início | O sensor não puxou a linha em até 100 µs | Sensor sem alimentação, DATA desconectado ou sensor travado | `NoResponse` |
+| resposta ao pulso de início incompleta | A resposta de 80 µs + 80 µs não terminou | Contato intermitente | `NoResponse` |
+| quadro interrompido após N de 40 bits | Algum dos 40 bits não chegou | Contato intermitente ou interferência | `NoResponse` |
+| checksum inválido no quadro [..] | Quadro completo, com os 5 bytes recebidos | Interferência ou bit lido errado | `Checksum` |
+| erro no GPIO | Driver do pino | — | `NoResponse` |
+
+O protocolo é lido pelo próprio firmware (`src/local.rs`), sem a crate `dht-sensor`, para distinguir essas etapas. As durações dos pulsos vêm do contador de ciclos da CPU, com as interrupções mascaradas durante o quadro.

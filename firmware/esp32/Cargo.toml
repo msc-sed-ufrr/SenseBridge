@@ -21,8 +21,6 @@ opt-level = "z"
 [dependencies]
 sense_bridge = { path = "../../sense-bridge" }
 esp-idf-svc = "0.53"
-dht-sensor = "0.3"
-embedded-hal = "1"
 log = "0.4"
 
 [build-dependencies]

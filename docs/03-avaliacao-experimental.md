@@ -1,5 +1,7 @@
 # Avaliação Experimental do SenseBridge
 
+> **Atualizado em:** 15/10/2026
+
 ## 1. Objetivo
 
 A avaliação experimental do SenseBridge teve como objetivo verificar:
@@ -12,102 +14,123 @@ A avaliação experimental do SenseBridge teve como objetivo verificar:
 - o tamanho do firmware;
 - o uso de memória no ESP32.
 
-Foram considerados os cenários experimentais C1 a C5.
+Foram considerados os cenários experimentais C1 a C5 e a comparação de memória prevista na decisão D8 do PRD.
 
 ---
 
-## 2. Cenários C1–C5
+## 2. Protocolo experimental final C1–C5
 
-| Cenário | Condição | Estado esperado | Resultado |
+O protocolo físico final utilizou:
+
+- 5 repetições por cenário;
+- 10 ciclos por repetição;
+- 50 ciclos por cenário;
+- 250 ciclos oficiais no total;
+- intervalo entre ciclos de 5 s;
+- timeout HTTP de 3 s.
+
+Para C3, C4 e C5, o intervalo de atualização externa foi temporariamente reduzido para:
+
+```text
+external_refresh_ms = 5000
+```
+
+Isso permitiu verificar a disponibilidade da fonte externa aproximadamente a cada ciclo durante a indução controlada de falhas. A configuração normal permanece em 900000 ms (15 min).
+
+| Cenário | Condição experimental | Estado esperado | Resultado físico final |
 |---|---|---|---|
-| C1 | Fonte local e externa disponíveis | `Normal` | Aprovado |
-| C2 | Falha da fonte local | `DegradedLocal` | Aprovado |
-| C3 | Falha da fonte externa | `DegradedExternal` | Aprovado |
-| C4 | Falha simultânea das duas fontes | `Error` | Aprovado |
-| C5 | Recuperação das fontes | retorno para `Normal` | Aprovado |
-
-Os cenários C1, C3, C4 e C5 foram exercitados utilizando as fontes simuladas da própria biblioteca.
-
-Essa abordagem permite introduzir falhas de forma determinística e verificar as transições de estado sem depender de eventos externos imprevisíveis.
+| C1 | DHT11 e Open-Meteo disponíveis | `Normal` | **Aprovado — 5/5; 50/50 ciclos** |
+| C2 | Fonte local indisponível | `DegradedLocal` | **Aprovado — 5/5; 50/50 ciclos** |
+| C3 | Fonte externa indisponível | `DegradedExternal` | **Aprovado — 5/5; 50/50 ciclos** |
+| C4 | Duas fontes indisponíveis | `Error` | **Aprovado — 5/5; 50/50 ciclos** |
+| C5 | Fonte local falha e depois volta a responder, com fonte externa válida | retorno para `Normal` | **Aprovado — 5/5 recuperações** |
 
 ### 2.1 C1 — Operação normal
 
-As duas fontes permanecem disponíveis.
+DHT11 e Open-Meteo permaneceram disponíveis.
 
-Resultado esperado:
+Resultado final:
 
 ```text
-Normal
+50/50 ciclos em Normal
 ```
 
-O SenseBridge integra corretamente as leituras local e externa.
+As leituras locais observadas ficaram em torno de 29–31 °C e 29–32 %UR. A fonte externa permaneceu válida em todas as repetições.
+
+Após a primeira consulta HTTP de cada execução, os ciclos sem nova consulta externa ficaram tipicamente em aproximadamente 21–22 ms.
 
 ### 2.2 C2 — Falha da fonte local
 
-A fonte local retorna:
+A falha foi produzida fisicamente retirando alimentação e sinal do DHT11, enquanto a conectividade externa permaneceu disponível.
+
+Resultado final:
 
 ```text
-LocalFailure::NoResponse
+50/50 ciclos em DegradedLocal
+50/50 falhas locais = NoResponse
 ```
 
-A fonte externa continua disponível.
+A Open-Meteo permaneceu válida, demonstrando que a indisponibilidade da fonte local não interrompe a operação do sistema.
 
-Resultado esperado:
-
-```text
-DegradedLocal
-```
-
-Esse cenário também foi observado diretamente no ESP32.
-
-Foram capturados 14 ciclos consecutivos em que:
-
-- o DHT11 permaneceu indisponível;
-- a falha local foi registrada como `NoResponse`;
-- a fonte Open-Meteo continuou operacional;
-- o sistema permaneceu em `DegradedLocal`.
-
-Assim, a indisponibilidade da fonte local não interrompeu o funcionamento do sistema.
+Os ciclos em regime estável ficaram tipicamente em aproximadamente 18–19 ms.
 
 ### 2.3 C3 — Falha da fonte externa
 
-A fonte local permanece válida e a fonte externa retorna:
+O DHT11 permaneceu funcional. Para produzir uma condição externa reproduzível, o firmware foi configurado temporariamente para tentar associar-se a uma rede Wi-Fi inexistente.
+
+Resultado final:
 
 ```text
-ExternalFailure::Timeout
+50/50 ciclos em DegradedExternal
+50/50 falhas externas = NoConnectivity
 ```
 
-Resultado esperado:
+O DHT11 continuou fornecendo leituras válidas durante toda a falha externa.
 
-```text
-DegradedExternal
-```
-
-A leitura local é preservada.
+Os ciclos observados nessa condição ficaram tipicamente em aproximadamente 22 ms.
 
 ### 2.4 C4 — Falha simultânea
 
-As duas fontes são configuradas para falhar simultaneamente.
+Foram combinadas as condições de C2 e C3:
 
-Resultado esperado:
+- DHT11 indisponível;
+- Wi-Fi externo indisponível.
+
+Resultado final:
 
 ```text
-Error
+50/50 ciclos em Error
+50/50 falhas locais = NoResponse
+50/50 falhas externas = NoConnectivity
 ```
 
-Mesmo nessa condição, o SenseBridge continua realizando novas tentativas nos ciclos seguintes.
+Mesmo em `Error`, o firmware continuou executando novos ciclos e novas tentativas.
+
+Os ciclos ficaram tipicamente em aproximadamente 18 ms.
 
 ### 2.5 C5 — Recuperação
 
-Após uma condição de falha, as duas fontes tornam-se novamente disponíveis.
+Em cada repetição, a fonte local permaneceu indisponível nos ciclos iniciais. Após o ciclo 2, o DHT11 foi novamente energizado.
 
-Resultado esperado:
+Resultados oficiais:
+
+| Repetição | Falha inicial | Primeiro ciclo em `Normal` | Resultado |
+|---|---|---:|---|
+| 1 | `DegradedLocal` | 3 | Aprovado |
+| 2 | `DegradedLocal` | 3 | Aprovado |
+| 3 | `DegradedLocal` | 4 | Aprovado |
+| 4 | `DegradedLocal` | 3 | Aprovado |
+| 5 | `DegradedLocal` | 3 | Aprovado |
+
+Em todas as repetições, a transição foi registrada como:
 
 ```text
-Normal
+DegradedLocal -> Normal (recuperação)
 ```
 
-O sistema retorna ao estado normal no primeiro ciclo em que ambas as fontes voltam a produzir leituras válidas.
+Na repetição 3, o DHT11 ainda retornou `NoResponse` no ciclo 3 e passou a produzir leitura válida no ciclo 4. A recuperação ocorreu imediatamente nesse primeiro ciclo válido, conforme a regra do projeto.
+
+Uma execução adicional prevista como repetição 4 apresentou um `Timeout` externo inesperado durante a falha local. Essa execução foi excluída do conjunto oficial e preservada separadamente como evidência de uma interferência externa não controlada. A repetição foi executada novamente com sucesso.
 
 ---
 
@@ -145,17 +168,15 @@ Além dos cenários C1–C5, os testes verificam:
 
 ## 4. Latência
 
-A latência foi medida utilizando o campo:
+A latência é registrada pelo firmware nos campos:
 
 ```text
+read_us
+fetch_us
 cycle_us
 ```
 
-registrado pelo próprio firmware durante o cenário C2.
-
-### 4.1 Todos os ciclos
-
-Foram analisados 14 ciclos.
+Na medição inicial de C2 com 14 ciclos, incluindo a primeira consulta HTTP:
 
 | Métrica | Resultado |
 |---|---:|
@@ -163,11 +184,7 @@ Foram analisados 14 ciclos.
 | Mínimo | 18.535 µs |
 | Máximo | 648.301 µs |
 
-O maior valor ocorreu no primeiro ciclo, que inclui a consulta HTTP à API Open-Meteo.
-
-### 4.2 Regime estável
-
-Excluindo o primeiro ciclo, foram analisados 13 ciclos.
+Excluindo o primeiro ciclo, o regime estável dessa captura apresentou:
 
 | Métrica | Resultado |
 |---|---:|
@@ -175,15 +192,17 @@ Excluindo o primeiro ciclo, foram analisados 13 ciclos.
 | Mínimo | 18.535 µs |
 | Máximo | 18.662 µs |
 
-Assim, em regime estável, o ciclo do SenseBridge apresentou latência aproximada de:
+Nos experimentos físicos finais, observou-se comportamento coerente com essa instrumentação:
 
-```text
-18,6 ms
-```
+- C1: aproximadamente 21–22 ms nos ciclos sem nova consulta externa;
+- C2: aproximadamente 18–19 ms em regime estável;
+- C3: aproximadamente 22 ms;
+- C4: aproximadamente 18 ms;
+- C5: maior duração por consultar a fonte externa a cada ciclo, com valores em torno de 0,9–1,3 s na maior parte das observações.
 
 ---
 
-## 5. Tamanho do firmware
+## 5. Tamanho do firmware e baseline D8
 
 O firmware em modo `release` foi analisado com:
 
@@ -191,32 +210,55 @@ O firmware em modo `release` foi analisado com:
 xtensa-esp32-elf-size
 ```
 
-Resultado:
+### 5.1 Firmware SenseBridge
 
 | Segmento | Tamanho |
 |---|---:|
-| `text` | 929.628 bytes |
-| `data` | 192.026 bytes |
+| `text` | 930.068 bytes |
+| `data` | 191.962 bytes |
 | `bss` | 19.891 bytes |
-| Total reportado | 1.141.545 bytes |
+| Total reportado | 1.141.921 bytes |
 
-Estimativas derivadas:
+Estimativas:
 
 ```text
-Flash aproximada (text + data):
-1.121.654 bytes
-
-RAM estática aproximada (data + bss):
-211.917 bytes
+Flash aproximada (text + data): 1.122.030 bytes
+RAM estática aproximada (data + bss): 211.853 bytes
 ```
 
-Esses valores caracterizam os segmentos do executável e não representam, isoladamente, toda a memória física efetivamente utilizada em execução.
+### 5.2 Firmware baseline
+
+Foi construído um firmware-base com a mesma infraestrutura essencial de ESP-IDF, Wi-Fi, DHT11, HTTP, temporização e métricas, mas sem a crate `sense_bridge` e sem sua lógica de integração, estados, validação e cache.
+
+| Segmento | Tamanho |
+|---|---:|
+| `text` | 919.716 bytes |
+| `data` | 178.426 bytes |
+| `bss` | 19.891 bytes |
+| Total reportado | 1.118.033 bytes |
+
+Estimativas:
+
+```text
+Flash aproximada (text + data): 1.098.142 bytes
+RAM estática aproximada (data + bss): 198.317 bytes
+```
+
+### 5.3 Custo incremental
+
+| Métrica | SenseBridge | Baseline | Diferença |
+|---|---:|---:|---:|
+| Flash aproximada | 1.122.030 B | 1.098.142 B | **+23.888 B (+2,18%)** |
+| RAM estática aproximada | 211.853 B | 198.317 B | **+13.536 B (+6,83%)** |
+| `bss` | 19.891 B | 19.891 B | **0 B** |
+
+O custo incremental observado corresponde à integração da solução SenseBridge no firmware de referência, e não ao tamanho binário isolado da crate.
 
 ---
 
 ## 6. Memória durante a execução
 
-O firmware registrou indicadores de memória durante o cenário C2.
+Na captura experimental inicial de C2, o firmware registrou:
 
 | Indicador | Valor |
 |---|---:|
@@ -224,7 +266,7 @@ O firmware registrou indicadores de memória durante o cenário C2.
 | Menor heap livre desde o boot | 201.120 bytes |
 | Stack mínima livre | 11.980 bytes |
 
-Os resultados indicam que permaneceu disponível memória dinâmica durante a execução observada.
+Nos experimentos finais, o console continuou mostrando heap e margem de stack disponíveis durante C1–C5, sem interrupção do firmware por falta de memória.
 
 ---
 
@@ -236,76 +278,50 @@ O experimento em hardware utilizou:
 - Rust;
 - ESP-IDF v5.5.5;
 - Open-Meteo como fonte externa;
-- DHT11 como fonte local prevista;
+- DHT11 como fonte local;
 - Wi-Fi;
-- firmware correspondente ao commit `3725e20`;
-- ciclo de execução configurado para 5 segundos;
+- ciclo normal de execução configurado para 5 segundos;
 - tempo limite HTTP de 3 segundos;
-- atualização externa configurada para 900 segundos.
+- atualização externa normal de 900 segundos;
+- atualização externa experimental de 5 segundos em C3–C5.
+
+As evidências de cada repetição foram capturadas pelo `sense_bridge_console` em CSV/TXT.
 
 ---
 
-## 8. Limitação observada no DHT11
+## 8. Integração física do DHT11
 
-O módulo disponível para o experimento foi um shield:
+A integração real do DHT11 foi concluída e validada no ESP32.
 
-```text
-ESP-01S DHT11 v1.0
-```
+Durante uma montagem anterior, um shield ESP-01S DHT11 v1.0 específico recebeu alimentação, mas não respondeu ao protocolo de leitura. Esse episódio foi tratado como característica daquela montagem e não como pendência da implementação.
 
-originalmente projetado para utilização com ESP-01/ESP8266.
-
-A alimentação do shield foi confirmada por meio do LED de energia. Entretanto, durante os testes com o ESP32, não foi obtida resposta válida do DHT11 na linha de dados.
-
-Foram realizados testes temporários de diagnóstico, incluindo:
-
-- geração do pulso de inicialização;
-- monitoramento da linha DATA;
-- busca por resposta em nível lógico LOW após o comando de início.
-
-Nenhuma resposta válida foi detectada.
-
-Por esse motivo, a leitura local real permaneceu classificada como:
-
-```text
-NoResponse
-```
-
-Essa limitação não impediu a avaliação da lógica de tolerância a falhas, pois permitiu observar diretamente em hardware o cenário C2.
-
-Entretanto, esse resultado não deve ser interpretado como validação de uma leitura DHT11 bem-sucedida no ESP32.
-
-Como trabalho complementar, a integração física deverá ser repetida utilizando um módulo DHT11 convencional ou outro sensor diretamente compatível com o ESP32.
+Nos experimentos físicos finais descritos neste documento, o DHT11 forneceu leituras válidas em C1, C3 e nas fases de recuperação de C5, além de permitir a indução controlada de `NoResponse` em C2 e C4.
 
 ---
 
 ## 9. Síntese
 
-Os experimentos demonstraram que o SenseBridge:
+A avaliação demonstrou que o SenseBridge:
 
-- representa explicitamente os estados das fontes;
-- continua operando quando somente uma fonte falha;
-- identifica falha simultânea das duas fontes;
-- continua tentando obter novas leituras mesmo após falhas;
-- retorna automaticamente ao estado `Normal` após a recuperação;
-- integra a fonte externa Open-Meteo;
-- possui testes automatizados para os principais comportamentos;
-- registra informações de latência e memória no ESP32.
+- opera em `Normal` quando as duas fontes estão disponíveis;
+- entra em `DegradedLocal` quando apenas a fonte local falha;
+- entra em `DegradedExternal` quando apenas a fonte externa falha;
+- entra em `Error` quando ambas falham;
+- continua executando ciclos durante condições degradadas e de erro;
+- retorna a `Normal` no primeiro ciclo em que as condições necessárias voltam a ser válidas;
+- integra DHT11 e Open-Meteo em hardware real;
+- registra transições, falhas, latência e memória;
+- mantém 53 testes automatizados aprovados;
+- acrescenta aproximadamente 23,3 KiB de Flash e 13,2 KiB de RAM estática em relação ao baseline utilizado na D8.
 
-Foram executados:
-
-```text
-53 testes
-53 aprovados
-0 falhas
-```
-
-Os cinco cenários C1–C5 foram validados.
-
-A execução em hardware também demonstrou o funcionamento real do estado:
+Resultados consolidados:
 
 ```text
-DegradedLocal
+53 testes automatizados aprovados
+25 repetições físicas oficiais
+250 ciclos experimentais oficiais
+5/5 cenários físicos aprovados
+0 falhas nos critérios finais dos cenários
 ```
 
-permanecendo pendente apenas a conclusão da leitura física normal do sensor local.
+Com a execução física de C1–C5 e a medição do baseline de RAM/Flash, a avaliação experimental prevista para o SenseBridge está concluída.

@@ -160,8 +160,8 @@ impl LocalSource for Dht11<'_> {
         let result = self.read_frame();
         self.last_fault = result.err();
         match result {
-            // Como na `dht-sensor` 0.3, usada até aqui: partes inteiras, com o bit 7 da
-            // temperatura como sinal.
+            // Partes inteiras, com o bit 7 da temperatura como sinal: a conversão da crate
+            // `dht-sensor` 0.3, que este driver substituiu, para manter as leituras comparáveis.
             Ok([humidity, _, temperature, _]) => {
                 self.failures = 0;
                 let magnitude = f32::from(temperature & 0x7F);
@@ -194,8 +194,8 @@ pub enum Fault {
 }
 
 impl From<Fault> for LocalFailure {
-    /// O mesmo mapeamento de antes do diagnóstico por etapa: só o checksum inválido não é
-    /// `NoResponse`.
+    /// Só o checksum inválido não é `NoResponse`, como com a crate `dht-sensor`: a etapa fica
+    /// no log, e `local_failure` continua comparável às capturas anteriores.
     fn from(fault: Fault) -> Self {
         match fault {
             Fault::Checksum { .. } => LocalFailure::Checksum,

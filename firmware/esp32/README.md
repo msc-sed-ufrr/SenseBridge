@@ -43,17 +43,17 @@ O primeiro build baixa o ESP-IDF v5.5.5 e as ferramentas para `~/.espressif`, o 
 cp cfg.toml.example cfg.toml
 ```
 
-Preencha `wifi_ssid` e `wifi_password`. O `cfg.toml` é ignorado pelo git; as credenciais nunca vão para o repositório. O build valida os valores: um ciclo abaixo de 1000 ms (intervalo mínimo do DHT11) ou um tempo limite maior que o ciclo interrompem a compilação com uma mensagem.
+Preencha `wifi_ssid` e `wifi_password`. O `cfg.toml` é ignorado pelo git; as credenciais nunca vão para o repositório. O build valida os valores: um ciclo abaixo de 1000 ms (intervalo mínimo do DHT11) ou um tempo limite igual ou maior que o ciclo interrompem a compilação com uma mensagem.
 
 | Chave | Padrão | Decisão no PRD |
 | --- | --- | --- |
-| `latitude`, `longitude` | 2.82, −60.67 (Boa Vista/RR) | D6, em aberto |
-| `cycle_interval_ms` | 5000 | D5b, em aberto |
-| `http_timeout_ms` | 3000 | D5c, em aberto |
+| `latitude`, `longitude` | 2.82, −60.67 (Boa Vista/RR) | D6, fechada |
+| `cycle_interval_ms` | 5000 | D5b, fechada |
+| `http_timeout_ms` | 3000 | D5c, fechada |
 | `external_refresh_ms` | 900000 (15 min) | D5a, fechada |
 | `dht11_gpio` | 4 | — |
 
-Para observar falha e recuperação da fonte externa sem esperar 15 minutos, reduza `external_refresh_ms` (por exemplo, para 30000). Uma falha de rede durante a reutilização só aparece na consulta seguinte (PRD, D10).
+Para observar falha e recuperação da fonte externa sem esperar 15 minutos, reduza `external_refresh_ms` para 5000, como nos experimentos C3–C5 (PRD, D10): com o ciclo de 5 s, a fonte externa passa a ser consultada aproximadamente a cada ciclo. Uma falha de rede durante a reutilização só aparece na consulta seguinte.
 
 ## Compilar e gravar
 
@@ -84,7 +84,7 @@ As linhas de dados começam por um número, e as de log por `I (`, `W (` ou `E (
 grep -E '^(cycle,|[0-9]+,)' captura.txt > ciclos.csv
 ```
 
-As colunas do protocolo experimental (cenário, repetição, estado esperado) dependem de D7 e ainda não fazem parte desta saída.
+As colunas do protocolo experimental (cenário, repetição, estado esperado) ainda não fazem parte desta saída.
 
 ### Console
 

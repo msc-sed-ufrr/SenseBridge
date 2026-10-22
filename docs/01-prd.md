@@ -54,7 +54,7 @@ Sistemas IoT embarcados que combinam leituras de sensores locais com informaçõ
 
 ## 5. Escopo
 
-### Estado atual — 04/10/2026
+### Estado atual — 15/10/2026
 
 | Capacidade | Status | Notas |
 | --- | --- | --- |
@@ -63,7 +63,7 @@ Sistemas IoT embarcados que combinam leituras de sensores locais com informaçõ
 | Modelo das leituras e das falhas por fonte | ✅ 100% | Tipos distintos para fonte local e externa, com falhas explicitamente identificadas |
 | Estados de operação | ✅ 100% | `Normal`, `DegradedLocal`, `DegradedExternal` e `Error` |
 | Transições de estado e recuperação | ✅ 100% | Transições emitidas apenas quando há mudança de estado; recuperação identificada no retorno a `Normal` |
-| Validação de dados | 🔶 90% | Validação implementada e testada; permanecem pendentes apenas as referências formais das faixas D3 e D4 |
+| Validação de dados | ✅ 100% | Validação implementada e testada; faixas fechadas em D3 e D4 |
 | Registro integrado por ciclo | ✅ 100% | Ciclo, instante, estado, leituras/falhas, idade da leitura externa, transição e recuperação |
 | Intervalo de consulta externa e cache | ✅ 100% | `external_refresh_ms = 900000` ms (15 min); leitura externa válida pode ser reutilizada |
 | Fontes simuladas | ✅ 100% | Utilizadas nos testes determinísticos dos cenários C1–C5 |
@@ -75,13 +75,13 @@ Sistemas IoT embarcados que combinam leituras de sensores locais com informaçõ
 | Análise estática | 🔶 75% | Estrutura preparada; execução final deve ser repetida antes da entrega |
 | Instrumentação de latência | ✅ 100% | `read_us`, `fetch_us` e `cycle_us` registrados pelo firmware |
 | Medição de RAM | ✅ 100% | Heap e stack monitorados em execução; segmentos estáticos também medidos |
-| Medição de Flash | 🔶 85% | Firmware completo medido; falta produzir o firmware-base previsto em D8 para obter o custo incremental |
-| Registro experimental em CSV | 🔶 75% | Console grava CSV e TXT; C2 real foi capturado; ainda falta padronizar cenário, repetição e estado esperado no CSV final |
+| Medição de Flash | ✅ 100% | Firmware completo e firmware-base (D8) medidos; custo incremental de cerca de 23,3 KiB de Flash e 13,2 KiB de RAM estática |
+| Registro experimental em CSV | 🔶 75% | Console grava CSV e TXT; C1–C5 capturados por repetição; cenário, repetição e estado esperado ainda não são colunas do CSV |
 | Cenários C1–C5 automatizados | ✅ 100% | Todos os cinco cenários aprovados |
-| Cenários C1–C5 em hardware | 🔶 30% | A leitura real do DHT11 já foi validada e C2 foi observado diretamente no ESP32; ainda falta executar o protocolo físico final e repetido de C1–C5 |
+| Cenários C1–C5 em hardware | ✅ 100% | Protocolo físico final executado: 5 repetições de 10 ciclos por cenário, todas aprovadas (ver [avaliação experimental](03-avaliacao-experimental.md)) |
 | Documentação da API e exemplos | 🔶 80% | README, documentação da crate, exemplos e doctests existentes; revisão final de reprodutibilidade pendente |
 | Avaliação experimental | ✅ 100% | Documento `docs/03-avaliacao-experimental.md` criado com resultados atuais |
-| Entregáveis finais | 🔶 65% | Código, testes e resultados principais existentes; faltam fechamento experimental, README final, relatório completo e vídeo |
+| Entregáveis finais | 🔶 65% | Código, testes e resultados experimentais existentes; faltam README final, relatório completo e vídeo |
 
 ### Resultados já obtidos
 
@@ -90,21 +90,16 @@ A implementação atual apresenta:
 - 53 testes automatizados aprovados e nenhuma falha;
 - validação dos cenários C1–C5 com fontes simuladas;
 - integração real do ESP32 com Wi-Fi e Open-Meteo;
-- observação real do cenário C2 (`DegradedLocal`) em hardware;
+- execução física de C1–C5 segundo o protocolo final: 25 repetições e 250 ciclos, todos aprovados;
 - captura experimental estruturada em CSV/TXT;
 - latência estável média no C2 de aproximadamente 18,59 ms;
-- medição de Flash, RAM estática, heap e stack;
+- medição de Flash, RAM estática, heap e stack, com o custo incremental em relação ao firmware-base (D8);
 - documentação específica da avaliação experimental.
 
 ### Pendências para a entrega
 
 | Pendência | Severidade | Área |
 | --- | --- | --- |
-| Executar e registrar C1–C5 no ESP32 segundo o protocolo final | Alta | Experimentos |
-| Definir formalmente o número de repetições por cenário (D7) | Alta | Protocolo |
-| Fechar D10 sobre identificação de falha externa durante período de reutilização | Média | Resiliência |
-| Confirmar e referenciar formalmente as faixas de validação D3 e D4 | Média | Validação |
-| Produzir firmware-base sem SenseBridge para comparação de RAM/Flash prevista em D8 | Média | Métricas |
 | Completar as colunas finais do CSV experimental | Média | Evidências |
 | Executar análise estática final | Média | Qualidade |
 | Atualizar README completo de reprodutibilidade | Média | Documentação |
@@ -389,7 +384,7 @@ A implementação atual apresenta:
 
 ## 9. Roadmap
 
-### Estado atual — 04/10/2026
+### Estado atual — 15/10/2026
 
 O desenvolvimento está adiantado em relação ao cronograma original.
 
@@ -397,22 +392,22 @@ O núcleo da biblioteca, os estados de operação, as transições, a recuperaç
 
 A suíte atual possui 53 testes aprovados.
 
-Os cenários C1–C5 estão validados de forma automatizada. O cenário C2 também foi observado em execução real no ESP32, quando o sensor local permaneceu indisponível e a fonte Open-Meteo continuou operacional.
+Os cenários C1–C5 estão validados de forma automatizada e foram executados no ESP32 segundo o protocolo final (5 repetições de 10 ciclos por cenário), todos aprovados.
 
 A integração real do DHT11 já foi concluída e validada. Em uma montagem posterior, um shield ESP-01S DHT11 v1.0 específico recebeu alimentação, mas não respondeu ao protocolo de leitura; esse fato é mantido apenas como registro experimental e não representa bloqueio do SenseBridge.
 
 ### Cronograma de fechamento
 
-| Fase | Situação em 04/10 | Próxima ação |
+| Fase | Situação em 15/10 | Próxima ação |
 | --- | --- | --- |
-| Revisão e protocolo | ✅ Concluída em grande parte | Decisões D3, D4, D7 e D10 fechadas |
+| Revisão e protocolo | ✅ Concluída | Todas as decisões de projeto (D1–D12) fechadas |
 | Implementação do núcleo | ✅ Concluída | Apenas correções identificadas na revisão final |
 | Firmware ESP32 | ✅ Concluído | Manter configuração reproduzível |
 | Open-Meteo | ✅ Concluída | Apenas documentação final |
 | DHT11 físico | ✅ Concluído | Leitura real validada; SB-10 encerrada |
 | Testes automatizados | ✅ 53/53 | Reexecutar na versão final |
-| Instrumentação | ✅ Concluída | Completar baseline de RAM/Flash |
-| Experimentos | 🔶 Parcial | Executar protocolo físico final C1–C5 |
+| Instrumentação | ✅ Concluída | Baseline de RAM/Flash (D8) medido |
+| Experimentos | ✅ Concluídos | C1–C5 executados no ESP32: 25 repetições, 250 ciclos |
 | Análise de resultados | 🔶 Avançada | Consolidar todas as repetições |
 | Documentação | 🔶 Avançada | Atualizar README, PRD e arquitetura |
 | Relatório | 🔶 Em andamento | Incorporar resultados finais |
@@ -421,15 +416,11 @@ A integração real do DHT11 já foi concluída e validada. Em uma montagem post
 ### Próximas atividades
 
 1. Revisar PRD e arquitetura contra a implementação real.
-2. Completar a integração física da fonte local.
-4. Definir o número de repetições do protocolo experimental.
-5. Executar C1–C5 em hardware conforme o protocolo final.
-6. Gerar os CSVs finais com cenário, repetição, estado esperado e estado observado.
-7. Produzir firmware-base e calcular o custo incremental de RAM/Flash.
-8. Executar a análise estática final.
-9. Consolidar resultados no relatório técnico.
-10. Atualizar o README de reprodutibilidade.
-11. Produzir o vídeo de demonstração de 3–5 minutos.
+2. Gerar os CSVs finais com cenário, repetição, estado esperado e estado observado.
+3. Executar a análise estática final.
+4. Consolidar resultados no relatório técnico.
+5. Atualizar o README de reprodutibilidade.
+6. Produzir o vídeo de demonstração de 3–5 minutos.
 
 ### Pós-disciplina
 
@@ -463,7 +454,7 @@ A integração real do DHT11 já foi concluída e validada. Em uma montagem post
 | Cenários executados no ESP32 | 5 de 5 |
 | Testes automatizados passando | 100% |
 | Avisos não justificados da análise estática | 0 |
-| Repetições por cenário | A definir no protocolo |
+| Repetições por cenário | 5, com 10 ciclos cada (D7) |
 | Latência por operação (leitura local, obtenção externa, validação/integração, ciclo) | Medir e relatar (média e dispersão); sem meta prévia |
 | RAM em execução | Medir e relatar; sem meta prévia |
 | Flash (tamanho do firmware) | Medir e relatar; sem meta prévia |

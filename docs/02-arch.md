@@ -1,6 +1,6 @@
 # Arquitetura e Princípios
 
-> **Atualizado em:** 04/10/2026 · **Base:** código em `sense-bridge/`, `firmware/esp32/`, `tools/console/`, [PRD](01-prd.md) e documentos de `docs/`.
+> **Atualizado em:** 21/10/2026 · **Base:** código em `sense-bridge/`, `firmware/esp32/`, `tools/console/`, [PRD](01-prd.md) e documentos de `docs/`.
 
 Para contexto de produto, personas, regras de negócio e casos de uso, ver [docs/01-prd.md](01-prd.md). Este documento cobre o desenho do sistema: componentes, fluxo de dados, módulos, stack, observabilidade, princípios e decisões de arquitetura.
 
@@ -120,7 +120,7 @@ flowchart TD
 | `bridge` | `SenseBridge<L, E>`, `Config` | Orquestra o ciclo: aquisição, validação, reuso da leitura externa, estado, transição e montagem do registro. Única parte com memória entre ciclos |
 | `source` | `LocalSource`, `ExternalSource` | Fronteira com hardware e rede. É por onde — e só por onde — a plataforma entra na biblioteca |
 | `reading` | `LocalReading`, `ExternalReading`, `LocalFailure`, `ExternalFailure`, `InvalidReason` | Modelo de dados e taxonomia de falhas, separada por fonte: o tipo de falha local não é expressável na externa e vice-versa |
-| `validation` | `Range`, `Limits`, `validate_local`, `validate_external` | Faixas com limites inclusivos e rejeição de valores não numéricos. `Limits::DHT11` e `Limits::PLAUSIBLE` são padrões provisórios (PRD, D3–D4) |
+| `validation` | `Range`, `Limits`, `validate_local`, `validate_external` | Faixas com limites inclusivos e rejeição de valores não numéricos. `Limits::DHT11` e `Limits::PLAUSIBLE` seguem as faixas fechadas em D3 e D4 (PRD) |
 | `state` | `OperationState`, `Transition`, `determine_state` | Estado derivado da disponibilidade e detecção de transição e recuperação. Função pura, sem memória |
 | `record` | `Record`, `ExternalSample` | Saída de um ciclo: origem, validade, motivo da falha, idade da leitura externa e transição |
 | `sim` | `Simulated<T, F>`, `SimulatedLocal`, `SimulatedExternal` | Fontes controláveis entre ciclos, com contagem de consultas, para testes e exemplos no host |
@@ -140,7 +140,7 @@ Como `timestamp_ms` é fornecido pelo chamador e a biblioteca não lê relógio,
 | Registros e transições | `Record` devolvido por `cycle` | Implementado |
 | Latência por operação e ciclo | Firmware, com `read_us`, `fetch_us` e `cycle_us` | Implementado |
 | RAM em execução | Firmware: heap livre, menor heap livre e margem de stack | Implementado e medido |
-| Flash | Tamanho do firmware final via `xtensa-esp32-elf-size`; comparação incremental prevista em D8 | Firmware completo medido; baseline pendente |
+| Flash | Tamanho do firmware final via `xtensa-esp32-elf-size`, comparado ao firmware-base sem a biblioteca (D8) | Firmware completo e firmware-base medidos ([avaliação experimental](03-avaliacao-experimental.md)) |
 | Exportação | Serial processada por `sense_bridge_console`, com gravação em TXT/CSV | Implementado; faltam apenas algumas colunas do protocolo experimental final, como repetição e estado esperado |
 
 Para não distorcer o que se quer medir, as amostras de latência são acumuladas em memória e exportadas fora da janela medida, e o custo da própria instrumentação é quantificado à parte (risco previsto no PRD).
@@ -266,7 +266,7 @@ Os firmwares compilam com a toolchain da sua placa, dentro de `firmware/<placa>/
 **Contexto:** Entre duas consultas, a última leitura externa válida é reutilizada com a idade informada. Quando a consulta seguinte falha, seria possível continuar servindo esse valor até o fim do intervalo.  
 **Decisão:** Toda falha de consulta ou de validação externa apaga a leitura guardada e a fonte fica indisponível até uma nova consulta bem-sucedida.  
 **Justificativa:** Um valor anterior à falha apresentado como atual é exatamente o tipo de propagação silenciosa que o projeto existe para evitar.  
-**Consequências:** C3 entra em degradado já no ciclo da falha. Em compensação, uma queda ocorrida durante o período de reuso só é percebida na consulta seguinte — com o intervalo de 15 minutos fechado em D5a, esse atraso é significativo, e como tratá-lo está em aberto (PRD, D10).
+**Consequências:** C3 entra em degradado já no ciclo da falha. Em compensação, uma queda ocorrida durante o período de reuso só é percebida na consulta seguinte — com o intervalo de 15 minutos fechado em D5a, esse atraso é significativo. A D10 manteve a arquitetura: nos experimentos C3–C5, `external_refresh_ms = 5000` faz a fonte externa ser consultada aproximadamente a cada ciclo.
 
 ### ADR-006 — Um `Result` por fonte no registro, sem fusão
 
@@ -284,8 +284,6 @@ Os firmwares compilam com a toolchain da sua placa, dentro de `firmware/<placa>/
 **Justificativa:** Mantém os comandos da raiz rodando sem hardware e o caso de uso fora do que vai para o crates.io.  
 **Consequências:** O núcleo e as ferramentas de host são testados sem depender do ESP32. O firmware possui configuração e build próprios e deve ser compilado e gravado explicitamente com a toolchain ESP.
 
-### Decisões ainda em aberto
+### Decisões de projeto do PRD
 
-As pendências com impacto no comportamento estão em [Decisões de projeto (PRD, §12)](01-prd.md#12-decisões-de-projeto): referências formais das faixas de validação (D3, D4), número de repetições por cenário (D7) e tratamento do atraso de identificação de falha durante a reutilização da leitura externa (D10). D5b, D5c, D6 e D12 já foram fechadas pela implementação.
-
-Já estão fechadas e sustentam os ADRs acima: recuperação como evento de transição (D1), ausência de histerese (D2), intervalo externo de 15 min (D5a), ciclo local de 5 s (D5b), timeout HTTP de 3 s (D5c), coordenadas configuráveis (D6), referência dupla para RAM e Flash (D8), licença dupla (D9), nova tentativa a cada ciclo (D11) e uso de ESP-IDF/`esp-idf-svc` no ESP32 (D12).
+Todas as [decisões de projeto (PRD, §12)](01-prd.md#12-decisões-de-projeto) estão fechadas: recuperação como evento de transição (D1), ausência de histerese (D2), faixas do DHT11 (D3) e da fonte externa (D4), intervalo externo de 15 min (D5a), ciclo local de 5 s (D5b), timeout HTTP de 3 s (D5c), coordenadas configuráveis (D6), 5 repetições de 10 ciclos por cenário (D7), referência dupla para RAM e Flash (D8), licença dupla (D9), arquitetura mantida diante do atraso de identificação durante a reutilização (D10), nova tentativa a cada ciclo (D11) e uso de ESP-IDF/`esp-idf-svc` no ESP32 (D12).

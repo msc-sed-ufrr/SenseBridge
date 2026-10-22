@@ -31,13 +31,13 @@ pub struct Limits {
 }
 
 impl Limits {
-    /// Faixa de medição do DHT11 segundo o manual do fabricante (a confirmar: PRD, D3).
+    /// Faixa de medição do DHT11 segundo o manual do fabricante (PRD, D3).
     pub const DHT11: Self = Self {
         temperature: Range::new(0.0, 50.0),
         humidity: Range::new(20.0, 90.0),
     };
 
-    /// Limites físicos plausíveis para dados meteorológicos (provisório: PRD, D4).
+    /// Limites físicos plausíveis para dados meteorológicos (PRD, D4).
     pub const PLAUSIBLE: Self = Self {
         temperature: Range::new(-90.0, 60.0),
         humidity: Range::new(0.0, 100.0),

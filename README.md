@@ -73,7 +73,7 @@ O projeto não inclui medição de consumo energético.
 └───────────┘      │ • coleta local   │
                    │ • consulta web   │
                    │ • trata falhas   │
-                   │ • compara dados  │
+                   │ • agenda ciclos  │
                    │ • mede recursos  │
                    └────────┬─────────┘
                             │
@@ -84,8 +84,8 @@ O projeto não inclui medição de consumo energético.
                    │                  │
                    │ Normal           │
                    │ DegradedLocal    │
-                   │ NoResponse       │
-                   │ etc.             │
+                   │ DegradedExternal │
+                   │ Error            │
                    └────────┬─────────┘
                             │
                             ▼
@@ -113,16 +113,18 @@ O projeto não inclui medição de consumo energético.
 
 ```text
 SenseBridge/
-├── Cargo.toml          # workspace
+├── Cargo.toml          # workspace: biblioteca e ferramentas de host
 ├── sense-bridge/       # biblioteca publicável no crates.io (no_std, independente de hardware)
 │   ├── src/
-│   ├── tests/          # cenários C1–C5 com fontes simuladas
+│   ├── tests/          # cenários C1–C5 com fontes simuladas e respostas gravadas da Open-Meteo
 │   ├── examples/
 │   └── README.md       # documentação da crate
+├── tools/
+│   └── console/        # console de host: acompanha os ciclos pela serial e grava as capturas
 ├── firmware/           # casos de uso, um projeto por placa (não publicados)
-│   └── esp32/          # DHT11 + Open-Meteo (esqueleto)
-├── data/               # dados brutos dos experimentos (a criar)
-├── docs/
+│   └── esp32/          # DHT11 + Open-Meteo
+├── capturas/           # capturas TXT/CSV gravadas pelo console (ignoradas pelo git)
+├── docs/               # PRD, arquitetura e avaliação experimental
 ├── README.md           # este arquivo: o projeto de pesquisa
 ├── LICENSE-APACHE
 └── LICENSE-MIT
@@ -130,12 +132,15 @@ SenseBridge/
 
 A documentação de uso da biblioteca está em [`sense-bridge/README.md`](sense-bridge/README.md).
 
-Os firmwares ficam fora do workspace porque cada um usa a toolchain da sua placa. Na raiz, os comandos abaixo rodam apenas a biblioteca, no computador de desenvolvimento:
+Os firmwares ficam fora do workspace porque cada um usa a toolchain da sua placa. Na raiz, os comandos abaixo rodam a biblioteca e o console no computador de desenvolvimento, sem hardware:
 
 ```sh
-cargo test                                     # testes unitários e cenários C1–C5
+cargo test                                     # testes da biblioteca e do console, com os cenários C1–C5
+cargo clippy --all-targets -- -D warnings      # análise estática
 cargo run -p sense_bridge --example simulate   # imprime os cenários em CSV
 ```
+
+Para compilar e gravar o firmware e acompanhar os ciclos com o console, ver [`firmware/esp32/README.md`](firmware/esp32/README.md).
 
 ## Autores
 

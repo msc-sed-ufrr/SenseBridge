@@ -23,6 +23,10 @@ impl<S> Timed<S> {
         self.last.take()
     }
 
+    pub fn source_mut(&mut self) -> &mut S {
+        &mut self.source
+    }
+
     fn measure<T>(&mut self, call: impl FnOnce(&mut S) -> T) -> T {
         let start = Instant::now();
         let result = call(&mut self.source);

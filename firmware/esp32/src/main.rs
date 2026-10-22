@@ -35,22 +35,25 @@ type Bridge = SenseBridge<Timed<Dht11<'static>>, Timed<OpenMeteo<'static>>>;
 /// segundos para recusar a primeira autenticação.
 const NETWORK_WAIT: Duration = Duration::from_secs(30);
 
-/// O DHT11 precisa de 1 s depois de energizado antes da primeira leitura.
-const DHT11_POWER_UP: Duration = Duration::from_secs(1);
-
 fn main() -> Result<(), EspError> {
     sys::link_patches();
     esp_idf_svc::log::EspLogger::initialize_default();
-    let boot = Instant::now();
 
     let peripherals = Peripherals::take()?;
     let sysloop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
 
     // DHT11 no GPIO escolhido em `cfg.toml` (padrão: GPIO4), ligação descrita no README.
-    info!("DHT11 no GPIO{}", config::DHT11_GPIO);
-    let dht11_pin = config::dht11_pin(peripherals.pins);
-    let dht11 = Dht11::new(PinDriver::input_output_od(dht11_pin, Pull::Up)?)?;
+    // Com `dht11_power_gpio`, o VCC do sensor vem desse GPIO, que permite reiniciá-lo.
+    match config::DHT11_POWER_GPIO {
+        Some(power) => info!("DHT11 no GPIO{}, alimentado pelo GPIO{power}", config::DHT11_GPIO),
+        None => info!("DHT11 no GPIO{}", config::DHT11_GPIO),
+    }
+    let (data_pin, power_pin) = config::dht11_pins(peripherals.pins);
+    let dht11 = Dht11::new(
+        PinDriver::input_output_od(data_pin, Pull::Up)?,
+        power_pin.map(PinDriver::output).transpose()?,
+    )?;
 
     // O ESP-IDF não reassocia sozinho: a cada queda, ou tentativa frustrada, uma nova
     // associação começa em segundo plano, sem depender do ciclo. A inscrição vale enquanto
@@ -72,9 +75,7 @@ fn main() -> Result<(), EspError> {
         Duration::from_millis(config::HTTP_TIMEOUT_MS),
     );
     wait_for_network(&open_meteo);
-    if let Some(wait) = DHT11_POWER_UP.checked_sub(boot.elapsed()) {
-        thread::sleep(wait);
-    }
+    dht11.wait_power_up();
 
     let mut bridge = SenseBridge::new(
         Timed::new(dht11),
@@ -149,6 +150,8 @@ fn run(bridge: &mut Bridge) -> ! {
             fetch: bridge.external_mut().take(),
         };
         println!("{}", csv::row(&record, &timing));
+        // Fora da janela medida: o log da falha do DHT11 e, se preciso, o reinício do sensor.
+        bridge.local_mut().source_mut().after_cycle();
 
         deadline += interval;
         match deadline.checked_duration_since(Instant::now()) {

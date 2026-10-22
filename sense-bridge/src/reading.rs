@@ -1,11 +1,16 @@
+//! Leituras de cada fonte e os motivos pelos quais uma fonte fica indisponível.
+
 /// Temperatura (°C) e umidade relativa (%) obtidas da fonte local (DHT11).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct LocalReading {
+    /// Temperatura, em °C.
     pub temperature: f32,
+    /// Umidade relativa, em %.
     pub humidity: f32,
 }
 
 impl LocalReading {
+    /// Leitura com temperatura em °C e umidade relativa em %.
     pub const fn new(temperature: f32, humidity: f32) -> Self {
         Self {
             temperature,
@@ -17,11 +22,14 @@ impl LocalReading {
 /// Temperatura (°C) e umidade relativa (%) obtidas da fonte externa (Open-Meteo).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ExternalReading {
+    /// Temperatura, em °C.
     pub temperature: f32,
+    /// Umidade relativa, em %.
     pub humidity: f32,
 }
 
 impl ExternalReading {
+    /// Leitura com temperatura em °C e umidade relativa em %.
     pub const fn new(temperature: f32, humidity: f32) -> Self {
         Self {
             temperature,

@@ -93,10 +93,10 @@ O módulo `sim` oferece fontes simuladas cujo resultado pode ser alterado entre 
 
 ## Status
 
-Em desenvolvimento no Programa de Pós-Graduação em Computação Aplicada da Universidade Federal de Roraima (PPCA/UFRR). A API pode mudar antes da versão 1.0. O firmware de referência para ESP32 e os experimentos estão no [repositório do projeto](https://github.com/msc-sed-ufrr/SenseBridge).
+Em desenvolvimento no Programa de Pós-Graduação em Computação Aplicada da Universidade Federal de Roraima (PPCA/UFRR). A API pode mudar antes da versão 1.0; as mudanças de cada versão estão no [CHANGELOG](https://github.com/msc-sed-ufrr/SenseBridge/blob/main/sense-bridge/CHANGELOG.md). O firmware de referência para ESP32 e os experimentos estão no [repositório do projeto](https://github.com/msc-sed-ufrr/SenseBridge).
 
 ## Licença
 
-Este projeto é licenciado sob a [Licença Apache 2.0](LICENSE-APACHE) ou a [Licença MIT](LICENSE-MIT), à escolha de quem o utiliza.
+Este projeto é licenciado sob a [Licença Apache 2.0](https://github.com/msc-sed-ufrr/SenseBridge/blob/main/sense-bridge/LICENSE-APACHE) ou a [Licença MIT](https://github.com/msc-sed-ufrr/SenseBridge/blob/main/sense-bridge/LICENSE-MIT), à escolha de quem o utiliza.
 
 Salvo declaração explícita em contrário, qualquer contribuição submetida intencionalmente para inclusão neste trabalho, conforme definido na licença Apache-2.0, será licenciada duplamente como acima, sem termos ou condições adicionais.

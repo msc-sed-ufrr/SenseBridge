@@ -1,3 +1,5 @@
+//! Estados de operação e transições entre ciclos.
+
 /// Estado de operação determinado pela disponibilidade das fontes em um ciclo.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OperationState {
@@ -24,6 +26,7 @@ impl OperationState {
     }
 }
 
+/// Estado correspondente à disponibilidade de cada fonte no ciclo.
 pub fn determine_state(local_available: bool, external_available: bool) -> OperationState {
     match (local_available, external_available) {
         (true, true) => OperationState::Normal,
@@ -36,7 +39,9 @@ pub fn determine_state(local_available: bool, external_available: bool) -> Opera
 /// Mudança de estado entre dois ciclos consecutivos.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Transition {
+    /// Estado do ciclo anterior.
     pub from: OperationState,
+    /// Estado do ciclo atual.
     pub to: OperationState,
 }
 

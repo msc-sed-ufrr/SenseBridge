@@ -108,7 +108,7 @@ espflash monitor --non-interactive | cargo run -q -p sense_bridge_console
 
 `↻` marca um ciclo que consultou a Open-Meteo, com a duração da consulta; nos demais aparece a idade da leitura reutilizada. Logs de aviso e de erro do ESP-IDF e os logs do próprio firmware continuam visíveis; `--logs` mostra também os demais.
 
-Por padrão, a captura é gravada em `capturas/<data UTC>.txt` (a saída bruta, compatível com o `grep` acima) e `.csv` (cabeçalho e ciclos), ignorados pelo git. `--out <prefixo>` escolhe o nome, por exemplo `--out capturas/c2-r1`, e `--no-save` desliga a gravação. Uma captura antiga pode ser revista com `cargo run -q -p sense_bridge_console --no-save < captura.txt`.
+Por padrão, a captura é gravada em `capturas/<data UTC>.txt` (a saída bruta, compatível com o `grep` acima) e `.csv` (cabeçalho e ciclos), ignorados pelo git. `--out <prefixo>` escolhe o nome, por exemplo `--out capturas/c2-r1`, e `--no-save` desliga a gravação. Uma captura antiga pode ser revista com `cargo run -q -p sense_bridge_console -- --no-save < captura.txt`.
 
 ## Mapeamento de falhas
 

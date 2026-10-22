@@ -44,7 +44,7 @@ Sistemas IoT embarcados que combinam leituras de sensores locais com informaçõ
 ### Não-metas
 
 - Não é uma solução completa de monitoramento ou automação ambiental (painéis, alertas, atuadores).
-- Não implementa o protocolo de comunicação de baixo nível do DHT11; usa bibliotecas e abstrações existentes.
+- A biblioteca não implementa o protocolo de comunicação de baixo nível do DHT11. Ele fica no firmware de referência, que lê o sensor com driver próprio para identificar a etapa em que a leitura falhou.
 - Não usa a Open-Meteo para corrigir, calibrar ou substituir as leituras do DHT11. A fonte externa serve apenas de contexto.
 - Não fixa metas de desempenho de antemão: latência, RAM e Flash são **medidas e caracterizadas**, não otimizadas até um limite.
 - Não mede consumo energético.
@@ -464,7 +464,7 @@ A integração real do DHT11 já foi concluída e validada. Em uma montagem post
 
 ## 11. Fora do Escopo
 
-- Implementação do protocolo de comunicação de baixo nível do DHT11.
+- Implementação do protocolo de comunicação de baixo nível do DHT11 na biblioteca. O firmware de referência o implementa apenas para diagnosticar falhas de leitura e reiniciar o sensor travado.
 - Criação de hardware dedicado ou de nova arquitetura de processamento.
 - Solução completa de automação ou monitoramento ambiental: painéis, alertas, atuadores, interface de usuário.
 - Medição de consumo energético.

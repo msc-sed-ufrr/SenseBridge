@@ -18,6 +18,10 @@ O GPIO de dados é configurável (ver [Configuração](#configuração)). O buil
 
 Os pinos de strapping (0, 2, 5, 12 e 15) funcionam, mas o build avisa: o nível no reset escolhe o modo de boot ou a tensão da Flash, e o pull-up do DHT11 pode impedir a gravação ou o boot. No GPIO2 (D2), por exemplo, o `espflash` não consegue conectar enquanto o DATA está ligado; desconecte-o para gravar e religue-o depois. No DevKit, o GPIO2 também aciona o LED azul da placa.
 
+### Alimentação por GPIO (opcional)
+
+Um DHT11 travado só volta a responder depois de perder a alimentação. Para que o firmware possa reiniciá-lo, ligue o VCC do sensor a um GPIO em vez do 3V3 e informe-o em `dht11_power_gpio`. A cada 3 falhas seguidas de leitura, o firmware desliga o sensor por 1 s, com o DATA também em nível baixo, para que o pull-up não o mantenha alimentado; depois o religa e espera mais 1 s. O reinício acontece depois da linha CSV, fora da janela medida, e cabe na espera entre ciclos; com `cycle_interval_ms` abaixo de cerca de 2100 ms, o ciclo seguinte começa atrasado. O DHT11 consome até 2,5 mA, bem abaixo do que um GPIO fornece. Valem os mesmos GPIOs do DATA, e o build avisa também sobre os pinos de strapping.
+
 A rede Wi-Fi precisa ser de 2,4 GHz.
 
 ## Ambiente
@@ -52,6 +56,7 @@ Preencha `wifi_ssid` e `wifi_password`. O `cfg.toml` é ignorado pelo git; as cr
 | `http_timeout_ms` | 3000 | D5c, fechada |
 | `external_refresh_ms` | 900000 (15 min) | D5a, fechada |
 | `dht11_gpio` | 4 | — |
+| `dht11_power_gpio` | ausente (VCC no 3V3) | — |
 
 Para observar falha e recuperação da fonte externa sem esperar 15 minutos, reduza `external_refresh_ms` para 5000, como nos experimentos C3–C5 (PRD, D10): com o ciclo de 5 s, a fonte externa passa a ser consultada aproximadamente a cada ciclo. Uma falha de rede durante a reutilização só aparece na consulta seguinte.
 
@@ -109,7 +114,7 @@ Por padrão, a captura é gravada em `capturas/<data UTC>.txt` (a saída bruta, 
 
 | Situação | Falha registrada |
 | --- | --- |
-| DHT11 não responde ou pino com erro | `NoResponse` |
+| DHT11 não responde, quadro interrompido ou pino com erro | `NoResponse` |
 | DHT11 com checksum inválido | `Checksum` |
 | Leitura fora da faixa ou não numérica | `Invalid(OutOfRange)`, `Invalid(NotANumber)` |
 | Wi-Fi sem conexão ou sem IP; DNS ou TCP falhando | `NoConnectivity` |
@@ -118,3 +123,22 @@ Por padrão, a captura é gravada em `capturas/<data UTC>.txt` (a saída bruta, 
 | Corpo incompleto ou sem temperatura e umidade | `MalformedResponse` |
 
 A cada queda do Wi-Fi, ou tentativa de associação frustrada, o firmware inicia outra em segundo plano, sem depender do ciclo nem bloqueá-lo. A fonte externa volta no primeiro ciclo após a reconexão.
+
+### Diagnóstico do DHT11
+
+A coluna `local_failure` mantém a taxonomia da biblioteca. A etapa do protocolo em que a leitura falhou vai para um log de aviso, emitido logo depois da linha CSV do ciclo e mostrado pelo console:
+
+```text
+W (40953) sense_bridge_esp32::local: DHT11: sem resposta ao pulso de início (sensor sem alimentação, DATA desconectado ou sensor travado) (falha 3 seguida)
+```
+
+| Log | Etapa | Causa provável | `local_failure` |
+| --- | --- | --- | --- |
+| linha DATA presa em nível baixo | Antes do pulso de início | DATA em curto com o GND ou sensor travado | `NoResponse` |
+| sem resposta ao pulso de início | A linha seguia em nível alto 48 µs depois da liberação | Sensor sem alimentação, DATA desconectado ou sensor travado | `NoResponse` |
+| resposta ao pulso de início incompleta | A resposta de 80 µs + 80 µs não terminou | Contato intermitente | `NoResponse` |
+| quadro interrompido após N de 40 bits | Algum dos 40 bits não chegou | Contato intermitente ou interferência | `NoResponse` |
+| checksum inválido no quadro [..] | Quadro completo, com os 5 bytes recebidos | Interferência ou bit lido errado | `Checksum` |
+| erro no GPIO | Driver do pino | — | `NoResponse` |
+
+O protocolo é lido pelo próprio firmware (`src/local.rs`), sem a crate `dht-sensor`, para distinguir essas etapas. As durações dos pulsos vêm do contador de ciclos da CPU, com as interrupções mascaradas durante o quadro.

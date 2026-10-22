@@ -26,3 +26,8 @@ external_refresh_ms = 900000
 # bidirecionais fora da Flash e da serial, e avisa quando o pino é de strapping (0, 2, 5, 12,
 # 15): o pull-up do DHT11 nesses pinos pode impedir a gravação ou o boot.
 dht11_gpio = 4
+
+# GPIO que alimenta o DHT11 (opcional; sem a chave, o VCC vai no 3V3). Com ele, o firmware
+# desliga e religa o sensor a cada 3 falhas seguidas de leitura. O build aceita os mesmos
+# GPIOs de dht11_gpio, exceto o próprio, e avisa sobre os pinos de strapping.
+# dht11_power_gpio = 23

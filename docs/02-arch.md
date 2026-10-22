@@ -175,7 +175,7 @@ O firmware de referência está implementado sobre ESP-IDF/`esp-idf-svc`, com su
 Responsabilidades do firmware:
 
 - configurar e executar o ESP32;
-- implementar a fonte local DHT11 por meio de biblioteca existente;
+- ler o DHT11 com driver próprio, que identifica a etapa do protocolo em que a leitura falhou e, com `dht11_power_gpio`, reinicia o sensor travado;
 - estabelecer a conexão Wi-Fi;
 - consultar a Open-Meteo com tempo limite configurável;
 - fornecer o relógio monotônico e a cadência dos ciclos;

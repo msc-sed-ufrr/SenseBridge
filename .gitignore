@@ -1,4 +1,5 @@
 target/
 .obsidian/
 capturas/
+firmware/esp32/.embuild/
 .DS_Store

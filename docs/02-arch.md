@@ -1,6 +1,6 @@
 # Arquitetura e Princípios
 
-> **Atualizado em:** 23/09/2026 · **Base:** código em `sense-bridge/` e `firmware/esp32/`, [PRD](01-prd.md) e documentos de `docs/`.
+> **Atualizado em:** 04/10/2026 · **Base:** código em `sense-bridge/`, `firmware/esp32/`, `tools/console/`, [PRD](01-prd.md) e documentos de `docs/`.
 
 Para contexto de produto, personas, regras de negócio e casos de uso, ver [docs/01-prd.md](01-prd.md). Este documento cobre o desenho do sistema: componentes, fluxo de dados, módulos, stack, observabilidade, princípios e decisões de arquitetura.
 
@@ -8,7 +8,7 @@ Para contexto de produto, personas, regras de negócio e casos de uso, ver [docs
 
 ## 1. Componentes
 
-O repositório separa **a biblioteca** (publicável, independente de hardware) do **caso de uso** (firmware de uma placa específica). O workspace da raiz contém apenas a biblioteca; `firmware/` fica em `exclude` para que `cargo test` na raiz rode inteiramente no computador de desenvolvimento.
+O repositório separa **a biblioteca** (independente de hardware), as **ferramentas de host** e o **firmware da placa**. O workspace da raiz contém a crate `sense_bridge` e ferramentas de desenvolvimento como `sense_bridge_console`; `firmware/esp32/` permanece separado da execução normal dos testes de host por exigir toolchain e alvo específicos do ESP32.
 
 | Unidade | Runtime / alvo | Responsabilidade |
 | --- | --- | --- |
@@ -16,13 +16,14 @@ O repositório separa **a biblioteca** (publicável, independente de hardware) d
 | `sense_bridge::sim` | idem | Fontes simuladas com resultado ajustável entre ciclos; permite reproduzir falha e recuperação sem hardware |
 | `sense-bridge/tests/scenarios.rs` | host | Cenários C1–C5, limites de validação, transições e intervalo de consulta externa |
 | `sense-bridge/examples/simulate.rs` | host | Percorre C1–C5 com fontes simuladas e imprime um registro por ciclo em CSV |
-| `firmware/esp32/` (bin `sense_bridge_esp32`, `publish = false`) | Rust + toolchain do ESP32 (a definir) | Caso de uso: driver do DHT11, cliente Open-Meteo com tempo limite, relógio monotônico, cadência dos ciclos, instrumentação e saída CSV |
+| `tools/console/` (crate `sense_bridge_console`) | host | Captura a saída serial do ESP32, acompanha os ciclos e grava evidências em TXT/CSV |
+| `firmware/esp32/` (bin `sense_bridge_esp32`, `publish = false`) | Rust + Xtensa + ESP-IDF/`esp-idf-svc` | Caso de uso: driver do DHT11, Wi-Fi, cliente Open-Meteo com tempo limite, relógio monotônico, cadência dos ciclos, instrumentação e saída CSV |
 | DHT11 | periférico | Fonte local de temperatura e umidade |
 | Open-Meteo | serviço HTTP externo | Fonte externa de contexto (nunca referência de verdade para o DHT11) |
 
 Cada placa futura entra como projeto irmão em `firmware/`, com a sua própria toolchain, consumindo a mesma crate.
 
-> **Lacunas entre documentação e código (23/09/2026).** O README da crate e o PRD descrevem `sense_bridge` como `no_std`; `lib.rs` ainda **não** declara `#![no_std]`. O código não usa `std` hoje, mas nada impede que passe a usar — a garantia não está sendo verificada pelo compilador. Pelo mesmo motivo o README da crate não roda como doctest (falta `#![doc = include_str!("../README.md")]`): `cargo test` executa **22 testes** (10 unitários + 12 de cenários) e nenhum doc-test. `firmware/esp32/src/main.rs` é um `fn main() {}` vazio: nada da coluna "firmware" desta arquitetura está exercitado. O estado por capacidade está na [tabela de escopo do PRD](01-prd.md#5-escopo).
+> **Estado da implementação em 04/10/2026.** A crate declara `#![no_std]`, o README participa dos doctests e o núcleo pode ser verificado no host sem hardware. A suíte completa possui **53 testes aprovados**: 18 unitários, 7 da integração Open-Meteo, 12 de cenários, 14 do console e 2 doctests. O firmware ESP32 está funcional, conecta-se ao Wi-Fi, consulta a Open-Meteo, executa o `SenseBridge`, mede latência e memória e produz registros experimentais. A integração real do DHT11 está concluída e validada. Um shield ESP-01S DHT11 v1.0 usado posteriormente em outra montagem não respondeu à leitura, sendo tratado apenas como ocorrência específica de hardware e não como pendência arquitetural.
 
 ---
 
@@ -32,7 +33,7 @@ Cada placa futura entra como projeto irmão em `firmware/`, com a sua própria t
 
 ```mermaid
 flowchart TD
-    subgraph board["ESP32 — firmware/esp32 (a implementar)"]
+    subgraph board["ESP32 — firmware/esp32"]
         App["Aplicação: loop de ciclos<br/>relógio monotônico"]
         Dht["Dht11Source<br/>impl LocalSource"]
         Meteo["OpenMeteoSource<br/>impl ExternalSource"]
@@ -51,7 +52,7 @@ flowchart TD
     subgraph host["Computador de desenvolvimento"]
         Tests["cargo test<br/>cenários C1–C5"]
         Sim["sense_bridge::sim<br/>fontes simuladas"]
-        CSV["CSV dos experimentos<br/>data/ (a criar)"]
+        CSV["Evidências experimentais<br/>capturas/*.csv e *.txt"]
     end
 
     App -->|"cycle(now_ms)"| Bridge
@@ -137,10 +138,10 @@ Como `timestamp_ms` é fornecido pelo chamador e a biblioteca não lê relógio,
 | Sinal | Onde é coletado | Situação |
 | --- | --- | --- |
 | Registros e transições | `Record` devolvido por `cycle` | Implementado |
-| Latência por operação (leitura local, obtenção externa, validação/integração, ciclo completo) | Firmware, marcando instantes em volta de `read`, `fetch` e `cycle` | A implementar |
-| RAM em execução | Firmware (marca d'água de pilha e uso de heap, se houver) | A implementar |
-| Flash | Tamanho do firmware final, comparado a um firmware base sem a biblioteca (PRD, D8) | A implementar |
-| Exportação | CSV por serial, uma linha por ciclo | Parcial: `examples/simulate.rs` imprime `scenario,cycle,timestamp_ms,state,local,external,transition`; faltam as colunas do protocolo (repetição, estado esperado, latências) |
+| Latência por operação e ciclo | Firmware, com `read_us`, `fetch_us` e `cycle_us` | Implementado |
+| RAM em execução | Firmware: heap livre, menor heap livre e margem de stack | Implementado e medido |
+| Flash | Tamanho do firmware final via `xtensa-esp32-elf-size`; comparação incremental prevista em D8 | Firmware completo medido; baseline pendente |
+| Exportação | Serial processada por `sense_bridge_console`, com gravação em TXT/CSV | Implementado; faltam apenas algumas colunas do protocolo experimental final, como repetição e estado esperado |
 
 Para não distorcer o que se quer medir, as amostras de latência são acumuladas em memória e exportadas fora da janela medida, e o custo da própria instrumentação é quantificado à parte (risco previsto no PRD).
 
@@ -153,7 +154,7 @@ Para não distorcer o que se quer medir, as amostras de latência são acumulada
 | Camada | Linguagem | Versão |
 | --- | --- | --- |
 | Biblioteca | Rust (edition 2024) | `rust-version = 1.85`; verificada em 1.97.1 |
-| Firmware ESP32 | Rust | toolchain e alvo a definir |
+| Firmware ESP32 | Rust + ESP-IDF | Rust ESP 1.90.0.0; ESP-IDF v5.5.5; alvo Xtensa ESP32 |
 
 ### `sense-bridge/` (crate `sense_bridge`)
 
@@ -165,15 +166,24 @@ Para não distorcer o que se quer medir, as amostras de latência são acumulada
 
 ### `firmware/esp32/`
 
-Apenas o esqueleto e a dependência de caminho para a crate. As escolhas pendentes com impacto arquitetural:
+O firmware de referência está implementado sobre ESP-IDF/`esp-idf-svc`, com suporte a `std`, Wi-Fi, TLS/HTTP e integração com a biblioteca por dependência de caminho.
 
-- pilha do ESP32 (PRD, D12) — `esp-hal` (`no_std`) ou `esp-idf-hal`/`esp-idf-svc` (com `std`), o que determina como entram Wi-Fi, TLS e HTTP;
-- driver do DHT11 (biblioteca existente, conforme o escopo do projeto);
-- cliente HTTP com tempo limite e interpretação da resposta da Open-Meteo, esta última planejada **dentro** da biblioteca para poder ser testada com respostas gravadas.
+Responsabilidades do firmware:
+
+- configurar e executar o ESP32;
+- implementar a fonte local DHT11 por meio de biblioteca existente;
+- estabelecer a conexão Wi-Fi;
+- consultar a Open-Meteo com tempo limite configurável;
+- fornecer o relógio monotônico e a cadência dos ciclos;
+- executar `SenseBridge::cycle`;
+- coletar latência, heap e stack;
+- emitir os registros pela serial para captura pelo `sense_bridge_console`.
+
+A interpretação da resposta da Open-Meteo permanece testável no host por meio de respostas gravadas.
 
 ### Dados
 
-Não há banco nem persistência no dispositivo. O estado vive em memória durante a execução (`Option<OperationState>` e `Option<(ExternalReading, u64)>`), e os dados brutos dos experimentos ficam versionados em CSV, em `data/` (a criar).
+Não há banco nem persistência de longo prazo no dispositivo. O estado vive em memória durante a execução (`Option<OperationState>` e `Option<(ExternalReading, u64)>`). As evidências experimentais são capturadas no computador de apoio e armazenadas em `capturas/`, em formatos CSV e TXT.
 
 ### Convenções
 
@@ -228,11 +238,11 @@ Os firmwares compilam com a toolchain da sua placa, dentro de `firmware/<placa>/
 
 ### ADR-002 — Sem `std`, sem alocação e sem dependências
 
-**Status:** aceita (implementação parcial)  
+**Status:** aceita e implementada  
 **Contexto:** O alvo tem RAM e Flash restritas, e o projeto mede o custo próprio da biblioteca. Cada dependência transitiva entra nessa conta e precisa compilar para o alvo.  
 **Decisão:** A crate não usa `std`, não aloca e não declara dependências. Tudo que ela produz cabe em tipos `Copy` de tamanho conhecido.  
 **Justificativa:** Sem alocador, não há falha de alocação nem fragmentação a tratar em tempo de execução, e a medição de Flash atribuída à biblioteca fica interpretável.  
-**Consequências:** Nada de `String`, `Vec` ou formatação dentro da crate — a serialização em CSV é do firmware e do exemplo. **Pendência:** `lib.rs` ainda não declara `#![no_std]`, então a restrição hoje é convenção, não garantia do compilador; declará-lo (e incluir o README como doctest) fecha a lacuna.
+**Consequências:** Nada de `String`, `Vec` ou formatação dentro da crate — a serialização permanece fora do núcleo. `lib.rs` declara `#![no_std]` e o README é verificado por doctests, de modo que essa restrição deixou de ser apenas uma convenção documental.
 
 ### ADR-003 — O instante do ciclo é injetado pelo chamador
 
@@ -270,12 +280,12 @@ Os firmwares compilam com a toolchain da sua placa, dentro de `firmware/<placa>/
 
 **Status:** aceita  
 **Contexto:** Cada placa exige toolchain e alvo próprios. Se o firmware fizesse parte do workspace, `cargo test` na raiz tentaria compilá-lo para o host.  
-**Decisão:** O workspace contém apenas `sense-bridge/`; `firmware/` está em `exclude`, com um projeto por placa, marcado `publish = false` e dependendo da crate por caminho.  
+**Decisão:** O workspace de host contém a biblioteca e ferramentas auxiliares, como `tools/console/`. O firmware permanece isolado em `firmware/`, com um projeto por placa, `publish = false` e dependência da crate por caminho.  
 **Justificativa:** Mantém os comandos da raiz rodando sem hardware e o caso de uso fora do que vai para o crates.io.  
-**Consequências:** Cada firmware tem seu próprio `Cargo.lock` e precisa ser compilado no seu diretório; a compilação para o alvo ESP32 não é exercitada pelos comandos da raiz e depende de verificação à parte.
+**Consequências:** O núcleo e as ferramentas de host são testados sem depender do ESP32. O firmware possui configuração e build próprios e deve ser compilado e gravado explicitamente com a toolchain ESP.
 
 ### Decisões ainda em aberto
 
-As pendências com impacto no comportamento estão em [Decisões de projeto (PRD, §12)](01-prd.md#12-decisões-de-projeto): faixas de validação (D3, D4), intervalo do ciclo local e tempo limite da consulta (D5b, D5c), coordenadas da consulta (D6), repetições por cenário (D7), tratamento do atraso de identificação (D10) e a escolha da pilha do ESP32 (D12), que condiciona Wi-Fi, TLS e cliente HTTP do firmware.
+As pendências com impacto no comportamento estão em [Decisões de projeto (PRD, §12)](01-prd.md#12-decisões-de-projeto): referências formais das faixas de validação (D3, D4), número de repetições por cenário (D7) e tratamento do atraso de identificação de falha durante a reutilização da leitura externa (D10). D5b, D5c, D6 e D12 já foram fechadas pela implementação.
 
-Já estão fechadas e sustentam os ADRs acima: recuperação como evento de transição (D1), ausência de histerese (D2), intervalo de 15 min entre consultas externas (D5a), referência dupla para RAM e Flash (D8), licença dupla (D9) e nova tentativa a cada ciclo (D11).
+Já estão fechadas e sustentam os ADRs acima: recuperação como evento de transição (D1), ausência de histerese (D2), intervalo externo de 15 min (D5a), ciclo local de 5 s (D5b), timeout HTTP de 3 s (D5c), coordenadas configuráveis (D6), referência dupla para RAM e Flash (D8), licença dupla (D9), nova tentativa a cada ciclo (D11) e uso de ESP-IDF/`esp-idf-svc` no ESP32 (D12).

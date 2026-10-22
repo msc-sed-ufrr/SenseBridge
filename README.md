@@ -57,18 +57,46 @@ O projeto não inclui medição de consumo energético.
 ## Arquitetura inicial
 
 ```text
-                +------------------+
-                |    Open-Meteo    |
-                +--------+---------+
-                         |
-                       Wi-Fi
-                         |
-+---------+        +-----v------+
-|  DHT11  +------->|    ESP32   |
-+---------+        | SenseBridge|
-                   +-----+------+
-                         |
-                    aplicação
+
+                    INTERNET
+                       │
+                       ▼
+              ┌─────────────────┐
+              │   Open-Meteo    │
+              │ Dados externos  │
+              └────────┬────────┘
+                       │ Wi-Fi
+                       ▼
+┌───────────┐      ┌──────────────────┐
+│   DHT11   │─────▶│      ESP32       │
+│Temp./Umid.│GPIO4 │                  │
+└───────────┘      │ • coleta local   │
+                   │ • consulta web   │
+                   │ • trata falhas   │
+                   │ • compara dados  │
+                   │ • mede recursos  │
+                   └────────┬─────────┘
+                            │
+                            ▼
+                   ┌──────────────────┐
+                   │ SenseBridge      │
+                   │ lógica/estado    │
+                   │                  │
+                   │ Normal           │
+                   │ DegradedLocal    │
+                   │ NoResponse       │
+                   │ etc.             │
+                   └────────┬─────────┘
+                            │
+                            ▼
+                   ┌──────────────────┐
+                   │ Console / Logs   │
+                   │ ciclos           │
+                   │ tempo            │
+                   │ heap / pilha     │
+                   │ medições         │
+                   └──────────────────┘
+             
 ```
 
 ## Tecnologias

@@ -114,7 +114,9 @@ impl Config {
             fail("external_refresh_ms não pode ser negativo");
         }
         if !DHT11_GPIOS.contains(&self.dht11_gpio) {
-            fail(&format!("dht11_gpio deve ser um destes GPIOs: {DHT11_GPIOS:?}"));
+            fail(&format!(
+                "dht11_gpio deve ser um destes GPIOs: {DHT11_GPIOS:?}"
+            ));
         }
         if STRAPPING_GPIOS.contains(&self.dht11_gpio) {
             println!(
@@ -125,7 +127,9 @@ impl Config {
         }
         if let Some(power) = self.dht11_power_gpio {
             if !DHT11_GPIOS.contains(&power) {
-                fail(&format!("dht11_power_gpio deve ser um destes GPIOs: {DHT11_GPIOS:?}"));
+                fail(&format!(
+                    "dht11_power_gpio deve ser um destes GPIOs: {DHT11_GPIOS:?}"
+                ));
             }
             if power == self.dht11_gpio {
                 fail("dht11_power_gpio deve ser diferente de dht11_gpio");
@@ -164,9 +168,10 @@ impl Config {
             self.external_refresh_ms,
             gpio = self.dht11_gpio,
             power = self.dht11_power_gpio,
-            power_pin = self
-                .dht11_power_gpio
-                .map_or_else(|| "None".to_owned(), |gpio| format!("Some(pins.gpio{gpio}.into())")),
+            power_pin = self.dht11_power_gpio.map_or_else(
+                || "None".to_owned(),
+                |gpio| format!("Some(pins.gpio{gpio}.into())")
+            ),
         )
     }
 }

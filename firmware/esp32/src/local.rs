@@ -60,7 +60,13 @@ impl<'d> Dht11<'d> {
         if let Some(power) = power.as_mut() {
             power.set_high()?;
         }
-        Ok(Self { data, power, powered_at: Instant::now(), failures: 0, last_fault: None })
+        Ok(Self {
+            data,
+            power,
+            powered_at: Instant::now(),
+            failures: 0,
+            last_fault: None,
+        })
     }
 
     /// Aguarda o sensor ficar pronto depois de energizado. Com VCC no 3V3, conta a partir de
@@ -231,7 +237,10 @@ struct Line<'a, 'd> {
 
 impl<'a, 'd> Line<'a, 'd> {
     fn new(pin: &'a PinDriver<'d, InputOutput>) -> Self {
-        Self { pin, ticks_per_us: unsafe { sys::esp_rom_get_cpu_ticks_per_us() } }
+        Self {
+            pin,
+            ticks_per_us: unsafe { sys::esp_rom_get_cpu_ticks_per_us() },
+        }
     }
 
     /// Espera a linha chegar a `level` e devolve o instante, em ciclos da CPU, ou `None`

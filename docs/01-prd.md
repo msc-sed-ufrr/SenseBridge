@@ -54,7 +54,7 @@ Sistemas IoT embarcados que combinam leituras de sensores locais com informaçõ
 
 ## 5. Escopo
 
-### Estado atual — 21/10/2026
+### Estado atual — 22/10/2026
 
 | Capacidade | Status | Notas |
 | --- | --- | --- |
@@ -71,12 +71,12 @@ Sistemas IoT embarcados que combinam leituras de sensores locais com informaçõ
 | Consulta real à Open-Meteo via Wi-Fi | ✅ 100% | Executada com sucesso no ESP32, com HTTP e tempo limite |
 | Firmware Rust no ESP32 | ✅ 100% | Toolchain configurada, firmware compilado, gravado e executado no hardware |
 | Integração do DHT11 | ✅ 100% | Driver, abstração e leitura real do DHT11 concluídos e validados; SB-10 encerrada |
-| Testes automatizados | ✅ 100% | 55 testes aprovados: 20 unitários, 7 Open-Meteo, 12 cenários, 14 console e 2 doctests |
+| Testes automatizados | ✅ 100% | 62 testes aprovados: 20 unitários, 7 Open-Meteo, 12 cenários, 21 console e 2 doctests |
 | Análise estática | ✅ 100% | Clippy sem avisos na biblioteca, no console e no firmware; verificado na CI e registrado em `docs/evidencias/verificacao.md` |
 | Instrumentação de latência | ✅ 100% | `read_us`, `fetch_us` e `cycle_us` registrados pelo firmware |
 | Medição de RAM | ✅ 100% | Heap e stack monitorados em execução; segmentos estáticos também medidos |
 | Medição de Flash | ✅ 100% | Firmware completo e firmware-base (D8) medidos; custo incremental de cerca de 23,3 KiB de Flash e 13,2 KiB de RAM estática |
-| Registro experimental em CSV | 🔶 75% | Console grava CSV e TXT; C1–C5 capturados por repetição; faltam versionar as capturas em `docs/evidencias/` e as colunas de cenário, repetição e estado esperado |
+| Registro experimental em CSV | 🔶 90% | Console grava CSV e TXT e confere o estado esperado em cada captura (`--analyze`), com o cenário e a repetição tirados do nome do arquivo; falta versionar as capturas em `docs/evidencias/` |
 | Cenários C1–C5 automatizados | ✅ 100% | Todos os cinco cenários aprovados |
 | Cenários C1–C5 em hardware | ✅ 100% | Protocolo físico final executado: 5 repetições de 10 ciclos por cenário, todas aprovadas (ver [avaliação experimental](03-avaliacao-experimental.md)) |
 | Documentação da API e exemplos | ✅ 100% | Todos os itens públicos documentados; README da crate com doctests; README do projeto com o roteiro de reprodução |
@@ -88,11 +88,11 @@ Sistemas IoT embarcados que combinam leituras de sensores locais com informaçõ
 
 A implementação atual apresenta:
 
-- 55 testes automatizados aprovados e nenhuma falha;
+- 62 testes automatizados aprovados e nenhuma falha;
 - validação dos cenários C1–C5 com fontes simuladas;
 - integração real do ESP32 com Wi-Fi e Open-Meteo;
 - execução física de C1–C5 segundo o protocolo final: 25 repetições e 250 ciclos, todos aprovados;
-- captura experimental estruturada em CSV/TXT;
+- captura experimental estruturada em CSV/TXT, com conferência automática do estado esperado;
 - latência estável média no C2 de aproximadamente 18,59 ms;
 - medição de Flash, RAM estática, heap e stack, com o custo incremental em relação ao firmware-base (D8);
 - análise estática sem avisos e CI no GitHub;
@@ -106,7 +106,6 @@ A implementação atual apresenta:
 | Versionar os dados brutos de C1–C5 e o firmware-base em `docs/evidencias/` | Alta | Evidências |
 | Confirmar o driver próprio do DHT11 diante do escopo do projeto de pesquisa (§6.2) | Alta | Escopo |
 | Registrar o firmware medido ou remedir Flash e RAM com o firmware atual | Média | Métricas |
-| Completar as colunas finais do CSV experimental | Média | Evidências |
 | Revisar o relatório técnico e gravar o vídeo de demonstração | Alta | Entrega |
 
 ---
@@ -388,13 +387,13 @@ A implementação atual apresenta:
 
 ## 9. Roadmap
 
-### Estado atual — 21/10/2026
+### Estado atual — 22/10/2026
 
 O desenvolvimento está adiantado em relação ao cronograma original.
 
 O núcleo da biblioteca, os estados de operação, as transições, a recuperação, as fontes simuladas, a integração com a Open-Meteo, o firmware ESP32, o console de captura e a instrumentação já estão implementados.
 
-A suíte atual possui 55 testes aprovados.
+A suíte atual possui 62 testes aprovados.
 
 Os cenários C1–C5 estão validados de forma automatizada e foram executados no ESP32 segundo o protocolo final (5 repetições de 10 ciclos por cenário), todos aprovados.
 
@@ -402,14 +401,14 @@ A integração real do DHT11 já foi concluída e validada. Em uma montagem post
 
 ### Cronograma de fechamento
 
-| Fase | Situação em 21/10 | Próxima ação |
+| Fase | Situação em 22/10 | Próxima ação |
 | --- | --- | --- |
 | Revisão e protocolo | ✅ Concluída | Todas as decisões de projeto (D1–D12) fechadas |
 | Implementação do núcleo | ✅ Concluída | Apenas correções identificadas na revisão final |
 | Firmware ESP32 | ✅ Concluído | Manter configuração reproduzível |
 | Open-Meteo | ✅ Concluída | Apenas documentação final |
 | DHT11 físico | ✅ Concluído | Leitura real validada; SB-10 encerrada |
-| Testes automatizados | ✅ 55/55 | Reexecutar na versão final |
+| Testes automatizados | ✅ 62/62 | Reexecutar na versão final |
 | Instrumentação | ✅ Concluída | Baseline de RAM/Flash (D8) medido |
 | Experimentos | ✅ Concluídos | C1–C5 executados no ESP32: 25 repetições, 250 ciclos |
 | Análise de resultados | 🔶 Avançada | Versionar os dados brutos e registrar o firmware medido |
@@ -422,7 +421,7 @@ A integração real do DHT11 já foi concluída e validada. Em uma montagem post
 1. Versionar as capturas oficiais de C1–C5 e o firmware-base em `docs/evidencias/`.
 2. Decidir, com o orientador, se o driver próprio do DHT11 permanece no firmware de referência (projeto de pesquisa, §6.2).
 3. Registrar o commit do firmware medido ou remedir Flash e RAM com o firmware atual.
-4. Gerar os CSVs finais com cenário, repetição, estado esperado e estado observado.
+4. Conferir as capturas versionadas com `sense_bridge_console --analyze` (UC-008).
 5. Revisar o rascunho do relatório técnico.
 6. Gravar o vídeo de demonstração de 3–5 minutos.
 

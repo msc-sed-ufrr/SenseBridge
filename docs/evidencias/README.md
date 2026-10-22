@@ -19,7 +19,7 @@ docs/evidencias/
 
 ## Verificação do código
 
-`verificacao.md` registra, para um commit, a formatação, o clippy, os 55 testes, a documentação da API e o pacote da crate. Para gerar de novo:
+`verificacao.md` registra, para um commit, a formatação, o clippy, os testes, a documentação da API e o pacote da crate. Para gerar de novo:
 
 ```sh
 scripts/evidencias.sh               # biblioteca e console
@@ -44,6 +44,14 @@ Para rever uma captura com o resumo por estado e por tipo de falha:
 cargo run -q -p sense_bridge_console -- --no-save < docs/evidencias/experimentos/c2-r1.txt
 ```
 
+Para conferir todas as capturas com o estado esperado em cada cenário (PRD, UC-008):
+
+```sh
+cargo run -q -p sense_bridge_console -- --analyze docs/evidencias/experimentos/*.csv
+```
+
+O cenário e a repetição vêm do nome do arquivo. Em C1–C4, todos os ciclos devem estar no estado do cenário. Em C5, cada ciclo deve estar no estado que corresponde à disponibilidade observada das fontes, a captura deve começar com falha e o primeiro ciclo com as duas fontes válidas deve estar em `Normal`, marcado como recuperação. O relatório mostra, por captura e por cenário, os ciclos no estado esperado e as divergências, e o comando termina com código 1 se alguma captura divergir.
+
 Para cada captura, registrar nesta tabela as condições da execução:
 
 | Arquivo | Data | Commit do firmware | `external_refresh_ms` | Observação |
@@ -56,4 +64,4 @@ Para cada captura, registrar nesta tabela as condições da execução:
 - [ ] Registrar o commit do firmware e a versão da toolchain `esp` usados nos experimentos e na medição de Flash e RAM.
 - [ ] Versionar o código do firmware-base (D8) e a saída do `xtensa-esp32-elf-size` dele e do firmware medido.
 - [ ] Decidir se os números de Flash e RAM da avaliação continuam valendo. O firmware atual, com o driver próprio do DHT11, tem `text` 939.016 B, `data` 192.642 B e `bss` 19.883 B (1.151.541 B), contra 930.068 B, 191.962 B e 19.891 B (1.141.921 B) na avaliação.
-- [ ] Calcular automaticamente a correspondência entre estado esperado e observado (PRD, UC-008). O CSV não traz cenário, repetição nem estado esperado; o nome do arquivo identifica o cenário e a repetição.
+- [x] Calcular automaticamente a correspondência entre estado esperado e observado (PRD, UC-008): `sense_bridge_console --analyze`, com o cenário e a repetição tirados do nome do arquivo.

@@ -17,14 +17,14 @@ O repositório separa **a biblioteca** (independente de hardware), as **ferramen
 | `sense-bridge/tests/scenarios.rs` | host | Cenários C1–C5, limites de validação, transições e intervalo de consulta externa |
 | `sense-bridge/tests/open_meteo.rs` | host | Interpretação de respostas reais da Open-Meteo, gravadas em `tests/fixtures/open_meteo/` |
 | `sense-bridge/examples/simulate.rs` | host | Percorre C1–C5 com fontes simuladas e imprime um registro por ciclo em CSV |
-| `tools/console/` (crate `sense_bridge_console`) | host | Captura a saída serial do ESP32, acompanha os ciclos e grava evidências em TXT/CSV |
+| `tools/console/` (crate `sense_bridge_console`) | host | Captura a saída serial do ESP32, acompanha os ciclos, grava evidências em TXT/CSV e confere as capturas com o estado esperado em cada cenário |
 | `firmware/esp32/` (bin `sense_bridge_esp32`, `publish = false`) | Rust + Xtensa + ESP-IDF/`esp-idf-svc` | Caso de uso: driver do DHT11, Wi-Fi, cliente Open-Meteo com tempo limite, relógio monotônico, cadência dos ciclos, instrumentação e saída CSV |
 | DHT11 | periférico | Fonte local de temperatura e umidade |
 | Open-Meteo | serviço HTTP externo | Fonte externa de contexto (nunca referência de verdade para o DHT11) |
 
 Cada placa futura entra como projeto irmão em `firmware/`, com a sua própria toolchain, consumindo a mesma crate.
 
-> **Estado da implementação em 21/10/2026.** A crate declara `#![no_std]`, o README participa dos doctests e o núcleo pode ser verificado no host sem hardware. A suíte completa possui **55 testes aprovados**: 20 unitários, 7 da integração Open-Meteo, 12 de cenários, 14 do console e 2 doctests. O firmware ESP32 está funcional, conecta-se ao Wi-Fi, consulta a Open-Meteo, executa o `SenseBridge`, mede latência e memória e produz registros experimentais. A integração real do DHT11 está concluída e validada. Um shield ESP-01S DHT11 v1.0 usado posteriormente em outra montagem não respondeu à leitura, sendo tratado apenas como ocorrência específica de hardware e não como pendência arquitetural.
+> **Estado da implementação em 22/10/2026.** A crate declara `#![no_std]`, o README participa dos doctests e o núcleo pode ser verificado no host sem hardware. A suíte completa possui **62 testes aprovados**: 20 unitários, 7 da integração Open-Meteo, 12 de cenários, 21 do console e 2 doctests. O firmware ESP32 está funcional, conecta-se ao Wi-Fi, consulta a Open-Meteo, executa o `SenseBridge`, mede latência e memória e produz registros experimentais. A integração real do DHT11 está concluída e validada. Um shield ESP-01S DHT11 v1.0 usado posteriormente em outra montagem não respondeu à leitura, sendo tratado apenas como ocorrência específica de hardware e não como pendência arquitetural.
 
 ---
 
@@ -145,7 +145,7 @@ Como `timestamp_ms` é fornecido pelo chamador e a biblioteca não lê relógio,
 | Latência por operação e ciclo | Firmware, com `read_us`, `fetch_us` e `cycle_us` | Implementado |
 | RAM em execução | Firmware: heap livre, menor heap livre e margem de stack | Implementado e medido |
 | Flash | Tamanho do firmware final via `xtensa-esp32-elf-size`, comparado ao firmware-base sem a biblioteca (D8) | Firmware completo e firmware-base medidos ([avaliação experimental](03-avaliacao-experimental.md)) |
-| Exportação | Serial processada por `sense_bridge_console`, com gravação em TXT/CSV | Implementado; faltam apenas algumas colunas do protocolo experimental final, como repetição e estado esperado |
+| Exportação | Serial processada por `sense_bridge_console`, com gravação em TXT/CSV | Implementado; o cenário e a repetição vêm do nome da captura, e `--analyze` confere o estado esperado (UC-008) |
 
 Para não distorcer o que se quer medir, as durações de cada ciclo ficam em memória e a linha CSV só é emitida depois do ciclo, fora da janela medida, e o custo da própria instrumentação é quantificado à parte (risco previsto no PRD).
 

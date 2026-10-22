@@ -61,6 +61,8 @@ assert_eq!(record.external, Err(ExternalFailure::Timeout));
 
 `Config` define as faixas aceitas para cada fonte e o intervalo entre consultas externas. Dentro desse intervalo, a última leitura externa válida é reutilizada e o registro informa a sua idade.
 
+Para serializar registros, `OperationState`, `LocalFailure` e `ExternalFailure` têm nomes estáveis em `as_str()`, como `DegradedLocal`, `NoResponse` e `Invalid(OutOfRange)`. Ao contrário da saída de `Debug`, esses nomes fazem parte da API.
+
 ## Open-Meteo
 
 O módulo `open_meteo` monta o caminho da consulta e interpreta a resposta da API, sem alocar memória. A implementação de `ExternalSource` fica apenas com o transporte: envia a requisição, aplica o tempo limite e entrega o status e o corpo a `interpret`.

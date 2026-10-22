@@ -1,5 +1,7 @@
 //! Formatação dos ciclos para o terminal.
 
+use sense_bridge::OperationState;
+
 use crate::record::{Cycle, Reading};
 
 /// Cores ANSI, desligadas fora de um terminal ou com `NO_COLOR`.
@@ -41,11 +43,13 @@ impl Style {
         self.paint("36", text)
     }
 
-    /// Cor de um estado da biblioteca.
+    /// Cor de um estado da biblioteca, reconhecido pelo nome que o firmware emite.
     pub fn state(self, state: &str, text: &str) -> String {
+        const NORMAL: &str = OperationState::Normal.as_str();
+        const ERROR: &str = OperationState::Error.as_str();
         match state {
-            "Normal" => self.green(text),
-            "Error" => self.red(text),
+            NORMAL => self.green(text),
+            ERROR => self.red(text),
             _ => self.yellow(text),
         }
     }

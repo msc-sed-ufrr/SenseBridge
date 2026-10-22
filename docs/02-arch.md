@@ -195,6 +195,7 @@ Não há banco nem persistência de longo prazo no dispositivo. O estado vive em
 - Tempo em milissegundos (`u64`) de relógio monotônico, sempre fornecido pelo chamador; diferenças com `saturating_sub`.
 - Faixas são intervalos fechados: o valor exatamente no limite é válido.
 - Identificador de ciclo começa em 0 e só cresce.
+- Estados e falhas são serializados pelos nomes de `as_str()`, que fazem parte da API; a saída de `Debug` não é contrato. O cabeçalho do CSV fica em `firmware/esp32/src/csv_header.in`, incluído pelo firmware e pelo console.
 - Documentação e comentários em português; nomes de código em inglês.
 - Testes unitários junto do módulo (`#[cfg(test)]`); cenários do protocolo em `tests/scenarios.rs`, nomeados pelo comportamento verificado.
 - Clippy sem avisos, com avisos tratados como erro.

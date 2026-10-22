@@ -1,4 +1,7 @@
 //! Uma linha CSV por ciclo, emitida pela serial depois do ciclo, fora da janela medida.
+//!
+//! Estados e falhas saem pelos nomes estáveis da biblioteca (`as_str`), que o console do host
+//! reconhece.
 
 use std::fmt::Write;
 use std::time::Duration;
@@ -6,10 +9,7 @@ use std::time::Duration;
 use esp_idf_svc::sys;
 use sense_bridge::Record;
 
-pub const HEADER: &str = "cycle,timestamp_ms,state,\
-    local_temperature_c,local_humidity_pct,local_failure,\
-    external_temperature_c,external_humidity_pct,external_age_ms,external_failure,\
-    transition,recovery,read_us,fetch_us,cycle_us,heap_free,heap_min_free,stack_min_free";
+pub const HEADER: &str = include!("csv_header.in");
 
 /// Duração das operações de um ciclo. `read` e `fetch` ficam vazias quando a fonte não foi
 /// consultada; a validação e a integração correspondem a `cycle - read - fetch`.
@@ -27,10 +27,16 @@ pub fn row(record: &Record, timing: &Timing) -> String {
 }
 
 fn write_row(line: &mut String, record: &Record, timing: &Timing) -> std::fmt::Result {
-    write!(line, "{},{},{:?},", record.cycle, record.timestamp_ms, record.state())?;
+    write!(
+        line,
+        "{},{},{},",
+        record.cycle,
+        record.timestamp_ms,
+        record.state().as_str()
+    )?;
     match record.local {
         Ok(reading) => write!(line, "{:.1},{:.1},,", reading.temperature, reading.humidity)?,
-        Err(failure) => write!(line, ",,{failure:?},")?,
+        Err(failure) => write!(line, ",,{},", failure.as_str())?,
     }
     match record.external {
         Ok(sample) => write!(
@@ -38,14 +44,14 @@ fn write_row(line: &mut String, record: &Record, timing: &Timing) -> std::fmt::R
             "{:.1},{:.1},{},,",
             sample.reading.temperature, sample.reading.humidity, sample.age_ms
         )?,
-        Err(failure) => write!(line, ",,,{failure:?},")?,
+        Err(failure) => write!(line, ",,,{},", failure.as_str())?,
     }
     match record.transition {
         Some(transition) => write!(
             line,
-            "{:?}->{:?},{},",
-            transition.from,
-            transition.to,
+            "{}->{},{},",
+            transition.from.as_str(),
+            transition.to.as_str(),
             transition.is_recovery()
         )?,
         None => line.push_str(",,"),

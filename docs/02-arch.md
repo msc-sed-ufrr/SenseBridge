@@ -24,7 +24,7 @@ O repositório separa **a biblioteca** (independente de hardware), as **ferramen
 
 Cada placa futura entra como projeto irmão em `firmware/`, com a sua própria toolchain, consumindo a mesma crate.
 
-> **Estado da implementação em 04/10/2026.** A crate declara `#![no_std]`, o README participa dos doctests e o núcleo pode ser verificado no host sem hardware. A suíte completa possui **53 testes aprovados**: 18 unitários, 7 da integração Open-Meteo, 12 de cenários, 14 do console e 2 doctests. O firmware ESP32 está funcional, conecta-se ao Wi-Fi, consulta a Open-Meteo, executa o `SenseBridge`, mede latência e memória e produz registros experimentais. A integração real do DHT11 está concluída e validada. Um shield ESP-01S DHT11 v1.0 usado posteriormente em outra montagem não respondeu à leitura, sendo tratado apenas como ocorrência específica de hardware e não como pendência arquitetural.
+> **Estado da implementação em 21/10/2026.** A crate declara `#![no_std]`, o README participa dos doctests e o núcleo pode ser verificado no host sem hardware. A suíte completa possui **55 testes aprovados**: 20 unitários, 7 da integração Open-Meteo, 12 de cenários, 14 do console e 2 doctests. O firmware ESP32 está funcional, conecta-se ao Wi-Fi, consulta a Open-Meteo, executa o `SenseBridge`, mede latência e memória e produz registros experimentais. A integração real do DHT11 está concluída e validada. Um shield ESP-01S DHT11 v1.0 usado posteriormente em outra montagem não respondeu à leitura, sendo tratado apenas como ocorrência específica de hardware e não como pendência arquitetural.
 
 ---
 
@@ -195,6 +195,7 @@ Não há banco nem persistência de longo prazo no dispositivo. O estado vive em
 - Tempo em milissegundos (`u64`) de relógio monotônico, sempre fornecido pelo chamador; diferenças com `saturating_sub`.
 - Faixas são intervalos fechados: o valor exatamente no limite é válido.
 - Identificador de ciclo começa em 0 e só cresce.
+- Estados e falhas são serializados pelos nomes de `as_str()`, que fazem parte da API; a saída de `Debug` não é contrato. O cabeçalho do CSV fica em `firmware/esp32/src/csv_header.in`, incluído pelo firmware e pelo console.
 - Documentação e comentários em português; nomes de código em inglês.
 - Testes unitários junto do módulo (`#[cfg(test)]`); cenários do protocolo em `tests/scenarios.rs`, nomeados pelo comportamento verificado.
 - Clippy sem avisos, com avisos tratados como erro.

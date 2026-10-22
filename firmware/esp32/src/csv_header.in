@@ -1,0 +1,7 @@
+// Cabeçalho do CSV emitido pela serial. Incluído com `include!` pelo firmware (`csv.rs`) e pelo
+// console do host (`tools/console`), que o usa enquanto o cabeçalho real não chega: renomear
+// uma coluna aqui vale para os dois lados.
+"cycle,timestamp_ms,state,\
+ local_temperature_c,local_humidity_pct,local_failure,\
+ external_temperature_c,external_humidity_pct,external_age_ms,external_failure,\
+ transition,recovery,read_us,fetch_us,cycle_us,heap_free,heap_min_free,stack_min_free"

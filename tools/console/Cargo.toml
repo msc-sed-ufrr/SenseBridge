@@ -9,3 +9,5 @@ license = "MIT OR Apache-2.0"
 publish = false
 
 [dependencies]
+# Nomes estáveis dos estados, os mesmos que o firmware emite no CSV.
+sense_bridge = { path = "../../sense-bridge" }

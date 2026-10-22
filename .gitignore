@@ -1,3 +1,4 @@
 target/
 .obsidian/
 capturas/
+.DS_Store

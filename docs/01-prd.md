@@ -72,16 +72,17 @@ Sistemas IoT embarcados que combinam leituras de sensores locais com informaçõ
 | Firmware Rust no ESP32 | ✅ 100% | Toolchain configurada, firmware compilado, gravado e executado no hardware |
 | Integração do DHT11 | ✅ 100% | Driver, abstração e leitura real do DHT11 concluídos e validados; SB-10 encerrada |
 | Testes automatizados | ✅ 100% | 55 testes aprovados: 20 unitários, 7 Open-Meteo, 12 cenários, 14 console e 2 doctests |
-| Análise estática | 🔶 75% | Estrutura preparada; execução final deve ser repetida antes da entrega |
+| Análise estática | ✅ 100% | Clippy sem avisos na biblioteca, no console e no firmware; verificado na CI e registrado em `docs/evidencias/verificacao.md` |
 | Instrumentação de latência | ✅ 100% | `read_us`, `fetch_us` e `cycle_us` registrados pelo firmware |
 | Medição de RAM | ✅ 100% | Heap e stack monitorados em execução; segmentos estáticos também medidos |
 | Medição de Flash | ✅ 100% | Firmware completo e firmware-base (D8) medidos; custo incremental de cerca de 23,3 KiB de Flash e 13,2 KiB de RAM estática |
-| Registro experimental em CSV | 🔶 75% | Console grava CSV e TXT; C1–C5 capturados por repetição; cenário, repetição e estado esperado ainda não são colunas do CSV |
+| Registro experimental em CSV | 🔶 75% | Console grava CSV e TXT; C1–C5 capturados por repetição; faltam versionar as capturas em `docs/evidencias/` e as colunas de cenário, repetição e estado esperado |
 | Cenários C1–C5 automatizados | ✅ 100% | Todos os cinco cenários aprovados |
 | Cenários C1–C5 em hardware | ✅ 100% | Protocolo físico final executado: 5 repetições de 10 ciclos por cenário, todas aprovadas (ver [avaliação experimental](03-avaliacao-experimental.md)) |
-| Documentação da API e exemplos | 🔶 80% | README, documentação da crate, exemplos e doctests existentes; revisão final de reprodutibilidade pendente |
+| Documentação da API e exemplos | ✅ 100% | Todos os itens públicos documentados; README da crate com doctests; README do projeto com o roteiro de reprodução |
 | Avaliação experimental | ✅ 100% | Documento `docs/03-avaliacao-experimental.md` criado com resultados atuais |
-| Entregáveis finais | 🔶 65% | Código, testes e resultados experimentais existentes; faltam README final, relatório completo e vídeo |
+| Preparação para o crates.io | ✅ 100% | Metadados, documentação, CHANGELOG, CI e pacote verificados; a publicação fica para depois da disciplina ([docs/06](06-publicacao-crates-io.md)) |
+| Entregáveis finais | 🔶 80% | README de reprodutibilidade concluído; relatório técnico e roteiro do vídeo em rascunho; faltam revisar o relatório, gravar o vídeo e versionar os dados brutos |
 
 ### Resultados já obtidos
 
@@ -94,16 +95,19 @@ A implementação atual apresenta:
 - captura experimental estruturada em CSV/TXT;
 - latência estável média no C2 de aproximadamente 18,59 ms;
 - medição de Flash, RAM estática, heap e stack, com o custo incremental em relação ao firmware-base (D8);
+- análise estática sem avisos e CI no GitHub;
+- README de reprodutibilidade, com hardware, ligação, versões das ferramentas e comandos;
 - documentação específica da avaliação experimental.
 
 ### Pendências para a entrega
 
 | Pendência | Severidade | Área |
 | --- | --- | --- |
+| Versionar os dados brutos de C1–C5 e o firmware-base em `docs/evidencias/` | Alta | Evidências |
+| Confirmar o driver próprio do DHT11 diante do escopo do projeto de pesquisa (§6.2) | Alta | Escopo |
+| Registrar o firmware medido ou remedir Flash e RAM com o firmware atual | Média | Métricas |
 | Completar as colunas finais do CSV experimental | Média | Evidências |
-| Executar análise estática final | Média | Qualidade |
-| Atualizar README completo de reprodutibilidade | Média | Documentação |
-| Consolidar relatório técnico e vídeo de demonstração | Alta | Entrega |
+| Revisar o relatório técnico e gravar o vídeo de demonstração | Alta | Entrega |
 
 ---
 
@@ -408,23 +412,23 @@ A integração real do DHT11 já foi concluída e validada. Em uma montagem post
 | Testes automatizados | ✅ 55/55 | Reexecutar na versão final |
 | Instrumentação | ✅ Concluída | Baseline de RAM/Flash (D8) medido |
 | Experimentos | ✅ Concluídos | C1–C5 executados no ESP32: 25 repetições, 250 ciclos |
-| Análise de resultados | 🔶 Avançada | Consolidar todas as repetições |
-| Documentação | 🔶 Avançada | Atualizar README, PRD e arquitetura |
-| Relatório | 🔶 Em andamento | Incorporar resultados finais |
-| Vídeo | 🔴 Pendente | Produzir após congelamento do firmware |
+| Análise de resultados | 🔶 Avançada | Versionar os dados brutos e registrar o firmware medido |
+| Documentação | ✅ Concluída | README de reprodutibilidade, PRD e arquitetura atualizados |
+| Relatório | 🔶 Rascunho | Revisar [docs/04](04-relatorio-tecnico.md) |
+| Vídeo | 🔶 Roteiro pronto | Gravar seguindo [docs/05](05-roteiro-video.md) |
 
 ### Próximas atividades
 
-1. Revisar PRD e arquitetura contra a implementação real.
-2. Gerar os CSVs finais com cenário, repetição, estado esperado e estado observado.
-3. Executar a análise estática final.
-4. Consolidar resultados no relatório técnico.
-5. Atualizar o README de reprodutibilidade.
-6. Produzir o vídeo de demonstração de 3–5 minutos.
+1. Versionar as capturas oficiais de C1–C5 e o firmware-base em `docs/evidencias/`.
+2. Decidir, com o orientador, se o driver próprio do DHT11 permanece no firmware de referência (projeto de pesquisa, §6.2).
+3. Registrar o commit do firmware medido ou remedir Flash e RAM com o firmware atual.
+4. Gerar os CSVs finais com cenário, repetição, estado esperado e estado observado.
+5. Revisar o rascunho do relatório técnico.
+6. Gravar o vídeo de demonstração de 3–5 minutos.
 
 ### Pós-disciplina
 
-- avaliar publicação da biblioteca como crate;
+- avaliar publicação da biblioteca como crate (preparação em [docs/06](06-publicacao-crates-io.md));
 - avaliar registro de software;
 - avaliar publicação do conjunto de dados experimental;
 - testar outros sensores e plataformas sem alterar o núcleo da biblioteca.

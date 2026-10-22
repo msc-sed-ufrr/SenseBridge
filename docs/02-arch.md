@@ -157,8 +157,8 @@ Para não distorcer o que se quer medir, as durações de cada ciclo ficam em me
 
 | Camada | Linguagem | Versão |
 | --- | --- | --- |
-| Biblioteca | Rust (edition 2024) | `rust-version = 1.85`; verificada em 1.97.1 |
-| Firmware ESP32 | Rust + ESP-IDF | Rust ESP 1.90.0.0; ESP-IDF v5.5.5; alvo Xtensa ESP32 |
+| Biblioteca | Rust (edition 2024) | `rust-version = 1.85`, verificada na CI; desenvolvida em 1.97.1 |
+| Firmware ESP32 | Rust + ESP-IDF | Toolchain `esp` do espup, sem versão fixa (1.97.0.0 em 21/10/2026); ESP-IDF v5.5.5; alvo Xtensa ESP32 |
 
 ### `sense-bridge/` (crate `sense_bridge`)
 
@@ -187,7 +187,7 @@ A interpretação da resposta da Open-Meteo permanece testável no host por meio
 
 ### Dados
 
-Não há banco nem persistência de longo prazo no dispositivo. O estado vive em memória durante a execução (`Option<OperationState>` e `Option<(ExternalReading, u64)>`). As evidências experimentais são capturadas no computador de apoio e armazenadas em `capturas/`, em formatos CSV e TXT.
+Não há banco nem persistência de longo prazo no dispositivo. O estado vive em memória durante a execução (`Option<OperationState>` e `Option<(ExternalReading, u64)>`). As evidências experimentais são capturadas no computador de apoio pelo console, em formatos CSV e TXT; as capturas de trabalho ficam em `capturas/`, fora do git, e as oficiais em `docs/evidencias/`.
 
 ### Convenções
 
@@ -199,6 +199,7 @@ Não há banco nem persistência de longo prazo no dispositivo. O estado vive em
 - Documentação e comentários em português; nomes de código em inglês.
 - Testes unitários junto do módulo (`#[cfg(test)]`); cenários do protocolo em `tests/scenarios.rs`, nomeados pelo comportamento verificado.
 - Clippy sem avisos, com avisos tratados como erro.
+- Todo item público da crate é documentado (`#![warn(missing_docs)]`).
 
 ---
 
@@ -225,9 +226,12 @@ Na raiz, sem hardware:
 cargo test                                     # testes unitários e cenários C1–C5
 cargo clippy --all-targets -- -D warnings      # análise estática
 cargo run -p sense_bridge --example simulate   # imprime os cenários em CSV
+scripts/evidencias.sh                          # registra as verificações em docs/evidencias/
 ```
 
-Os firmwares compilam com a toolchain da sua placa, dentro de `firmware/<placa>/`.
+A CI (`.github/workflows/ci.yml`) roda formatação, clippy, testes, documentação e o pacote da crate a cada push e pull request, além de compilar a crate com Rust 1.85 e para um alvo sem `std`.
+
+Os firmwares compilam com a toolchain da sua placa, dentro de `firmware/<placa>/`, e ficam fora da CI.
 
 ---
 

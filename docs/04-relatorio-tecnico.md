@@ -83,7 +83,7 @@ O repositório separa a biblioteca (`sense-bridge/`), independente de hardware, 
 - **Firmware.** Implementa a fonte local (DHT11) e a externa (cliente HTTP da Open-Meteo com tempo limite sobre Wi-Fi), fornece o relógio monotônico e a cadência de 5 s, mede a duração da leitura local, da consulta externa e do ciclo, e emite uma linha CSV por ciclo pela serial, depois do trecho medido, com heap livre, heap mínimo e folga mínima da pilha.
 - **Console de host.** Lê a serial, mostra os ciclos com o estado em cor e as transições destacadas, resume os ciclos por estado e por tipo de falha e grava a captura em TXT e CSV.
 
-**[revisar]** O firmware atual lê o DHT11 com a crate `dht11-trace`, extraída do driver próprio do firmware e publicada no crates.io por um dos autores, para identificar a etapa do protocolo em que a leitura falhou e reiniciar o sensor travado. O projeto de pesquisa (§6.2) exclui do escopo a implementação do protocolo de baixo nível do DHT11. Decidir com o orientador se o firmware de referência segue com a `dht11-trace`, e com qual justificativa, ou volta à crate `dht-sensor`.
+O firmware lê o DHT11 com a crate `dht11-trace`, extraída do driver do firmware e publicada à parte no crates.io por um dos autores. Ela identifica a etapa do protocolo em que a leitura falhou, que a crate `dht-sensor`, usada no início, não distingue, e pode reiniciar o sensor travado. O protocolo do DHT11 continua fora da biblioteca, como define o projeto de pesquisa (§6.2): a `dht11-trace` é uma dependência do firmware de referência, e a biblioteca conhece o sensor apenas pela trait `LocalSource`.
 
 ### 3.4 Verificação
 
@@ -166,7 +166,7 @@ Em execução, na captura inicial de C2, o menor heap livre desde o boot foi de 
 - As falhas foram induzidas manualmente; a indução de C3 por rede inexistente não exercita tempo limite nem erro do serviço, cobertos apenas nos testes automatizados.
 - O custo de memória medido é o da integração da solução no firmware, não o da crate isolada.
 - A duração do ciclo com consulta externa depende da rede e do serviço, fora do controle do experimento.
-- **[revisar]** Desvio de escopo do driver do DHT11 e diferença entre o firmware medido e o atual (seções 3.3 e 4.3).
+- **[revisar]** Diferença entre o firmware medido e o atual (seção 4.3).
 
 ## 6. Conclusão
 

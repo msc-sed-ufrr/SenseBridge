@@ -358,7 +358,8 @@ dependencies = [
 [[package]]
 name = "dht11-trace"
 version = "0.1.0"
-source = "git+https://github.com/marcelobns/dht11-trace?branch=develop#a128e61851afe1a2c778464b48816bf2f86ac803"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "02f24a70bf2e3a2be06635eca7191425c0ad3ec11caf4dd76c73b4ac6362e2e7"
 dependencies = [
  "embedded-hal 1.0.0",
 ]

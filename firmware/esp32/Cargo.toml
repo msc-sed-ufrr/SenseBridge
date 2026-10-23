@@ -20,6 +20,10 @@ opt-level = "z"
 
 [dependencies]
 sense_bridge = { path = "../../sense-bridge" }
+# Driver do DHT11, publicado à parte no crates.io.
+dht11-trace = "0.1"
+# Traits de pino que o driver usa, para o GPIO opcional de alimentação.
+embedded-hal = "1.0"
 esp-idf-svc = "0.53"
 log = "0.4"
 

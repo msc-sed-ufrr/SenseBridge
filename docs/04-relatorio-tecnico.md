@@ -83,7 +83,7 @@ O repositório separa a biblioteca (`sense-bridge/`), independente de hardware, 
 - **Firmware.** Implementa a fonte local (DHT11) e a externa (cliente HTTP da Open-Meteo com tempo limite sobre Wi-Fi), fornece o relógio monotônico e a cadência de 5 s, mede a duração da leitura local, da consulta externa e do ciclo, e emite uma linha CSV por ciclo pela serial, depois do trecho medido, com heap livre, heap mínimo e folga mínima da pilha.
 - **Console de host.** Lê a serial, mostra os ciclos com o estado em cor e as transições destacadas, resume os ciclos por estado e por tipo de falha e grava a captura em TXT e CSV.
 
-**[revisar]** O firmware atual lê o DHT11 com driver próprio, para identificar a etapa do protocolo em que a leitura falhou e reiniciar o sensor travado. O projeto de pesquisa (§6.2) exclui do escopo a implementação do protocolo de baixo nível do DHT11. Decidir com o orientador se o driver próprio fica, e com qual justificativa, ou se o firmware de referência volta à crate `dht-sensor`.
+**[revisar]** O firmware atual lê o DHT11 com a crate `dht11-trace`, extraída do driver próprio do firmware e publicada no crates.io por um dos autores, para identificar a etapa do protocolo em que a leitura falhou e reiniciar o sensor travado. O projeto de pesquisa (§6.2) exclui do escopo a implementação do protocolo de baixo nível do DHT11. Decidir com o orientador se o firmware de referência segue com a `dht11-trace`, e com qual justificativa, ou volta à crate `dht-sensor`.
 
 ### 3.4 Verificação
 
@@ -150,7 +150,7 @@ O ciclo é dominado pela consulta HTTP quando ela acontece: na medição inicial
 
 Em execução, na captura inicial de C2, o menor heap livre desde o boot foi de 201.120 B e a menor folga da pilha da tarefa principal, de 11.980 B. Nos experimentos finais, o firmware não foi interrompido por falta de memória.
 
-**[revisar]** O firmware atual, com o driver próprio do DHT11, é maior que o medido: `text` 939.016 B, `data` 192.642 B e `bss` 19.883 B. Registrar o commit medido ou repetir a medição, inclusive do firmware-base.
+**[revisar]** O firmware atual, com a crate `dht11-trace`, é maior que o medido: `text` 939.744 B, `data` 192.802 B e `bss` 19.883 B. Registrar o commit medido ou repetir a medição, inclusive do firmware-base.
 
 ## 5. Discussão
 

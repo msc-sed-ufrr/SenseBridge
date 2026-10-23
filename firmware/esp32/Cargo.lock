@@ -356,6 +356,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "dht11-trace"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "02f24a70bf2e3a2be06635eca7191425c0ad3ec11caf4dd76c73b4ac6362e2e7"
+dependencies = [
+ "embedded-hal 1.0.0",
+]
+
+[[package]]
 name = "either"
 version = "1.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1139,6 +1148,8 @@ version = "0.1.0"
 name = "sense_bridge_esp32"
 version = "0.1.0"
 dependencies = [
+ "dht11-trace",
+ "embedded-hal 1.0.0",
  "embuild",
  "esp-idf-svc",
  "log",

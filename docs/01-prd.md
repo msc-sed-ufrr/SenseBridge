@@ -44,7 +44,7 @@ Sistemas IoT embarcados que combinam leituras de sensores locais com informaçõ
 ### Não-metas
 
 - Não é uma solução completa de monitoramento ou automação ambiental (painéis, alertas, atuadores).
-- A biblioteca não implementa o protocolo de comunicação de baixo nível do DHT11. Ele fica no firmware de referência, que lê o sensor com driver próprio para identificar a etapa em que a leitura falhou.
+- A biblioteca não implementa o protocolo de comunicação de baixo nível do DHT11. O firmware de referência lê o sensor com a crate `dht11-trace`, de autoria própria e publicada à parte no crates.io, para identificar a etapa em que a leitura falhou.
 - Não usa a Open-Meteo para corrigir, calibrar ou substituir as leituras do DHT11. A fonte externa serve apenas de contexto.
 - Não fixa metas de desempenho de antemão: latência, RAM e Flash são **medidas e caracterizadas**, não otimizadas até um limite.
 - Não mede consumo energético.
@@ -104,7 +104,7 @@ A implementação atual apresenta:
 | Pendência | Severidade | Área |
 | --- | --- | --- |
 | Versionar os dados brutos de C1–C5 e o firmware-base em `docs/evidencias/` | Alta | Evidências |
-| Confirmar o driver próprio do DHT11 diante do escopo do projeto de pesquisa (§6.2) | Alta | Escopo |
+| Confirmar o uso da crate `dht11-trace`, de autoria própria, diante do escopo do projeto de pesquisa (§6.2) | Alta | Escopo |
 | Registrar o firmware medido ou remedir Flash e RAM com o firmware atual | Média | Métricas |
 | Completar as colunas finais do CSV experimental | Média | Evidências |
 | Revisar o relatório técnico e gravar o vídeo de demonstração | Alta | Entrega |
@@ -420,7 +420,7 @@ A integração real do DHT11 já foi concluída e validada. Em uma montagem post
 ### Próximas atividades
 
 1. Versionar as capturas oficiais de C1–C5 e o firmware-base em `docs/evidencias/`.
-2. Decidir, com o orientador, se o driver próprio do DHT11 permanece no firmware de referência (projeto de pesquisa, §6.2).
+2. Decidir, com o orientador, se o firmware de referência segue com a crate `dht11-trace`, de autoria própria, ou volta à `dht-sensor` (projeto de pesquisa, §6.2).
 3. Registrar o commit do firmware medido ou remedir Flash e RAM com o firmware atual.
 4. Gerar os CSVs finais com cenário, repetição, estado esperado e estado observado.
 5. Revisar o rascunho do relatório técnico.

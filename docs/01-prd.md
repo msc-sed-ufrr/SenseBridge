@@ -104,7 +104,6 @@ A implementação atual apresenta:
 | Pendência | Severidade | Área |
 | --- | --- | --- |
 | Versionar os dados brutos de C1–C5 e o firmware-base em `docs/evidencias/` | Alta | Evidências |
-| Confirmar o uso da crate `dht11-trace`, de autoria própria, diante do escopo do projeto de pesquisa (§6.2) | Alta | Escopo |
 | Registrar o firmware medido ou remedir Flash e RAM com o firmware atual | Média | Métricas |
 | Revisar o relatório técnico e gravar o vídeo de demonstração | Alta | Entrega |
 
@@ -403,7 +402,7 @@ A integração real do DHT11 já foi concluída e validada. Em uma montagem post
 
 | Fase | Situação em 22/10 | Próxima ação |
 | --- | --- | --- |
-| Revisão e protocolo | ✅ Concluída | Todas as decisões de projeto (D1–D12) fechadas |
+| Revisão e protocolo | ✅ Concluída | Todas as decisões de projeto (D1–D13) fechadas |
 | Implementação do núcleo | ✅ Concluída | Apenas correções identificadas na revisão final |
 | Firmware ESP32 | ✅ Concluído | Manter configuração reproduzível |
 | Open-Meteo | ✅ Concluída | Apenas documentação final |
@@ -419,11 +418,10 @@ A integração real do DHT11 já foi concluída e validada. Em uma montagem post
 ### Próximas atividades
 
 1. Versionar as capturas oficiais de C1–C5 e o firmware-base em `docs/evidencias/`.
-2. Decidir, com o orientador, se o firmware de referência segue com a crate `dht11-trace`, de autoria própria, ou volta à `dht-sensor` (projeto de pesquisa, §6.2).
-3. Registrar o commit do firmware medido ou remedir Flash e RAM com o firmware atual.
-4. Conferir as capturas versionadas com `sense_bridge_console --analyze` (UC-008).
-5. Revisar o rascunho do relatório técnico.
-6. Gravar o vídeo de demonstração de 3–5 minutos.
+2. Registrar o commit do firmware medido ou remedir Flash e RAM com o firmware atual.
+3. Conferir as capturas versionadas com `sense_bridge_console --analyze` (UC-008).
+4. Revisar o rascunho do relatório técnico.
+5. Gravar o vídeo de demonstração de 3–5 minutos.
 
 ### Pós-disciplina
 
@@ -467,7 +465,7 @@ A integração real do DHT11 já foi concluída e validada. Em uma montagem post
 
 ## 11. Fora do Escopo
 
-- Implementação do protocolo de comunicação de baixo nível do DHT11 na biblioteca. O firmware de referência o implementa apenas para diagnosticar falhas de leitura e reiniciar o sensor travado.
+- Implementação do protocolo de comunicação de baixo nível do DHT11 na biblioteca. O firmware de referência lê o sensor com a crate `dht11-trace`, de autoria própria e publicada à parte (D13).
 - Criação de hardware dedicado ou de nova arquitetura de processamento.
 - Solução completa de automação ou monitoramento ambiental: painéis, alertas, atuadores, interface de usuário.
 - Medição de consumo energético.
@@ -503,6 +501,7 @@ Registro das decisões que moldam o comportamento da biblioteca e o protocolo ex
 | D10 | Falha externa durante reutilização | Não alterar a arquitetura; nos experimentos C3–C5 usar `external_refresh_ms = 5000` para verificar a fonte externa aproximadamente a cada ciclo |
 | D11 | Nova tentativa após falha externa | Nova tentativa em cada ciclo enquanto a fonte estiver indisponível |
 | D12 | Pilha ESP32 | `esp-idf` / `esp-idf-svc`, com `std`, Wi-Fi, TLS e HTTP |
+| D13 | Leitura do DHT11 no firmware de referência | Crate `dht11-trace`, de autoria própria e publicada à parte no crates.io, que identifica a etapa do protocolo em que a leitura falhou; o protocolo continua fora da biblioteca (projeto de pesquisa, §6.2) |
 
 ### Protocolo experimental consolidado
 

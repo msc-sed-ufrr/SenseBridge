@@ -29,4 +29,4 @@
 ## Observações
 
 - A demonstração ao vivo desliga o roteador para mostrar a falha externa; nos experimentos oficiais, C3 foi induzido com uma rede inexistente em `cfg.toml`. Dizer isso na cena de C3 evita confundir o procedimento do vídeo com o do protocolo.
-- **[revisar]** Se o firmware continuar com a crate `dht11-trace`, a cena de C2 pode mostrar também o aviso com a etapa do protocolo em que a leitura falhou.
+- A cena de C2 pode mostrar também o aviso do firmware com a etapa do protocolo em que a leitura falhou, identificada pela crate `dht11-trace`.

@@ -6,7 +6,10 @@
 //! ```sh
 //! espflash monitor --non-interactive | cargo run -q -p sense_bridge_console
 //! ```
+//!
+//! Com `--analyze`, confere capturas gravadas com o estado esperado em cada cenário (C1–C5).
 
+mod analysis;
 mod record;
 mod summary;
 mod view;
@@ -29,12 +32,22 @@ const FIRMWARE_TAG: &str = ") sense_bridge_esp32";
 
 const USAGE: &str = "\
 Uso: espflash monitor --non-interactive | sense_bridge_console [opções]
+     sense_bridge_console --analyze <c<cenário>-r<repetição>.csv>...
 
 Opções:
   --logs            mostra todos os logs do ESP-IDF, esmaecidos
   --out <prefixo>   grava em <prefixo>.txt e <prefixo>.csv (padrão: capturas/<data UTC>)
   --no-save         não grava a captura
+  --analyze         confere as capturas seguintes com o estado esperado em cada cenário
+                    (C1–C5) e termina com código 1 se alguma divergir
   -h, --help        mostra esta ajuda";
+
+enum Mode {
+    /// Acompanha a serial pela entrada padrão.
+    Monitor(Options),
+    /// Confere as capturas gravadas.
+    Analyze(Vec<PathBuf>),
+}
 
 struct Options {
     logs: bool,
@@ -42,8 +55,8 @@ struct Options {
 }
 
 fn main() -> ExitCode {
-    let options = match parse_args(std::env::args().skip(1)) {
-        Ok(Some(options)) => options,
+    let mode = match parse_args(std::env::args().skip(1)) {
+        Ok(Some(mode)) => mode,
         Ok(None) => {
             println!("{USAGE}");
             return ExitCode::SUCCESS;
@@ -53,19 +66,25 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     };
-    match run(&options) {
+    let result = match &mode {
+        Mode::Monitor(options) => run(options).map(|()| true),
+        Mode::Analyze(files) => analysis::run(files, &mut io::stdout().lock(), style()),
+    };
+    match result {
         // O terminal ou o pipe de saída fechou: nada mais a mostrar.
         Err(error) if error.kind() == io::ErrorKind::BrokenPipe => ExitCode::SUCCESS,
         Err(error) => {
             eprintln!("erro: {error}");
             ExitCode::FAILURE
         }
-        Ok(()) => ExitCode::SUCCESS,
+        Ok(true) => ExitCode::SUCCESS,
+        // Alguma captura divergiu do esperado; o relatório já diz qual.
+        Ok(false) => ExitCode::FAILURE,
     }
 }
 
 /// `Ok(None)`: ajuda pedida.
-fn parse_args(mut args: impl Iterator<Item = String>) -> Result<Option<Options>, String> {
+fn parse_args(mut args: impl Iterator<Item = String>) -> Result<Option<Mode>, String> {
     let mut options = Options {
         logs: false,
         out: Some(default_prefix()),
@@ -78,11 +97,25 @@ fn parse_args(mut args: impl Iterator<Item = String>) -> Result<Option<Options>,
                 let prefix = args.next().ok_or("--out precisa de um prefixo")?;
                 options.out = Some(PathBuf::from(prefix));
             }
+            "--analyze" => {
+                let files: Vec<PathBuf> = args.map(PathBuf::from).collect();
+                if files.is_empty() {
+                    return Err("--analyze precisa de ao menos uma captura .csv".to_owned());
+                }
+                return Ok(Some(Mode::Analyze(files)));
+            }
             "-h" | "--help" => return Ok(None),
             other => return Err(format!("opção desconhecida: {other}")),
         }
     }
-    Ok(Some(options))
+    Ok(Some(Mode::Monitor(options)))
+}
+
+/// Cores só em um terminal e sem `NO_COLOR`.
+fn style() -> Style {
+    Style {
+        color: io::stdout().is_terminal() && std::env::var_os("NO_COLOR").is_none(),
+    }
 }
 
 fn default_prefix() -> PathBuf {
@@ -146,11 +179,8 @@ impl Capture {
 }
 
 fn run(options: &Options) -> io::Result<()> {
-    let terminal = io::stdout().is_terminal();
-    let style = Style {
-        color: terminal && std::env::var_os("NO_COLOR").is_none(),
-    };
-    let mut out: Box<dyn Write> = if terminal {
+    let style = style();
+    let mut out: Box<dyn Write> = if io::stdout().is_terminal() {
         Box::new(CrLf(io::stdout().lock()))
     } else {
         Box::new(io::stdout().lock())
@@ -304,13 +334,32 @@ mod tests {
     #[test]
     fn parses_options() {
         let args = |list: &[&str]| parse_args(list.iter().map(|arg| arg.to_string()));
-        assert!(args(&[]).unwrap().unwrap().out.is_some());
-        assert!(args(&["--no-save"]).unwrap().unwrap().out.is_none());
-        let options = args(&["--logs", "--out", "c1"]).unwrap().unwrap();
+        let monitor = |list: &[&str]| match args(list) {
+            Ok(Some(Mode::Monitor(options))) => options,
+            _ => panic!("{list:?} não é o modo de acompanhamento"),
+        };
+        assert!(monitor(&[]).out.is_some());
+        assert!(monitor(&["--no-save"]).out.is_none());
+        let options = monitor(&["--logs", "--out", "c1"]);
         assert!(options.logs);
         assert_eq!(options.out, Some(PathBuf::from("c1")));
         assert!(args(&["--help"]).unwrap().is_none());
         assert!(args(&["--out"]).is_err());
         assert!(args(&["--verbose"]).is_err());
+    }
+
+    #[test]
+    fn parses_captures_to_analyze() {
+        let args = |list: &[&str]| parse_args(list.iter().map(|arg| arg.to_string()));
+        match args(&["--analyze", "c1-r1.csv", "c1-r2.csv"]) {
+            Ok(Some(Mode::Analyze(files))) => {
+                assert_eq!(
+                    files,
+                    [PathBuf::from("c1-r1.csv"), PathBuf::from("c1-r2.csv")]
+                );
+            }
+            _ => panic!("--analyze não foi reconhecido"),
+        }
+        assert!(args(&["--analyze"]).is_err());
     }
 }

@@ -16,7 +16,7 @@
 | --- | --- | --- | --- |
 | 0:00–0:20 | Abertura | Título, autores, orientador, disciplina | Biblioteca em Rust para ESP32 que integra um sensor local e uma fonte meteorológica externa, com comportamento definido quando as fontes falham. |
 | 0:20–0:50 | Problema e arquitetura | Diagrama de topologia da [arquitetura](02-arch.md#topologia) | Sem tratamento explícito, um valor inválido passa silenciosamente. A biblioteca recebe as fontes por traits, valida cada leitura e deriva um de quatro estados: `Normal`, `DegradedLocal`, `DegradedExternal` e `Error`. |
-| 0:50–1:20 | Verificação sem hardware | `cargo test` (55 testes aprovados) e `cargo run -p sense_bridge --example simulate` | O núcleo é testado no computador, sem placa nem rede, com fontes simuladas e respostas reais gravadas da Open-Meteo. A CI repete isso a cada push. |
+| 0:50–1:20 | Verificação sem hardware | `cargo test` (62 testes aprovados) e `cargo run -p sense_bridge --example simulate` | O núcleo é testado no computador, sem placa nem rede, com fontes simuladas e respostas reais gravadas da Open-Meteo. A CI repete isso a cada push. |
 | 1:20–1:40 | Montagem | Placa na câmera e o esquema de ligação | ESP32, DHT11 no GPIO4, Wi-Fi de 2,4 GHz. |
 | 1:40–2:00 | C1 ao vivo | `espflash monitor --non-interactive \| cargo run -q -p sense_bridge_console -- --no-save`; ciclos em `Normal` | Cada linha é um ciclo de 5 s: leitura local, leitura externa e duração do ciclo. |
 | 2:00–2:25 | C2 e recuperação | Soltar o DATA do DHT11: `DegradedLocal` e `NoResponse`. Religar: transição para `Normal` marcada como recuperação | A fonte externa continua chegando enquanto a local falha. A volta acontece no primeiro ciclo com as duas fontes válidas. |

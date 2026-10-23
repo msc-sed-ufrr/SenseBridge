@@ -285,7 +285,7 @@ O experimento em hardware utilizou:
 - atualização externa normal de 900 segundos;
 - atualização externa experimental de 5 segundos em C3–C5.
 
-As evidências de cada repetição foram capturadas pelo `sense_bridge_console` em CSV/TXT.
+As evidências de cada repetição foram capturadas pelo `sense_bridge_console` em CSV/TXT. A correspondência entre o estado esperado e o observado pode ser recalculada a partir delas com `--analyze` ([evidências](evidencias/README.md#capturas-dos-experimentos)).
 
 ---
 

@@ -11,7 +11,7 @@
 
 ## Resumo
 
-**[revisar]** Este relatório apresenta o SenseBridge, uma biblioteca em Rust para ESP32 que integra dados ambientais de uma fonte local, o sensor DHT11, e de uma fonte externa de contexto, a API Open-Meteo. A cada ciclo, a biblioteca valida as leituras, identifica a origem e o tipo de falha de cada fonte e determina um de quatro estados de operação: normal, degradado por falha local, degradado por falha externa ou erro. A biblioteca é `no_std`, não aloca memória e não tem dependências; o acesso ao hardware fica em traits implementadas pelo firmware. A verificação reúne 55 testes automatizados executados sem hardware e análise estática sem avisos. No ESP32, os cenários de operação normal, falha local, falha externa, falha simultânea e recuperação foram executados em 5 repetições de 10 ciclos cada, todas aprovadas. Os ciclos sem consulta externa duraram entre 18 e 22 ms, e a solução acrescentou cerca de 23,3 KiB de Flash e 13,2 KiB de RAM estática em relação a um firmware-base sem a biblioteca.
+**[revisar]** Este relatório apresenta o SenseBridge, uma biblioteca em Rust para ESP32 que integra dados ambientais de uma fonte local, o sensor DHT11, e de uma fonte externa de contexto, a API Open-Meteo. A cada ciclo, a biblioteca valida as leituras, identifica a origem e o tipo de falha de cada fonte e determina um de quatro estados de operação: normal, degradado por falha local, degradado por falha externa ou erro. A biblioteca é `no_std`, não aloca memória e não tem dependências; o acesso ao hardware fica em traits implementadas pelo firmware. A verificação reúne 62 testes automatizados executados sem hardware e análise estática sem avisos. No ESP32, os cenários de operação normal, falha local, falha externa, falha simultânea e recuperação foram executados em 5 repetições de 10 ciclos cada, todas aprovadas. Os ciclos sem consulta externa duraram entre 18 e 22 ms, e a solução acrescentou cerca de 23,3 KiB de Flash e 13,2 KiB de RAM estática em relação a um firmware-base sem a biblioteca.
 
 **Palavras-chave:** sistemas embarcados; Rust; ESP32; tolerância a falhas; integração de dados.
 
@@ -87,7 +87,7 @@ O repositório separa a biblioteca (`sense-bridge/`), independente de hardware, 
 
 ### 3.4 Verificação
 
-- **Testes automatizados:** 55, executados sem ESP32, sensor ou rede — 20 unitários da biblioteca, 7 de interpretação de respostas reais gravadas da Open-Meteo, 12 de cenários C1–C5 e propriedades do ciclo, 14 do console e 2 exemplos da documentação.
+- **Testes automatizados:** 62, executados sem ESP32, sensor ou rede — 20 unitários da biblioteca, 7 de interpretação de respostas reais gravadas da Open-Meteo, 12 de cenários C1–C5 e propriedades do ciclo, 21 do console e 2 exemplos da documentação.
 - **Análise estática:** clippy com avisos tratados como erro na biblioteca, no console e no firmware.
 - **Integração contínua:** a cada push, formatação, clippy, testes, documentação e empacotamento da crate, além da compilação com Rust 1.85 (a versão mínima declarada) e para um alvo sem `std`.
 - O registro da verificação de um commit fica em [docs/evidencias/verificacao.md](evidencias/verificacao.md).

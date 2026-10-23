@@ -48,47 +48,14 @@ A metodologia e os números completos estão na [avaliação experimental](docs/
 
 ## Arquitetura
 
-```text
-
-                    INTERNET
-                       │
-                       ▼
-              ┌─────────────────┐
-              │   Open-Meteo    │
-              │ Dados externos  │
-              └────────┬────────┘
-                       │ Wi-Fi
-                       ▼
-┌───────────┐      ┌──────────────────┐
-│   DHT11   │─────▶│      ESP32       │
-│Temp./Umid.│GPIO4 │                  │
-└───────────┘      │ • coleta local   │
-                   │ • consulta web   │
-                   │ • trata falhas   │
-                   │ • agenda ciclos  │
-                   │ • mede recursos  │
-                   └────────┬─────────┘
-                            │
-                            ▼
-                   ┌──────────────────┐
-                   │ SenseBridge      │
-                   │ lógica/estado    │
-                   │                  │
-                   │ Normal           │
-                   │ DegradedLocal    │
-                   │ DegradedExternal │
-                   │ Error            │
-                   └────────┬─────────┘
-                            │
-                            ▼
-                   ┌──────────────────┐
-                   │ Console / Logs   │
-                   │ ciclos           │
-                   │ tempo            │
-                   │ heap / pilha     │
-                   │ medições         │
-                   └──────────────────┘
-
+```mermaid
+flowchart TB
+    Net(["Internet"]) --> OM["Open-Meteo<br/>dados externos"]
+    OM -->|"Wi-Fi"| ESP32
+    DHT11["DHT11<br/>temperatura e umidade"] -->|"GPIO4"| ESP32
+    ESP32["ESP32<br/>coleta local · consulta web · trata falhas<br/>agenda ciclos · mede recursos"] --> SB
+    SB["SenseBridge<br/>lógica e estado<br/>Normal · DegradedLocal · DegradedExternal · Error"] --> Log
+    Log["Console e logs<br/>ciclos · tempo · heap e pilha · medições"]
 ```
 
 Componentes, fluxo do ciclo, princípios e decisões de arquitetura estão em [docs/02-arch.md](docs/02-arch.md).

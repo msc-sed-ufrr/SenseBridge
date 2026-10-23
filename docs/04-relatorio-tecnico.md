@@ -83,7 +83,7 @@ O repositório separa a biblioteca (`sense-bridge/`), independente de hardware, 
 - **Firmware.** Implementa a fonte local (DHT11) e a externa (cliente HTTP da Open-Meteo com tempo limite sobre Wi-Fi), fornece o relógio monotônico e a cadência de 5 s, mede a duração da leitura local, da consulta externa e do ciclo, e emite uma linha CSV por ciclo pela serial, depois do trecho medido, com heap livre, heap mínimo e folga mínima da pilha.
 - **Console de host.** Lê a serial, mostra os ciclos com o estado em cor e as transições destacadas, resume os ciclos por estado e por tipo de falha e grava a captura em TXT e CSV.
 
-**[revisar]** O firmware atual lê o DHT11 com a crate `dht11-trace`, extraída do driver próprio do firmware e mantida à parte por um dos autores, para identificar a etapa do protocolo em que a leitura falhou e reiniciar o sensor travado. O projeto de pesquisa (§6.2) exclui do escopo a implementação do protocolo de baixo nível do DHT11. Decidir com o orientador se o firmware de referência segue com a `dht11-trace`, e com qual justificativa, ou volta à crate `dht-sensor`.
+**[revisar]** O firmware atual lê o DHT11 com a crate `dht11-trace`, extraída do driver próprio do firmware e publicada no crates.io por um dos autores, para identificar a etapa do protocolo em que a leitura falhou e reiniciar o sensor travado. O projeto de pesquisa (§6.2) exclui do escopo a implementação do protocolo de baixo nível do DHT11. Decidir com o orientador se o firmware de referência segue com a `dht11-trace`, e com qual justificativa, ou volta à crate `dht-sensor`.
 
 ### 3.4 Verificação
 

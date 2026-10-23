@@ -44,7 +44,7 @@ Sistemas IoT embarcados que combinam leituras de sensores locais com informaçõ
 ### Não-metas
 
 - Não é uma solução completa de monitoramento ou automação ambiental (painéis, alertas, atuadores).
-- A biblioteca não implementa o protocolo de comunicação de baixo nível do DHT11. O firmware de referência lê o sensor com a crate `dht11-trace`, de autoria própria e mantida à parte, para identificar a etapa em que a leitura falhou.
+- A biblioteca não implementa o protocolo de comunicação de baixo nível do DHT11. O firmware de referência lê o sensor com a crate `dht11-trace`, de autoria própria e publicada à parte no crates.io, para identificar a etapa em que a leitura falhou.
 - Não usa a Open-Meteo para corrigir, calibrar ou substituir as leituras do DHT11. A fonte externa serve apenas de contexto.
 - Não fixa metas de desempenho de antemão: latência, RAM e Flash são **medidas e caracterizadas**, não otimizadas até um limite.
 - Não mede consumo energético.

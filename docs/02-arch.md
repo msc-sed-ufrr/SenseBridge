@@ -114,6 +114,24 @@ flowchart TD
 8. Se o estado difere do ciclo anterior, o registro carrega um `Transition`; `is_recovery()` identifica o retorno a `Normal`. No primeiro ciclo não há transição, porque nenhum estado é presumido antes dele.
 9. O `Record` é devolvido com identificador sequencial de ciclo, instante, resultado de cada fonte e a transição. O firmware o serializa em CSV para os experimentos.
 
+### Estados de operação
+
+O estado é função da disponibilidade das duas fontes no ciclo (✓ disponível, ✗ indisponível), e qualquer estado pode seguir qualquer outro de um ciclo para o seguinte. Cada ligação vale nos dois sentidos e indica a fonte que muda de disponibilidade; as que chegam a `Normal` são as recuperações (`is_recovery()`). O primeiro estado vem do primeiro ciclo concluído, sem estado presumido antes dele.
+
+```mermaid
+flowchart LR
+    N(["Normal<br/>local ✓ · externa ✓"])
+    DL(["DegradedLocal<br/>local ✗ · externa ✓"])
+    DE(["DegradedExternal<br/>local ✓ · externa ✗"])
+    E(["Error<br/>local ✗ · externa ✗"])
+    N <-->|"local"| DL
+    N <-->|"externa"| DE
+    DL <-->|"externa"| E
+    DE <-->|"local"| E
+    N <-->|"as duas"| E
+    DL <-->|"as duas"| DE
+```
+
 ---
 
 ## 3. Módulos do domínio

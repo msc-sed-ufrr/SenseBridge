@@ -141,4 +141,4 @@ W (40953) sense_bridge_esp32::local: DHT11: sem resposta ao pulso de início (se
 | checksum inválido no quadro [..] | Quadro completo, com os 5 bytes recebidos | Interferência ou bit lido errado | `Checksum` |
 | erro no GPIO | Driver do pino | — | `NoResponse` |
 
-O protocolo é lido pelo próprio firmware (`src/local.rs`), sem a crate `dht-sensor`, para distinguir essas etapas. As durações dos pulsos vêm do contador de ciclos da CPU, com as interrupções mascaradas durante o quadro.
+O protocolo é lido pela crate [`dht11-trace`](https://github.com/marcelobns/dht11-trace), mantida à parte deste repositório, que distingue essas etapas; `src/local.rs` adapta o resultado à biblioteca e escreve as mensagens acima. As durações dos pulsos vêm do contador de ciclos da CPU, com as interrupções mascaradas durante o quadro por uma seção crítica de ISR.

@@ -55,5 +55,5 @@ Para cada captura, registrar nesta tabela as condições da execução:
 - [ ] Versionar as 25 capturas oficiais (`c1-r1` a `c5-r5`, `.txt` e `.csv`) e a execução de C5 excluída do conjunto oficial ([avaliação, §2.5](../03-avaliacao-experimental.md#25-c5--recuperação)).
 - [ ] Registrar o commit do firmware e a versão da toolchain `esp` usados nos experimentos e na medição de Flash e RAM.
 - [ ] Versionar o código do firmware-base (D8) e a saída do `xtensa-esp32-elf-size` dele e do firmware medido.
-- [ ] Decidir se os números de Flash e RAM da avaliação continuam valendo. O firmware atual, com o driver próprio do DHT11, tem `text` 939.016 B, `data` 192.642 B e `bss` 19.883 B (1.151.541 B), contra 930.068 B, 191.962 B e 19.891 B (1.141.921 B) na avaliação.
+- [ ] Decidir se os números de Flash e RAM da avaliação continuam valendo. O firmware atual, com a crate `dht11-trace`, tem `text` 939.744 B, `data` 192.802 B e `bss` 19.883 B (1.152.429 B), contra 930.068 B, 191.962 B e 19.891 B (1.141.921 B) na avaliação.
 - [ ] Calcular automaticamente a correspondência entre estado esperado e observado (PRD, UC-008). O CSV não traz cenário, repetição nem estado esperado; o nome do arquivo identifica o cenário e a repetição.

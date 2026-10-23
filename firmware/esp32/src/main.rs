@@ -46,7 +46,10 @@ fn main() -> Result<(), EspError> {
     // DHT11 no GPIO escolhido em `cfg.toml` (padrão: GPIO4), ligação descrita no README.
     // Com `dht11_power_gpio`, o VCC do sensor vem desse GPIO, que permite reiniciá-lo.
     match config::DHT11_POWER_GPIO {
-        Some(power) => info!("DHT11 no GPIO{}, alimentado pelo GPIO{power}", config::DHT11_GPIO),
+        Some(power) => info!(
+            "DHT11 no GPIO{}, alimentado pelo GPIO{power}",
+            config::DHT11_GPIO
+        ),
         None => info!("DHT11 no GPIO{}", config::DHT11_GPIO),
     }
     let (data_pin, power_pin) = config::dht11_pins(peripherals.pins);

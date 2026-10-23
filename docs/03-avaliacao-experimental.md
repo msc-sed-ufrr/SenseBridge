@@ -122,10 +122,13 @@ Resultados oficiais:
 | 4 | `DegradedLocal` | 3 | Aprovado |
 | 5 | `DegradedLocal` | 3 | Aprovado |
 
-Em todas as repetições, a transição foi registrada como:
+Em todas as repetições, os estados seguiram a mesma sequência, e a transição para `Normal` foi registrada como recuperação:
 
-```text
-DegradedLocal -> Normal (recuperação)
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> DegradedLocal: ciclo 0, DHT11 sem resposta
+    DegradedLocal --> Normal: primeiro ciclo com leitura local válida, recuperação
 ```
 
 Na repetição 3, o DHT11 ainda retornou `NoResponse` no ciclo 3 e passou a produzir leitura válida no ciclo 4. A recuperação ocorreu imediatamente nesse primeiro ciclo válido, conforme a regra do projeto.
@@ -285,7 +288,7 @@ O experimento em hardware utilizou:
 - atualização externa normal de 900 segundos;
 - atualização externa experimental de 5 segundos em C3–C5.
 
-As evidências de cada repetição foram capturadas pelo `sense_bridge_console` em CSV/TXT.
+As evidências de cada repetição foram capturadas pelo `sense_bridge_console` em CSV/TXT. A correspondência entre o estado esperado e o observado pode ser recalculada a partir delas com `--analyze` ([evidências](evidencias/README.md#capturas-dos-experimentos)).
 
 ---
 

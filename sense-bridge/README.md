@@ -61,6 +61,8 @@ assert_eq!(record.external, Err(ExternalFailure::Timeout));
 
 `Config` define as faixas aceitas para cada fonte e o intervalo entre consultas externas. Dentro desse intervalo, a última leitura externa válida é reutilizada e o registro informa a sua idade.
 
+Para serializar registros, `OperationState`, `LocalFailure` e `ExternalFailure` têm nomes estáveis em `as_str()`, como `DegradedLocal`, `NoResponse` e `Invalid(OutOfRange)`. Ao contrário da saída de `Debug`, esses nomes fazem parte da API.
+
 ## Open-Meteo
 
 O módulo `open_meteo` monta o caminho da consulta e interpreta a resposta da API, sem alocar memória. A implementação de `ExternalSource` fica apenas com o transporte: envia a requisição, aplica o tempo limite e entrega o status e o corpo a `interpret`.
@@ -91,10 +93,10 @@ O módulo `sim` oferece fontes simuladas cujo resultado pode ser alterado entre 
 
 ## Status
 
-Em desenvolvimento no Programa de Pós-Graduação em Computação Aplicada da Universidade Federal de Roraima (PPCA/UFRR). A API pode mudar antes da versão 1.0. O firmware de referência para ESP32 e os experimentos estão no [repositório do projeto](https://github.com/msc-sed-ufrr/SenseBridge).
+Em desenvolvimento no Programa de Pós-Graduação em Computação Aplicada da Universidade Federal de Roraima (PPCA/UFRR). A API pode mudar antes da versão 1.0; as mudanças de cada versão estão no [CHANGELOG](https://github.com/msc-sed-ufrr/SenseBridge/blob/main/sense-bridge/CHANGELOG.md). O firmware de referência para ESP32 e os experimentos estão no [repositório do projeto](https://github.com/msc-sed-ufrr/SenseBridge).
 
 ## Licença
 
-Este projeto é licenciado sob a [Licença Apache 2.0](LICENSE-APACHE) ou a [Licença MIT](LICENSE-MIT), à escolha de quem o utiliza.
+Este projeto é licenciado sob a [Licença Apache 2.0](https://github.com/msc-sed-ufrr/SenseBridge/blob/main/sense-bridge/LICENSE-APACHE) ou a [Licença MIT](https://github.com/msc-sed-ufrr/SenseBridge/blob/main/sense-bridge/LICENSE-MIT), à escolha de quem o utiliza.
 
 Salvo declaração explícita em contrário, qualquer contribuição submetida intencionalmente para inclusão neste trabalho, conforme definido na licença Apache-2.0, será licenciada duplamente como acima, sem termos ou condições adicionais.

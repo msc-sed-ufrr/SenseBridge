@@ -1,6 +1,6 @@
 # Arquitetura e Princípios
 
-> **Atualizado em:** 04/10/2026 · **Base:** código em `sense-bridge/`, `firmware/esp32/`, `tools/console/`, [PRD](01-prd.md) e documentos de `docs/`.
+> **Atualizado em:** 21/10/2026 · **Base:** código em `sense-bridge/`, `firmware/esp32/`, `tools/console/`, [PRD](01-prd.md) e documentos de `docs/`.
 
 Para contexto de produto, personas, regras de negócio e casos de uso, ver [docs/01-prd.md](01-prd.md). Este documento cobre o desenho do sistema: componentes, fluxo de dados, módulos, stack, observabilidade, princípios e decisões de arquitetura.
 
@@ -15,15 +15,16 @@ O repositório separa **a biblioteca** (independente de hardware), as **ferramen
 | `sense-bridge/` (crate `sense_bridge`) | Rust 2024, sem dependências, host e alvo embarcado | Núcleo: modelo de leituras e falhas, validação, ciclo de aquisição, estados de operação e registro integrado |
 | `sense_bridge::sim` | idem | Fontes simuladas com resultado ajustável entre ciclos; permite reproduzir falha e recuperação sem hardware |
 | `sense-bridge/tests/scenarios.rs` | host | Cenários C1–C5, limites de validação, transições e intervalo de consulta externa |
+| `sense-bridge/tests/open_meteo.rs` | host | Interpretação de respostas reais da Open-Meteo, gravadas em `tests/fixtures/open_meteo/` |
 | `sense-bridge/examples/simulate.rs` | host | Percorre C1–C5 com fontes simuladas e imprime um registro por ciclo em CSV |
-| `tools/console/` (crate `sense_bridge_console`) | host | Captura a saída serial do ESP32, acompanha os ciclos e grava evidências em TXT/CSV |
+| `tools/console/` (crate `sense_bridge_console`) | host | Captura a saída serial do ESP32, acompanha os ciclos, grava evidências em TXT/CSV e confere as capturas com o estado esperado em cada cenário |
 | `firmware/esp32/` (bin `sense_bridge_esp32`, `publish = false`) | Rust + Xtensa + ESP-IDF/`esp-idf-svc` | Caso de uso: driver do DHT11, Wi-Fi, cliente Open-Meteo com tempo limite, relógio monotônico, cadência dos ciclos, instrumentação e saída CSV |
 | DHT11 | periférico | Fonte local de temperatura e umidade |
 | Open-Meteo | serviço HTTP externo | Fonte externa de contexto (nunca referência de verdade para o DHT11) |
 
 Cada placa futura entra como projeto irmão em `firmware/`, com a sua própria toolchain, consumindo a mesma crate.
 
-> **Estado da implementação em 04/10/2026.** A crate declara `#![no_std]`, o README participa dos doctests e o núcleo pode ser verificado no host sem hardware. A suíte completa possui **53 testes aprovados**: 18 unitários, 7 da integração Open-Meteo, 12 de cenários, 14 do console e 2 doctests. O firmware ESP32 está funcional, conecta-se ao Wi-Fi, consulta a Open-Meteo, executa o `SenseBridge`, mede latência e memória e produz registros experimentais. A integração real do DHT11 está concluída e validada. Um shield ESP-01S DHT11 v1.0 usado posteriormente em outra montagem não respondeu à leitura, sendo tratado apenas como ocorrência específica de hardware e não como pendência arquitetural.
+> **Estado da implementação em 22/10/2026.** A crate declara `#![no_std]`, o README participa dos doctests e o núcleo pode ser verificado no host sem hardware. A suíte completa possui **62 testes aprovados**: 20 unitários, 7 da integração Open-Meteo, 12 de cenários, 21 do console e 2 doctests. O firmware ESP32 está funcional, conecta-se ao Wi-Fi, consulta a Open-Meteo, executa o `SenseBridge`, mede latência e memória e produz registros experimentais. A integração real do DHT11 está concluída e validada. Um shield ESP-01S DHT11 v1.0 usado posteriormente em outra montagem não respondeu à leitura, sendo tratado apenas como ocorrência específica de hardware e não como pendência arquitetural.
 
 ---
 
@@ -35,9 +36,10 @@ Cada placa futura entra como projeto irmão em `firmware/`, com a sua própria t
 flowchart TD
     subgraph board["ESP32 — firmware/esp32"]
         App["Aplicação: loop de ciclos<br/>relógio monotônico"]
-        Dht["Dht11Source<br/>impl LocalSource"]
-        Meteo["OpenMeteoSource<br/>impl ExternalSource"]
+        Dht["Timed&lt;Dht11&gt;<br/>impl LocalSource"]
+        Meteo["Timed&lt;OpenMeteo&gt;<br/>impl ExternalSource"]
         Bridge["sense_bridge::SenseBridge"]
+        Parse["sense_bridge::open_meteo<br/>caminho e interpretação"]
     end
 
     subgraph periph["Periféricos e rede"]
@@ -61,13 +63,14 @@ flowchart TD
     Bridge -->|"fetch()"| Meteo
     Dht -->|"1-wire"| DHT11
     Meteo --> WIFI
+    Meteo -->|"write_path() / interpret()"| Parse
     WIFI -->|"HTTP + tempo limite"| OM
     App -->|"serial"| CSV
     Sim --> Tests
     Tests -->|"cycle(now_ms)"| Bridge
 ```
 
-A biblioteca é o único ponto que combina as duas fontes, e conhece cada uma apenas pela sua trait. Driver, pilha de rede, relógio e serialização ficam do lado do firmware.
+A biblioteca é o único ponto que combina as duas fontes, e o ciclo conhece cada uma apenas pela sua trait. Driver, pilha de rede, relógio e serialização ficam do lado do firmware; `Timed` envolve cada fonte para medir a duração da consulta fora da biblioteca. Da Open-Meteo, a biblioteca oferece apenas a montagem da consulta e a interpretação da resposta, que a implementação da fonte externa usa (ADR-008).
 
 ### Ciclo de aquisição
 
@@ -111,6 +114,24 @@ flowchart TD
 8. Se o estado difere do ciclo anterior, o registro carrega um `Transition`; `is_recovery()` identifica o retorno a `Normal`. No primeiro ciclo não há transição, porque nenhum estado é presumido antes dele.
 9. O `Record` é devolvido com identificador sequencial de ciclo, instante, resultado de cada fonte e a transição. O firmware o serializa em CSV para os experimentos.
 
+### Estados de operação
+
+O estado é função da disponibilidade das duas fontes no ciclo (✓ disponível, ✗ indisponível), e qualquer estado pode seguir qualquer outro de um ciclo para o seguinte. Cada ligação vale nos dois sentidos e indica a fonte que muda de disponibilidade; as que chegam a `Normal` são as recuperações (`is_recovery()`). O primeiro estado vem do primeiro ciclo concluído, sem estado presumido antes dele.
+
+```mermaid
+flowchart LR
+    N(["Normal<br/>local ✓ · externa ✓"])
+    DL(["DegradedLocal<br/>local ✗ · externa ✓"])
+    DE(["DegradedExternal<br/>local ✓ · externa ✗"])
+    E(["Error<br/>local ✗ · externa ✗"])
+    N <-->|"local"| DL
+    N <-->|"externa"| DE
+    DL <-->|"externa"| E
+    DE <-->|"local"| E
+    N <-->|"as duas"| E
+    DL <-->|"as duas"| DE
+```
+
 ---
 
 ## 3. Módulos do domínio
@@ -120,10 +141,11 @@ flowchart TD
 | `bridge` | `SenseBridge<L, E>`, `Config` | Orquestra o ciclo: aquisição, validação, reuso da leitura externa, estado, transição e montagem do registro. Única parte com memória entre ciclos |
 | `source` | `LocalSource`, `ExternalSource` | Fronteira com hardware e rede. É por onde — e só por onde — a plataforma entra na biblioteca |
 | `reading` | `LocalReading`, `ExternalReading`, `LocalFailure`, `ExternalFailure`, `InvalidReason` | Modelo de dados e taxonomia de falhas, separada por fonte: o tipo de falha local não é expressável na externa e vice-versa |
-| `validation` | `Range`, `Limits`, `validate_local`, `validate_external` | Faixas com limites inclusivos e rejeição de valores não numéricos. `Limits::DHT11` e `Limits::PLAUSIBLE` são padrões provisórios (PRD, D3–D4) |
+| `validation` | `Range`, `Limits`, `validate_local`, `validate_external` | Faixas com limites inclusivos e rejeição de valores não numéricos. `Limits::DHT11` e `Limits::PLAUSIBLE` seguem as faixas fechadas em D3 e D4 (PRD) |
 | `state` | `OperationState`, `Transition`, `determine_state` | Estado derivado da disponibilidade e detecção de transição e recuperação. Função pura, sem memória |
 | `record` | `Record`, `ExternalSample` | Saída de um ciclo: origem, validade, motivo da falha, idade da leitura externa e transição |
 | `sim` | `Simulated<T, F>`, `SimulatedLocal`, `SimulatedExternal` | Fontes controláveis entre ciclos, com contagem de consultas, para testes e exemplos no host |
+| `open_meteo` | `HOST`, `write_path`, `interpret` | Caminho da consulta e interpretação da resposta da Open-Meteo, sem alocação nem E/S. Usado pela implementação de `ExternalSource`, não pelo ciclo (ADR-008) |
 
 O estado retido em `SenseBridge` é deliberadamente mínimo: `next_cycle` (identificador sequencial), `state` (estado do ciclo anterior, para a transição) e `last_external` (última leitura externa válida e o instante em que foi obtida, para o reuso dentro do intervalo).
 
@@ -140,10 +162,10 @@ Como `timestamp_ms` é fornecido pelo chamador e a biblioteca não lê relógio,
 | Registros e transições | `Record` devolvido por `cycle` | Implementado |
 | Latência por operação e ciclo | Firmware, com `read_us`, `fetch_us` e `cycle_us` | Implementado |
 | RAM em execução | Firmware: heap livre, menor heap livre e margem de stack | Implementado e medido |
-| Flash | Tamanho do firmware final via `xtensa-esp32-elf-size`; comparação incremental prevista em D8 | Firmware completo medido; baseline pendente |
-| Exportação | Serial processada por `sense_bridge_console`, com gravação em TXT/CSV | Implementado; faltam apenas algumas colunas do protocolo experimental final, como repetição e estado esperado |
+| Flash | Tamanho do firmware final via `xtensa-esp32-elf-size`, comparado ao firmware-base sem a biblioteca (D8) | Firmware completo e firmware-base medidos ([avaliação experimental](03-avaliacao-experimental.md)) |
+| Exportação | Serial processada por `sense_bridge_console`, com gravação em TXT/CSV | Implementado; o cenário e a repetição vêm do nome da captura, e `--analyze` confere o estado esperado (UC-008) |
 
-Para não distorcer o que se quer medir, as amostras de latência são acumuladas em memória e exportadas fora da janela medida, e o custo da própria instrumentação é quantificado à parte (risco previsto no PRD).
+Para não distorcer o que se quer medir, as durações de cada ciclo ficam em memória e a linha CSV só é emitida depois do ciclo, fora da janela medida, e o custo da própria instrumentação é quantificado à parte (risco previsto no PRD).
 
 ---
 
@@ -153,8 +175,8 @@ Para não distorcer o que se quer medir, as amostras de latência são acumulada
 
 | Camada | Linguagem | Versão |
 | --- | --- | --- |
-| Biblioteca | Rust (edition 2024) | `rust-version = 1.85`; verificada em 1.97.1 |
-| Firmware ESP32 | Rust + ESP-IDF | Rust ESP 1.90.0.0; ESP-IDF v5.5.5; alvo Xtensa ESP32 |
+| Biblioteca | Rust (edition 2024) | `rust-version = 1.85`, verificada na CI; desenvolvida em 1.97.1 |
+| Firmware ESP32 | Rust + ESP-IDF | Toolchain `esp` do espup, sem versão fixa (1.97.0.0 em 21/10/2026); ESP-IDF v5.5.5; alvo Xtensa ESP32 |
 
 ### `sense-bridge/` (crate `sense_bridge`)
 
@@ -171,7 +193,7 @@ O firmware de referência está implementado sobre ESP-IDF/`esp-idf-svc`, com su
 Responsabilidades do firmware:
 
 - configurar e executar o ESP32;
-- implementar a fonte local DHT11 por meio de biblioteca existente;
+- ler o DHT11 com a crate `dht11-trace`, que identifica a etapa do protocolo em que a leitura falhou e, com `dht11_power_gpio`, reinicia o sensor travado;
 - estabelecer a conexão Wi-Fi;
 - consultar a Open-Meteo com tempo limite configurável;
 - fornecer o relógio monotônico e a cadência dos ciclos;
@@ -183,7 +205,7 @@ A interpretação da resposta da Open-Meteo permanece testável no host por meio
 
 ### Dados
 
-Não há banco nem persistência de longo prazo no dispositivo. O estado vive em memória durante a execução (`Option<OperationState>` e `Option<(ExternalReading, u64)>`). As evidências experimentais são capturadas no computador de apoio e armazenadas em `capturas/`, em formatos CSV e TXT.
+Não há banco nem persistência de longo prazo no dispositivo. O estado vive em memória durante a execução (`Option<OperationState>` e `Option<(ExternalReading, u64)>`). As evidências experimentais são capturadas no computador de apoio pelo console, em formatos CSV e TXT; as capturas de trabalho ficam em `capturas/`, fora do git, e as oficiais em `docs/evidencias/`.
 
 ### Convenções
 
@@ -191,9 +213,11 @@ Não há banco nem persistência de longo prazo no dispositivo. O estado vive em
 - Tempo em milissegundos (`u64`) de relógio monotônico, sempre fornecido pelo chamador; diferenças com `saturating_sub`.
 - Faixas são intervalos fechados: o valor exatamente no limite é válido.
 - Identificador de ciclo começa em 0 e só cresce.
+- Estados e falhas são serializados pelos nomes de `as_str()`, que fazem parte da API; a saída de `Debug` não é contrato. O cabeçalho do CSV fica em `firmware/esp32/src/csv_header.in`, incluído pelo firmware e pelo console.
 - Documentação e comentários em português; nomes de código em inglês.
 - Testes unitários junto do módulo (`#[cfg(test)]`); cenários do protocolo em `tests/scenarios.rs`, nomeados pelo comportamento verificado.
 - Clippy sem avisos, com avisos tratados como erro.
+- Todo item público da crate é documentado (`#![warn(missing_docs)]`).
 
 ---
 
@@ -220,9 +244,12 @@ Na raiz, sem hardware:
 cargo test                                     # testes unitários e cenários C1–C5
 cargo clippy --all-targets -- -D warnings      # análise estática
 cargo run -p sense_bridge --example simulate   # imprime os cenários em CSV
+scripts/evidencias.sh                          # registra as verificações em docs/evidencias/
 ```
 
-Os firmwares compilam com a toolchain da sua placa, dentro de `firmware/<placa>/`.
+A CI (`.github/workflows/ci.yml`) roda formatação, clippy, testes, documentação e o pacote da crate a cada push e pull request, além de compilar a crate com Rust 1.85 e para um alvo sem `std`.
+
+Os firmwares compilam com a toolchain da sua placa, dentro de `firmware/<placa>/`, e ficam fora da CI.
 
 ---
 
@@ -242,7 +269,7 @@ Os firmwares compilam com a toolchain da sua placa, dentro de `firmware/<placa>/
 **Contexto:** O alvo tem RAM e Flash restritas, e o projeto mede o custo próprio da biblioteca. Cada dependência transitiva entra nessa conta e precisa compilar para o alvo.  
 **Decisão:** A crate não usa `std`, não aloca e não declara dependências. Tudo que ela produz cabe em tipos `Copy` de tamanho conhecido.  
 **Justificativa:** Sem alocador, não há falha de alocação nem fragmentação a tratar em tempo de execução, e a medição de Flash atribuída à biblioteca fica interpretável.  
-**Consequências:** Nada de `String`, `Vec` ou formatação dentro da crate — a serialização permanece fora do núcleo. `lib.rs` declara `#![no_std]` e o README é verificado por doctests, de modo que essa restrição deixou de ser apenas uma convenção documental.
+**Consequências:** Nada de `String` ou `Vec` dentro da crate, e a serialização dos registros permanece fora do núcleo. A única formatação é a do caminho da consulta à Open-Meteo, escrito em um `fmt::Write` fornecido pelo chamador (ADR-008). `lib.rs` declara `#![no_std]` e o README é verificado por doctests, de modo que essa restrição deixou de ser apenas uma convenção documental.
 
 ### ADR-003 — O instante do ciclo é injetado pelo chamador
 
@@ -266,7 +293,7 @@ Os firmwares compilam com a toolchain da sua placa, dentro de `firmware/<placa>/
 **Contexto:** Entre duas consultas, a última leitura externa válida é reutilizada com a idade informada. Quando a consulta seguinte falha, seria possível continuar servindo esse valor até o fim do intervalo.  
 **Decisão:** Toda falha de consulta ou de validação externa apaga a leitura guardada e a fonte fica indisponível até uma nova consulta bem-sucedida.  
 **Justificativa:** Um valor anterior à falha apresentado como atual é exatamente o tipo de propagação silenciosa que o projeto existe para evitar.  
-**Consequências:** C3 entra em degradado já no ciclo da falha. Em compensação, uma queda ocorrida durante o período de reuso só é percebida na consulta seguinte — com o intervalo de 15 minutos fechado em D5a, esse atraso é significativo, e como tratá-lo está em aberto (PRD, D10).
+**Consequências:** C3 entra em degradado já no ciclo da falha. Em compensação, uma queda ocorrida durante o período de reuso só é percebida na consulta seguinte — com o intervalo de 15 minutos fechado em D5a, esse atraso é significativo. A D10 manteve a arquitetura: nos experimentos C3–C5, `external_refresh_ms = 5000` faz a fonte externa ser consultada aproximadamente a cada ciclo.
 
 ### ADR-006 — Um `Result` por fonte no registro, sem fusão
 
@@ -284,8 +311,22 @@ Os firmwares compilam com a toolchain da sua placa, dentro de `firmware/<placa>/
 **Justificativa:** Mantém os comandos da raiz rodando sem hardware e o caso de uso fora do que vai para o crates.io.  
 **Consequências:** O núcleo e as ferramentas de host são testados sem depender do ESP32. O firmware possui configuração e build próprios e deve ser compilado e gravado explicitamente com a toolchain ESP.
 
-### Decisões ainda em aberto
+### ADR-008 — Interpretação da Open-Meteo dentro da biblioteca
 
-As pendências com impacto no comportamento estão em [Decisões de projeto (PRD, §12)](01-prd.md#12-decisões-de-projeto): referências formais das faixas de validação (D3, D4), número de repetições por cenário (D7) e tratamento do atraso de identificação de falha durante a reutilização da leitura externa (D10). D5b, D5c, D6 e D12 já foram fechadas pela implementação.
+**Status:** aceita  
+**Contexto:** A resposta da Open-Meteo é a entrada com mais casos de borda do sistema: status de erro, corpo truncado, JSON malformado, campos ausentes ou não numéricos. O firmware só roda no ESP32, e o princípio de que o núcleo é verificável sem hardware deveria valer também para a parte determinística da fonte externa.  
+**Decisão:** O módulo `open_meteo` monta o caminho da consulta (`write_path`) e converte status e corpo em `ExternalReading` ou `ExternalFailure` (`interpret`), com um leitor JSON próprio, sem alocação e com profundidade de aninhamento limitada. Rede, HTTP, tempo limite e conectividade ficam na implementação de `ExternalSource`, no firmware. O ciclo não depende do módulo.  
+**Justificativa:** A interpretação é determinística e pode ser testada no host com respostas reais gravadas em `tests/fixtures/open_meteo/`. Uma crate de JSON violaria a ADR-002.  
+**Consequências:** A biblioteca passa a conhecer um provedor específico, como exceção à regra de conhecer as fontes apenas pelas traits. Outro provedor entraria como módulo irmão, sem alterar o ciclo. A validação de faixa continua no ciclo, como para qualquer fonte externa.
 
-Já estão fechadas e sustentam os ADRs acima: recuperação como evento de transição (D1), ausência de histerese (D2), intervalo externo de 15 min (D5a), ciclo local de 5 s (D5b), timeout HTTP de 3 s (D5c), coordenadas configuráveis (D6), referência dupla para RAM e Flash (D8), licença dupla (D9), nova tentativa a cada ciclo (D11) e uso de ESP-IDF/`esp-idf-svc` no ESP32 (D12).
+### ADR-009 — DHT11 lido pela crate `dht11-trace`
+
+**Status:** aceita (PRD, D13)  
+**Contexto:** O projeto de pesquisa (§6.2) deixa fora do escopo a implementação do protocolo de baixo nível do DHT11. A crate `dht-sensor`, usada no início, informa apenas tempo esgotado ou checksum inválido e não protege o quadro da preempção pela tarefa do Wi-Fi; o firmware mascarava as interrupções por um adaptador de atraso que dependia da ordem interna das chamadas da crate.  
+**Decisão:** O firmware de referência lê o sensor com a crate `dht11-trace`, extraída do driver do firmware e publicada à parte no crates.io por um dos autores. O adaptador `firmware/esp32/src/local.rs` converte o resultado em `LocalReading` ou `LocalFailure`.  
+**Justificativa:** A crate identifica a etapa do protocolo em que a leitura falhou, o que separa sensor desligado, linha em curto e quadro corrompido nos experimentos, e lê o quadro dentro da seção sem interrupções que a plataforma fornece (`Platform::uninterrupted`). Por ser uma crate independente, o protocolo continua fora da biblioteca, como pede o §6.2.  
+**Consequências:** A biblioteca não muda: conhece o sensor apenas pela trait `LocalSource`, e `LocalFailure` mantém `NoResponse` e `Checksum`, comparáveis às capturas anteriores; a etapa vai para o log. O firmware ficou cerca de 10 KB maior que o medido na avaliação de memória.
+
+### Decisões de projeto do PRD
+
+Todas as [decisões de projeto (PRD, §12)](01-prd.md#12-decisões-de-projeto) estão fechadas: recuperação como evento de transição (D1), ausência de histerese (D2), faixas do DHT11 (D3) e da fonte externa (D4), intervalo externo de 15 min (D5a), ciclo local de 5 s (D5b), timeout HTTP de 3 s (D5c), coordenadas configuráveis (D6), 5 repetições de 10 ciclos por cenário (D7), referência dupla para RAM e Flash (D8), licença dupla (D9), arquitetura mantida diante do atraso de identificação durante a reutilização (D10), nova tentativa a cada ciclo (D11), uso de ESP-IDF/`esp-idf-svc` no ESP32 (D12) e leitura do DHT11 com a crate `dht11-trace` (D13, ADR-009).

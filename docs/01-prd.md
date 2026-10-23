@@ -44,7 +44,7 @@ Sistemas IoT embarcados que combinam leituras de sensores locais com informaçõ
 ### Não-metas
 
 - Não é uma solução completa de monitoramento ou automação ambiental (painéis, alertas, atuadores).
-- Não implementa o protocolo de comunicação de baixo nível do DHT11; usa bibliotecas e abstrações existentes.
+- A biblioteca não implementa o protocolo de comunicação de baixo nível do DHT11. O firmware de referência lê o sensor com a crate `dht11-trace`, de autoria própria e publicada à parte no crates.io, para identificar a etapa em que a leitura falhou.
 - Não usa a Open-Meteo para corrigir, calibrar ou substituir as leituras do DHT11. A fonte externa serve apenas de contexto.
 - Não fixa metas de desempenho de antemão: latência, RAM e Flash são **medidas e caracterizadas**, não otimizadas até um limite.
 - Não mede consumo energético.
@@ -54,7 +54,7 @@ Sistemas IoT embarcados que combinam leituras de sensores locais com informaçõ
 
 ## 5. Escopo
 
-### Estado atual — 04/10/2026
+### Estado atual — 22/10/2026
 
 | Capacidade | Status | Notas |
 | --- | --- | --- |
@@ -63,7 +63,7 @@ Sistemas IoT embarcados que combinam leituras de sensores locais com informaçõ
 | Modelo das leituras e das falhas por fonte | ✅ 100% | Tipos distintos para fonte local e externa, com falhas explicitamente identificadas |
 | Estados de operação | ✅ 100% | `Normal`, `DegradedLocal`, `DegradedExternal` e `Error` |
 | Transições de estado e recuperação | ✅ 100% | Transições emitidas apenas quando há mudança de estado; recuperação identificada no retorno a `Normal` |
-| Validação de dados | 🔶 90% | Validação implementada e testada; permanecem pendentes apenas as referências formais das faixas D3 e D4 |
+| Validação de dados | ✅ 100% | Validação implementada e testada; faixas fechadas em D3 e D4 |
 | Registro integrado por ciclo | ✅ 100% | Ciclo, instante, estado, leituras/falhas, idade da leitura externa, transição e recuperação |
 | Intervalo de consulta externa e cache | ✅ 100% | `external_refresh_ms = 900000` ms (15 min); leitura externa válida pode ser reutilizada |
 | Fontes simuladas | ✅ 100% | Utilizadas nos testes determinísticos dos cenários C1–C5 |
@@ -71,44 +71,41 @@ Sistemas IoT embarcados que combinam leituras de sensores locais com informaçõ
 | Consulta real à Open-Meteo via Wi-Fi | ✅ 100% | Executada com sucesso no ESP32, com HTTP e tempo limite |
 | Firmware Rust no ESP32 | ✅ 100% | Toolchain configurada, firmware compilado, gravado e executado no hardware |
 | Integração do DHT11 | ✅ 100% | Driver, abstração e leitura real do DHT11 concluídos e validados; SB-10 encerrada |
-| Testes automatizados | ✅ 100% | 53 testes aprovados: 18 unitários, 7 Open-Meteo, 12 cenários, 14 console e 2 doctests |
-| Análise estática | 🔶 75% | Estrutura preparada; execução final deve ser repetida antes da entrega |
+| Testes automatizados | ✅ 100% | 62 testes aprovados: 20 unitários, 7 Open-Meteo, 12 cenários, 21 console e 2 doctests |
+| Análise estática | ✅ 100% | Clippy sem avisos na biblioteca, no console e no firmware; verificado na CI e registrado em `docs/evidencias/verificacao.md` |
 | Instrumentação de latência | ✅ 100% | `read_us`, `fetch_us` e `cycle_us` registrados pelo firmware |
 | Medição de RAM | ✅ 100% | Heap e stack monitorados em execução; segmentos estáticos também medidos |
-| Medição de Flash | 🔶 85% | Firmware completo medido; falta produzir o firmware-base previsto em D8 para obter o custo incremental |
-| Registro experimental em CSV | 🔶 75% | Console grava CSV e TXT; C2 real foi capturado; ainda falta padronizar cenário, repetição e estado esperado no CSV final |
+| Medição de Flash | ✅ 100% | Firmware completo e firmware-base (D8) medidos; custo incremental de cerca de 23,3 KiB de Flash e 13,2 KiB de RAM estática |
+| Registro experimental em CSV | 🔶 90% | Console grava CSV e TXT e confere o estado esperado em cada captura (`--analyze`), com o cenário e a repetição tirados do nome do arquivo; falta versionar as capturas em `docs/evidencias/` |
 | Cenários C1–C5 automatizados | ✅ 100% | Todos os cinco cenários aprovados |
-| Cenários C1–C5 em hardware | 🔶 30% | A leitura real do DHT11 já foi validada e C2 foi observado diretamente no ESP32; ainda falta executar o protocolo físico final e repetido de C1–C5 |
-| Documentação da API e exemplos | 🔶 80% | README, documentação da crate, exemplos e doctests existentes; revisão final de reprodutibilidade pendente |
+| Cenários C1–C5 em hardware | ✅ 100% | Protocolo físico final executado: 5 repetições de 10 ciclos por cenário, todas aprovadas (ver [avaliação experimental](03-avaliacao-experimental.md)) |
+| Documentação da API e exemplos | ✅ 100% | Todos os itens públicos documentados; README da crate com doctests; README do projeto com o roteiro de reprodução |
 | Avaliação experimental | ✅ 100% | Documento `docs/03-avaliacao-experimental.md` criado com resultados atuais |
-| Entregáveis finais | 🔶 65% | Código, testes e resultados principais existentes; faltam fechamento experimental, README final, relatório completo e vídeo |
+| Preparação para o crates.io | ✅ 100% | Metadados, documentação, CHANGELOG, CI e pacote verificados; a publicação fica para depois da disciplina ([docs/06](06-publicacao-crates-io.md)) |
+| Entregáveis finais | 🔶 80% | README de reprodutibilidade concluído; relatório técnico e roteiro do vídeo em rascunho; faltam revisar o relatório, gravar o vídeo e versionar os dados brutos |
 
 ### Resultados já obtidos
 
 A implementação atual apresenta:
 
-- 53 testes automatizados aprovados e nenhuma falha;
+- 62 testes automatizados aprovados e nenhuma falha;
 - validação dos cenários C1–C5 com fontes simuladas;
 - integração real do ESP32 com Wi-Fi e Open-Meteo;
-- observação real do cenário C2 (`DegradedLocal`) em hardware;
-- captura experimental estruturada em CSV/TXT;
+- execução física de C1–C5 segundo o protocolo final: 25 repetições e 250 ciclos, todos aprovados;
+- captura experimental estruturada em CSV/TXT, com conferência automática do estado esperado;
 - latência estável média no C2 de aproximadamente 18,59 ms;
-- medição de Flash, RAM estática, heap e stack;
+- medição de Flash, RAM estática, heap e stack, com o custo incremental em relação ao firmware-base (D8);
+- análise estática sem avisos e CI no GitHub;
+- README de reprodutibilidade, com hardware, ligação, versões das ferramentas e comandos;
 - documentação específica da avaliação experimental.
 
 ### Pendências para a entrega
 
 | Pendência | Severidade | Área |
 | --- | --- | --- |
-| Executar e registrar C1–C5 no ESP32 segundo o protocolo final | Alta | Experimentos |
-| Definir formalmente o número de repetições por cenário (D7) | Alta | Protocolo |
-| Fechar D10 sobre identificação de falha externa durante período de reutilização | Média | Resiliência |
-| Confirmar e referenciar formalmente as faixas de validação D3 e D4 | Média | Validação |
-| Produzir firmware-base sem SenseBridge para comparação de RAM/Flash prevista em D8 | Média | Métricas |
-| Completar as colunas finais do CSV experimental | Média | Evidências |
-| Executar análise estática final | Média | Qualidade |
-| Atualizar README completo de reprodutibilidade | Média | Documentação |
-| Consolidar relatório técnico e vídeo de demonstração | Alta | Entrega |
+| Versionar os dados brutos de C1–C5 e o firmware-base em `docs/evidencias/` | Alta | Evidências |
+| Registrar o firmware medido ou remedir Flash e RAM com o firmware atual | Média | Métricas |
+| Revisar o relatório técnico e gravar o vídeo de demonstração | Alta | Entrega |
 
 ---
 
@@ -389,51 +386,46 @@ A implementação atual apresenta:
 
 ## 9. Roadmap
 
-### Estado atual — 04/10/2026
+### Estado atual — 22/10/2026
 
 O desenvolvimento está adiantado em relação ao cronograma original.
 
 O núcleo da biblioteca, os estados de operação, as transições, a recuperação, as fontes simuladas, a integração com a Open-Meteo, o firmware ESP32, o console de captura e a instrumentação já estão implementados.
 
-A suíte atual possui 53 testes aprovados.
+A suíte atual possui 62 testes aprovados.
 
-Os cenários C1–C5 estão validados de forma automatizada. O cenário C2 também foi observado em execução real no ESP32, quando o sensor local permaneceu indisponível e a fonte Open-Meteo continuou operacional.
+Os cenários C1–C5 estão validados de forma automatizada e foram executados no ESP32 segundo o protocolo final (5 repetições de 10 ciclos por cenário), todos aprovados.
 
 A integração real do DHT11 já foi concluída e validada. Em uma montagem posterior, um shield ESP-01S DHT11 v1.0 específico recebeu alimentação, mas não respondeu ao protocolo de leitura; esse fato é mantido apenas como registro experimental e não representa bloqueio do SenseBridge.
 
 ### Cronograma de fechamento
 
-| Fase | Situação em 04/10 | Próxima ação |
+| Fase | Situação em 22/10 | Próxima ação |
 | --- | --- | --- |
-| Revisão e protocolo | ✅ Concluída em grande parte | Decisões D3, D4, D7 e D10 fechadas |
+| Revisão e protocolo | ✅ Concluída | Todas as decisões de projeto (D1–D13) fechadas |
 | Implementação do núcleo | ✅ Concluída | Apenas correções identificadas na revisão final |
 | Firmware ESP32 | ✅ Concluído | Manter configuração reproduzível |
 | Open-Meteo | ✅ Concluída | Apenas documentação final |
 | DHT11 físico | ✅ Concluído | Leitura real validada; SB-10 encerrada |
-| Testes automatizados | ✅ 53/53 | Reexecutar na versão final |
-| Instrumentação | ✅ Concluída | Completar baseline de RAM/Flash |
-| Experimentos | 🔶 Parcial | Executar protocolo físico final C1–C5 |
-| Análise de resultados | 🔶 Avançada | Consolidar todas as repetições |
-| Documentação | 🔶 Avançada | Atualizar README, PRD e arquitetura |
-| Relatório | 🔶 Em andamento | Incorporar resultados finais |
-| Vídeo | 🔴 Pendente | Produzir após congelamento do firmware |
+| Testes automatizados | ✅ 62/62 | Reexecutar na versão final |
+| Instrumentação | ✅ Concluída | Baseline de RAM/Flash (D8) medido |
+| Experimentos | ✅ Concluídos | C1–C5 executados no ESP32: 25 repetições, 250 ciclos |
+| Análise de resultados | 🔶 Avançada | Versionar os dados brutos e registrar o firmware medido |
+| Documentação | ✅ Concluída | README de reprodutibilidade, PRD e arquitetura atualizados |
+| Relatório | 🔶 Rascunho | Revisar [docs/04](04-relatorio-tecnico.md) |
+| Vídeo | 🔶 Roteiro pronto | Gravar seguindo [docs/05](05-roteiro-video.md) |
 
 ### Próximas atividades
 
-1. Revisar PRD e arquitetura contra a implementação real.
-2. Completar a integração física da fonte local.
-4. Definir o número de repetições do protocolo experimental.
-5. Executar C1–C5 em hardware conforme o protocolo final.
-6. Gerar os CSVs finais com cenário, repetição, estado esperado e estado observado.
-7. Produzir firmware-base e calcular o custo incremental de RAM/Flash.
-8. Executar a análise estática final.
-9. Consolidar resultados no relatório técnico.
-10. Atualizar o README de reprodutibilidade.
-11. Produzir o vídeo de demonstração de 3–5 minutos.
+1. Versionar as capturas oficiais de C1–C5 e o firmware-base em `docs/evidencias/`.
+2. Registrar o commit do firmware medido ou remedir Flash e RAM com o firmware atual.
+3. Conferir as capturas versionadas com `sense_bridge_console --analyze` (UC-008).
+4. Revisar o rascunho do relatório técnico.
+5. Gravar o vídeo de demonstração de 3–5 minutos.
 
 ### Pós-disciplina
 
-- avaliar publicação da biblioteca como crate;
+- avaliar publicação da biblioteca como crate (preparação em [docs/06](06-publicacao-crates-io.md));
 - avaliar registro de software;
 - avaliar publicação do conjunto de dados experimental;
 - testar outros sensores e plataformas sem alterar o núcleo da biblioteca.
@@ -463,7 +455,7 @@ A integração real do DHT11 já foi concluída e validada. Em uma montagem post
 | Cenários executados no ESP32 | 5 de 5 |
 | Testes automatizados passando | 100% |
 | Avisos não justificados da análise estática | 0 |
-| Repetições por cenário | A definir no protocolo |
+| Repetições por cenário | 5, com 10 ciclos cada (D7) |
 | Latência por operação (leitura local, obtenção externa, validação/integração, ciclo) | Medir e relatar (média e dispersão); sem meta prévia |
 | RAM em execução | Medir e relatar; sem meta prévia |
 | Flash (tamanho do firmware) | Medir e relatar; sem meta prévia |
@@ -473,7 +465,7 @@ A integração real do DHT11 já foi concluída e validada. Em uma montagem post
 
 ## 11. Fora do Escopo
 
-- Implementação do protocolo de comunicação de baixo nível do DHT11.
+- Implementação do protocolo de comunicação de baixo nível do DHT11 na biblioteca. O firmware de referência lê o sensor com a crate `dht11-trace`, de autoria própria e publicada à parte (D13).
 - Criação de hardware dedicado ou de nova arquitetura de processamento.
 - Solução completa de automação ou monitoramento ambiental: painéis, alertas, atuadores, interface de usuário.
 - Medição de consumo energético.
@@ -509,6 +501,7 @@ Registro das decisões que moldam o comportamento da biblioteca e o protocolo ex
 | D10 | Falha externa durante reutilização | Não alterar a arquitetura; nos experimentos C3–C5 usar `external_refresh_ms = 5000` para verificar a fonte externa aproximadamente a cada ciclo |
 | D11 | Nova tentativa após falha externa | Nova tentativa em cada ciclo enquanto a fonte estiver indisponível |
 | D12 | Pilha ESP32 | `esp-idf` / `esp-idf-svc`, com `std`, Wi-Fi, TLS e HTTP |
+| D13 | Leitura do DHT11 no firmware de referência | Crate `dht11-trace`, de autoria própria e publicada à parte no crates.io, que identifica a etapa do protocolo em que a leitura falhou; o protocolo continua fora da biblioteca (projeto de pesquisa, §6.2) |
 
 ### Protocolo experimental consolidado
 

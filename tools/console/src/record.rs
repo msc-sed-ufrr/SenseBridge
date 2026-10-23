@@ -1,11 +1,8 @@
 //! Classificação das linhas da serial e interpretação das linhas de ciclo.
 
 /// Colunas emitidas pelo firmware, usadas enquanto o cabeçalho não chega (console aberto
-/// depois do boot). Cópia de `HEADER` em `firmware/esp32/src/csv.rs`.
-pub const DEFAULT_HEADER: &str = "cycle,timestamp_ms,state,\
-    local_temperature_c,local_humidity_pct,local_failure,\
-    external_temperature_c,external_humidity_pct,external_age_ms,external_failure,\
-    transition,recovery,read_us,fetch_us,cycle_us,heap_free,heap_min_free,stack_min_free";
+/// depois do boot). Vem do mesmo arquivo que o `HEADER` do firmware.
+pub const DEFAULT_HEADER: &str = include!("../../../firmware/esp32/src/csv_header.in");
 
 /// O que uma linha da serial representa.
 #[derive(Debug, PartialEq, Eq)]

@@ -1,0 +1,53 @@
+# Verificações de host: biblioteca e console. O firmware do ESP32 exige a toolchain Xtensa
+# (espup) e é compilado à parte, conforme firmware/esp32/README.md.
+name: CI
+
+on:
+  push:
+    branches: [main, develop, "feature/**", "release/**", "hotfix/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  host:
+    name: Formatação, clippy, testes e pacote
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test
+      - run: cargo doc -p sense_bridge --no-deps
+        env:
+          RUSTDOCFLAGS: -D warnings
+      # Gera o pacote que iria para o crates.io e compila a crate a partir dele.
+      - run: cargo package -p sense_bridge
+
+  msrv:
+    name: Rust 1.85 (rust-version da crate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.85"
+      - run: cargo test -p sense_bridge
+
+  no-std:
+    name: Compilação sem std
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: thumbv7em-none-eabihf
+      # Um alvo sem std falha na compilação se a crate depender dela.
+      - run: cargo build -p sense_bridge --target thumbv7em-none-eabihf

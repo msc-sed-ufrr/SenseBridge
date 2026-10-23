@@ -1,3 +1,5 @@
+//! Ciclo de aquisição: [`SenseBridge`] e os seus parâmetros ([`Config`]).
+
 use crate::reading::{ExternalFailure, ExternalReading};
 use crate::record::{ExternalSample, Record};
 use crate::source::{ExternalSource, LocalSource};
@@ -38,6 +40,8 @@ pub struct SenseBridge<L, E> {
 }
 
 impl<L, E> SenseBridge<L, E> {
+    /// Cria a ponte entre as duas fontes. Nenhuma delas é consultada antes do primeiro
+    /// [`SenseBridge::cycle`].
     pub fn new(local: L, external: E, config: Config) -> Self {
         Self {
             local,
@@ -54,10 +58,12 @@ impl<L, E> SenseBridge<L, E> {
         self.state
     }
 
+    /// Acesso à fonte local, por exemplo para alterar uma fonte simulada entre ciclos.
     pub fn local_mut(&mut self) -> &mut L {
         &mut self.local
     }
 
+    /// Acesso à fonte externa, por exemplo para alterar uma fonte simulada entre ciclos.
     pub fn external_mut(&mut self) -> &mut E {
         &mut self.external
     }

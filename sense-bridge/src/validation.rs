@@ -1,17 +1,23 @@
+//! Faixas aceitas e validação das leituras.
+
 use crate::reading::{ExternalFailure, ExternalReading, InvalidReason, LocalFailure, LocalReading};
 
 /// Intervalo fechado `[min, max]` de valores aceitos.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Range {
+    /// Menor valor aceito.
     pub min: f32,
+    /// Maior valor aceito.
     pub max: f32,
 }
 
 impl Range {
+    /// Intervalo `[min, max]`, com os dois limites incluídos.
     pub const fn new(min: f32, max: f32) -> Self {
         Self { min, max }
     }
 
+    /// Aceita `value` se ele for finito e estiver no intervalo.
     pub fn check(&self, value: f32) -> Result<(), InvalidReason> {
         if !value.is_finite() {
             Err(InvalidReason::NotANumber)
@@ -26,29 +32,34 @@ impl Range {
 /// Faixas aceitas de temperatura (°C) e umidade relativa (%).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Limits {
+    /// Faixa de temperatura, em °C.
     pub temperature: Range,
+    /// Faixa de umidade relativa, em %.
     pub humidity: Range,
 }
 
 impl Limits {
-    /// Faixa de medição do DHT11 segundo o manual do fabricante (a confirmar: PRD, D3).
+    /// Faixa de medição do DHT11 segundo o manual do fabricante (PRD, D3).
     pub const DHT11: Self = Self {
         temperature: Range::new(0.0, 50.0),
         humidity: Range::new(20.0, 90.0),
     };
 
-    /// Limites físicos plausíveis para dados meteorológicos (provisório: PRD, D4).
+    /// Limites físicos plausíveis para dados meteorológicos (PRD, D4).
     pub const PLAUSIBLE: Self = Self {
         temperature: Range::new(-90.0, 60.0),
         humidity: Range::new(0.0, 100.0),
     };
 
+    /// Verifica a temperatura e depois a umidade; a primeira reprovação dá o motivo.
     pub fn check(&self, temperature: f32, humidity: f32) -> Result<(), InvalidReason> {
         self.temperature.check(temperature)?;
         self.humidity.check(humidity)
     }
 }
 
+/// Devolve a leitura local se ela estiver dentro de `limits`, ou
+/// [`LocalFailure::Invalid`] com o motivo da reprovação.
 pub fn validate_local(
     reading: LocalReading,
     limits: &Limits,
@@ -59,6 +70,8 @@ pub fn validate_local(
         .map_err(LocalFailure::Invalid)
 }
 
+/// Devolve a leitura externa se ela estiver dentro de `limits`, ou
+/// [`ExternalFailure::Invalid`] com o motivo da reprovação.
 pub fn validate_external(
     reading: ExternalReading,
     limits: &Limits,

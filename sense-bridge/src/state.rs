@@ -1,3 +1,5 @@
+//! Estados de operação e transições entre ciclos.
+
 /// Estado de operação determinado pela disponibilidade das fontes em um ciclo.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OperationState {
@@ -11,6 +13,20 @@ pub enum OperationState {
     Error,
 }
 
+impl OperationState {
+    /// Nome estável do estado, para serializar registros. Ao contrário da saída de `Debug`,
+    /// faz parte da API: mudar um nome muda o formato dos registros já gravados.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Normal => "Normal",
+            Self::DegradedLocal => "DegradedLocal",
+            Self::DegradedExternal => "DegradedExternal",
+            Self::Error => "Error",
+        }
+    }
+}
+
+/// Estado correspondente à disponibilidade de cada fonte no ciclo.
 pub fn determine_state(local_available: bool, external_available: bool) -> OperationState {
     match (local_available, external_available) {
         (true, true) => OperationState::Normal,
@@ -23,7 +39,9 @@ pub fn determine_state(local_available: bool, external_available: bool) -> Opera
 /// Mudança de estado entre dois ciclos consecutivos.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Transition {
+    /// Estado do ciclo anterior.
     pub from: OperationState,
+    /// Estado do ciclo atual.
     pub to: OperationState,
 }
 
@@ -59,6 +77,17 @@ mod tests {
     #[test]
     fn both_sources_unavailable_returns_error() {
         assert_eq!(determine_state(false, false), OperationState::Error);
+    }
+
+    #[test]
+    fn state_names_are_stable() {
+        assert_eq!(OperationState::Normal.as_str(), "Normal");
+        assert_eq!(OperationState::DegradedLocal.as_str(), "DegradedLocal");
+        assert_eq!(
+            OperationState::DegradedExternal.as_str(),
+            "DegradedExternal"
+        );
+        assert_eq!(OperationState::Error.as_str(), "Error");
     }
 
     #[test]

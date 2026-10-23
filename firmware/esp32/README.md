@@ -47,18 +47,18 @@ O primeiro build baixa o ESP-IDF v5.5.5 e as ferramentas para `~/.espressif`, o 
 cp cfg.toml.example cfg.toml
 ```
 
-Preencha `wifi_ssid` e `wifi_password`. O `cfg.toml` é ignorado pelo git; as credenciais nunca vão para o repositório. O build valida os valores: um ciclo abaixo de 1000 ms (intervalo mínimo do DHT11) ou um tempo limite maior que o ciclo interrompem a compilação com uma mensagem.
+Preencha `wifi_ssid` e `wifi_password`. O `cfg.toml` é ignorado pelo git; as credenciais nunca vão para o repositório. O build valida os valores: um ciclo abaixo de 1000 ms (intervalo mínimo do DHT11) ou um tempo limite igual ou maior que o ciclo interrompem a compilação com uma mensagem.
 
 | Chave | Padrão | Decisão no PRD |
 | --- | --- | --- |
-| `latitude`, `longitude` | 2.82, −60.67 (Boa Vista/RR) | D6, em aberto |
-| `cycle_interval_ms` | 5000 | D5b, em aberto |
-| `http_timeout_ms` | 3000 | D5c, em aberto |
+| `latitude`, `longitude` | 2.82, −60.67 (Boa Vista/RR) | D6, fechada |
+| `cycle_interval_ms` | 5000 | D5b, fechada |
+| `http_timeout_ms` | 3000 | D5c, fechada |
 | `external_refresh_ms` | 900000 (15 min) | D5a, fechada |
 | `dht11_gpio` | 4 | — |
 | `dht11_power_gpio` | ausente (VCC no 3V3) | — |
 
-Para observar falha e recuperação da fonte externa sem esperar 15 minutos, reduza `external_refresh_ms` (por exemplo, para 30000). Uma falha de rede durante a reutilização só aparece na consulta seguinte (PRD, D10).
+Para observar falha e recuperação da fonte externa sem esperar 15 minutos, reduza `external_refresh_ms` para 5000, como nos experimentos C3–C5 (PRD, D10): com o ciclo de 5 s, a fonte externa passa a ser consultada aproximadamente a cada ciclo. Uma falha de rede durante a reutilização só aparece na consulta seguinte.
 
 ## Compilar e gravar
 
@@ -89,7 +89,7 @@ As linhas de dados começam por um número, e as de log por `I (`, `W (` ou `E (
 grep -E '^(cycle,|[0-9]+,)' captura.txt > ciclos.csv
 ```
 
-As colunas do protocolo experimental (cenário, repetição, estado esperado) dependem de D7 e ainda não fazem parte desta saída.
+As colunas do protocolo experimental (cenário, repetição, estado esperado) ainda não fazem parte desta saída.
 
 ### Console
 
@@ -108,7 +108,7 @@ espflash monitor --non-interactive | cargo run -q -p sense_bridge_console
 
 `↻` marca um ciclo que consultou a Open-Meteo, com a duração da consulta; nos demais aparece a idade da leitura reutilizada. Logs de aviso e de erro do ESP-IDF e os logs do próprio firmware continuam visíveis; `--logs` mostra também os demais.
 
-Por padrão, a captura é gravada em `capturas/<data UTC>.txt` (a saída bruta, compatível com o `grep` acima) e `.csv` (cabeçalho e ciclos), ignorados pelo git. `--out <prefixo>` escolhe o nome, por exemplo `--out capturas/c2-r1`, e `--no-save` desliga a gravação. Uma captura antiga pode ser revista com `cargo run -q -p sense_bridge_console --no-save < captura.txt`.
+Por padrão, a captura é gravada em `capturas/<data UTC>.txt` (a saída bruta, compatível com o `grep` acima) e `.csv` (cabeçalho e ciclos), ignorados pelo git. `--out <prefixo>` escolhe o nome, por exemplo `--out capturas/c2-r1`, e `--no-save` desliga a gravação. Uma captura antiga pode ser revista com `cargo run -q -p sense_bridge_console -- --no-save < captura.txt`. Capturas nomeadas por cenário e repetição podem ser conferidas com o estado esperado em `--analyze` ([evidências](../../docs/evidencias/README.md#capturas-dos-experimentos)).
 
 ## Mapeamento de falhas
 
@@ -141,4 +141,4 @@ W (40953) sense_bridge_esp32::local: DHT11: sem resposta ao pulso de início (se
 | checksum inválido no quadro [..] | Quadro completo, com os 5 bytes recebidos | Interferência ou bit lido errado | `Checksum` |
 | erro no GPIO | Driver do pino | — | `NoResponse` |
 
-O protocolo é lido pelo próprio firmware (`src/local.rs`), sem a crate `dht-sensor`, para distinguir essas etapas. As durações dos pulsos vêm do contador de ciclos da CPU, com as interrupções mascaradas durante o quadro.
+O protocolo é lido pela crate [`dht11-trace`](https://crates.io/crates/dht11-trace), publicada à parte no crates.io, que distingue essas etapas; `src/local.rs` adapta o resultado à biblioteca e escreve as mensagens acima. As durações dos pulsos vêm do contador de ciclos da CPU, com as interrupções mascaradas durante o quadro por uma seção crítica de ISR.

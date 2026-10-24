@@ -11,7 +11,7 @@
 
 ## Resumo
 
-**[revisar]** Este relatório apresenta o SenseBridge, uma biblioteca em Rust para ESP32 que integra dados ambientais de uma fonte local, o sensor DHT11, e de uma fonte externa de contexto, a API Open-Meteo. A cada ciclo, a biblioteca valida as leituras, identifica a origem e o tipo de falha de cada fonte e determina um de quatro estados de operação: normal, degradado por falha local, degradado por falha externa ou erro. A biblioteca é `no_std`, não aloca memória e não tem dependências; o acesso ao hardware fica em traits implementadas pelo firmware. A verificação reúne 62 testes automatizados executados sem hardware e análise estática sem avisos. No ESP32, os cenários de operação normal, falha local, falha externa, falha simultânea e recuperação foram executados em 5 repetições de 10 ciclos cada, todas aprovadas. Os ciclos sem consulta externa duraram entre 18 e 22 ms, e a solução acrescentou cerca de 23,3 KiB de Flash e 13,2 KiB de RAM estática em relação a um firmware-base sem a biblioteca.
+**[revisar]** Este relatório apresenta o SenseBridge, uma biblioteca em Rust para ESP32 que integra dados ambientais de uma fonte local, o sensor DHT11, e de uma fonte externa de contexto, a API Open-Meteo. A cada ciclo, a biblioteca valida as leituras, identifica a origem e o tipo de falha de cada fonte e determina um de quatro estados de operação: normal, degradado por falha local, degradado por falha externa ou erro. A biblioteca é `no_std`, não aloca memória e não tem dependências; o acesso ao hardware fica em traits implementadas pelo firmware. A verificação reúne 62 testes automatizados executados sem hardware e análise estática sem avisos. No ESP32, os cenários de operação normal, falha local, falha externa, falha simultânea e recuperação foram executados em 5 repetições de 10 ciclos cada, todas aprovadas. Os ciclos sem consulta externa duraram entre 18 e 22 ms, e a solução acrescentou cerca de 26,1 KiB de Flash e 14,1 KiB de RAM estática em relação a um firmware-base sem a biblioteca.
 
 **Palavras-chave:** sistemas embarcados; Rust; ESP32; tolerância a falhas; integração de dados.
 
@@ -144,13 +144,13 @@ O ciclo é dominado pela consulta HTTP quando ela acontece: na medição inicial
 
 | Métrica | SenseBridge | Firmware-base | Diferença |
 | --- | ---: | ---: | ---: |
-| Flash (`text` + `data`) | 1.122.030 B | 1.098.142 B | +23.888 B (+2,18%) |
-| RAM estática (`data` + `bss`) | 211.853 B | 198.317 B | +13.536 B (+6,83%) |
+| Flash (`text` + `data`) | 1.124.874 B | 1.098.142 B | +26.732 B (+2,43%) |
+| RAM estática (`data` + `bss`) | 212.797 B | 198.317 B | +14.480 B (+7,30%) |
 | `bss` | 19.891 B | 19.891 B | 0 B |
 
 Em execução, na captura inicial de C2, o menor heap livre desde o boot foi de 201.120 B e a menor folga da pilha da tarefa principal, de 11.980 B. Nos experimentos finais, o firmware não foi interrompido por falta de memória.
 
-**[revisar]** O firmware atual, com a crate `dht11-trace`, é maior que o medido: `text` 939.744 B, `data` 192.802 B e `bss` 19.883 B. Registrar o commit medido ou repetir a medição, inclusive do firmware-base.
+A medição foi repetida com o firmware atual. O firmware SenseBridge apresentou `text` 931.968 B, `data` 192.906 B e `bss` 19.891 B; o firmware-base permaneceu em `text` 919.716 B, `data` 178.426 B e `bss` 19.891 B.
 
 ## 5. Discussão
 
@@ -166,11 +166,11 @@ Em execução, na captura inicial de C2, o menor heap livre desde o boot foi de 
 - As falhas foram induzidas manualmente; a indução de C3 por rede inexistente não exercita tempo limite nem erro do serviço, cobertos apenas nos testes automatizados.
 - O custo de memória medido é o da integração da solução no firmware, não o da crate isolada.
 - A duração do ciclo com consulta externa depende da rede e do serviço, fora do controle do experimento.
-- **[revisar]** Diferença entre o firmware medido e o atual (seção 4.3).
+- A comparação de memória representa o custo incremental da solução integrada em relação ao firmware-base, não o tamanho isolado da crate.
 
 ## 6. Conclusão
 
-**[revisar]** O SenseBridge mostrou que uma biblioteca `no_std`, sem alocação e sem dependências pode integrar uma fonte local e uma externa com comportamento definido diante de falhas parciais e totais, recuperando a operação normal no primeiro ciclo possível. Todos os cenários foram aprovados no ESP32, com ciclos de 18 a 22 ms sem consulta externa e um custo de cerca de 23,3 KiB de Flash e 13,2 KiB de RAM estática.
+**[revisar]** O SenseBridge mostrou que uma biblioteca `no_std`, sem alocação e sem dependências pode integrar uma fonte local e uma externa com comportamento definido diante de falhas parciais e totais, recuperando a operação normal no primeiro ciclo possível. Todos os cenários foram aprovados no ESP32, com ciclos de 18 a 22 ms sem consulta externa e um custo de cerca de 26,1 KiB de Flash e 14,1 KiB de RAM estática.
 
 Como trabalhos futuros, ficam a publicação da biblioteca como crate (preparação em [docs/06](06-publicacao-crates-io.md)), o registro de software, a publicação do conjunto de dados experimentais e a validação com outros sensores e plataformas sem alterar o núcleo.
 

@@ -42,7 +42,7 @@ A biblioteca é `no_std`, não aloca memória e não tem dependências. O uso da
 
 - **Testes automatizados:** 62, executados sem hardware, cobrindo C1–C5, validação, transições e a interpretação de respostas reais da Open-Meteo.
 - **Latência:** ciclos sem consulta externa entre 18 e 22 ms.
-- **Memória:** cerca de 23,3 KiB de Flash e 13,2 KiB de RAM estática a mais que um firmware-base sem a biblioteca.
+- **Memória:** cerca de 26,1 KiB de Flash e 14,1 KiB de RAM estática a mais que um firmware-base sem a biblioteca.
 
 A metodologia e os números completos estão na [avaliação experimental](docs/03-avaliacao-experimental.md). O projeto não inclui medição de consumo energético.
 
@@ -200,7 +200,7 @@ Linha de Sistemas Embarcados e Distribuídos — SED
 
 ## Status
 
-Implementação e avaliação experimental concluídas. Em preparação: relatório técnico, vídeo de demonstração e versionamento dos dados brutos.
+Implementação, avaliação experimental e versionamento das capturas oficiais concluídos. Em preparação: revisão final do relatório técnico e vídeo de demonstração.
 
 **Entrega prevista:** 26 de novembro de 2026.
 

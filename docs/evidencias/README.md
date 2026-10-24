@@ -8,7 +8,7 @@ Dados brutos e registros de verificação que sustentam a [avaliação experimen
 docs/evidencias/
 ├── README.md            # este arquivo
 ├── verificacao.md       # testes, análise estática, documentação e pacote (gerado)
-├── experimentos/        # capturas oficiais de C1–C5 (a versionar)
+├── experimentos/        # 25 capturas oficiais de C1–C5 versionadas
 │   ├── c1-r1.txt        # saída bruta da serial, gravada pelo console
 │   ├── c1-r1.csv        # cabeçalho e ciclos da mesma captura
 │   ├── ...
@@ -60,8 +60,8 @@ Para cada captura, registrar nesta tabela as condições da execução:
 
 ## Pendências
 
-- [ ] Versionar as 25 capturas oficiais (`c1-r1` a `c5-r5`, `.txt` e `.csv`) e a execução de C5 excluída do conjunto oficial ([avaliação, §2.5](../03-avaliacao-experimental.md#25-c5--recuperação)).
+- [x] Versionar as 25 capturas oficiais (`c1-r1` a `c5-r5`, `.txt` e `.csv`). O conjunto oficial foi validado automaticamente: **25/25 capturas e 250/250 ciclos no estado esperado**.
 - [ ] Registrar o commit do firmware e a versão da toolchain `esp` usados nos experimentos e na medição de Flash e RAM.
 - [ ] Versionar o código do firmware-base (D8) e a saída do `xtensa-esp32-elf-size` dele e do firmware medido.
-- [ ] Decidir se os números de Flash e RAM da avaliação continuam valendo. O firmware atual, com a crate `dht11-trace`, tem `text` 939.744 B, `data` 192.802 B e `bss` 19.883 B (1.152.429 B), contra 930.068 B, 191.962 B e 19.891 B (1.141.921 B) na avaliação.
+- [x] Repetir a medição D8 com o firmware atual. SenseBridge: `text` 931.968 B, `data` 192.906 B, `bss` 19.891 B; baseline: `text` 919.716 B, `data` 178.426 B, `bss` 19.891 B. Diferença: **+26.732 B de Flash (+2,43%)** e **+14.480 B de RAM estática (+7,30%)**.
 - [x] Calcular automaticamente a correspondência entre estado esperado e observado (PRD, UC-008): `sense_bridge_console --analyze`, com o cenário e a repetição tirados do nome do arquivo.

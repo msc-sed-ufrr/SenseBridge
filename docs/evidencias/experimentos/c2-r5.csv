@@ -1,0 +1,11 @@
+cycle,timestamp_ms,state,local_temperature_c,local_humidity_pct,local_failure,external_temperature_c,external_humidity_pct,external_age_ms,external_failure,transition,recovery,read_us,fetch_us,cycle_us,heap_free,heap_min_free,stack_min_free
+0,21,DegradedLocal,,,NoResponse,31.2,57.0,0,,,,18280,1053570,1071956,206724,200860,12380
+1,5005,DegradedLocal,,,NoResponse,31.2,57.0,4984,,,,18292,,18415,206836,200860,12380
+2,10005,DegradedLocal,,,NoResponse,31.2,57.0,9984,,,,18288,,18403,206836,200860,12380
+3,15005,DegradedLocal,,,NoResponse,31.2,57.0,14984,,,,18288,,18408,206836,200860,12380
+4,20005,DegradedLocal,,,NoResponse,31.2,57.0,19984,,,,18421,,18576,206836,200860,12380
+5,25005,DegradedLocal,,,NoResponse,31.2,57.0,24984,,,,18287,,18407,206836,200860,12380
+6,30005,DegradedLocal,,,NoResponse,31.2,57.0,29984,,,,18288,,18403,206836,200860,12380
+7,35005,DegradedLocal,,,NoResponse,31.2,57.0,34984,,,,18287,,18407,206836,200860,12380
+8,40005,DegradedLocal,,,NoResponse,31.2,57.0,39984,,,,18288,,18403,206836,200860,12380
+9,45005,DegradedLocal,,,NoResponse,31.2,57.0,44984,,,,18331,,18479,206836,200860,12380

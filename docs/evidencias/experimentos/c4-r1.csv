@@ -1,0 +1,11 @@
+cycle,timestamp_ms,state,local_temperature_c,local_humidity_pct,local_failure,external_temperature_c,external_humidity_pct,external_age_ms,external_failure,transition,recovery,read_us,fetch_us,cycle_us,heap_free,heap_min_free,stack_min_free
+0,21,Error,,,NoResponse,,,,NoConnectivity,,,18276,167,18542,208308,208276,13404
+1,5002,Error,,,NoResponse,,,,NoConnectivity,,,18288,219,18620,208308,208248,13404
+2,10002,Error,,,NoResponse,,,,NoConnectivity,,,18288,215,18620,208308,208248,13404
+3,15002,Error,,,NoResponse,,,,NoConnectivity,,,18288,223,18628,208308,208248,13404
+4,20002,Error,,,NoResponse,,,,NoConnectivity,,,18288,215,18620,208308,208248,13404
+5,25002,Error,,,NoResponse,,,,NoConnectivity,,,18288,223,18628,208308,208248,13404
+6,30002,Error,,,NoResponse,,,,NoConnectivity,,,18288,215,18620,208308,208248,13404
+7,35002,Error,,,NoResponse,,,,NoConnectivity,,,18288,223,18628,208308,208248,13404
+8,40002,Error,,,NoResponse,,,,NoConnectivity,,,18288,175,18580,208308,208248,13404
+9,45002,Error,,,NoResponse,,,,NoConnectivity,,,18288,207,18608,208308,208248,13404

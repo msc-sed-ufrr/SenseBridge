@@ -195,13 +195,17 @@ Excluindo o primeiro ciclo, o regime estável dessa captura apresentou:
 | Mínimo | 18.535 µs |
 | Máximo | 18.662 µs |
 
-Nos experimentos físicos finais, observou-se comportamento coerente com essa instrumentação:
+Nas 25 capturas oficiais, a consolidação por cenário produziu as seguintes estatísticas. O desvio-padrão é populacional; `fetch_us` considera somente os ciclos em que a consulta externa foi efetivamente executada.
 
-- C1: aproximadamente 21–22 ms nos ciclos sem nova consulta externa;
-- C2: aproximadamente 18–19 ms em regime estável;
-- C3: aproximadamente 22 ms;
-- C4: aproximadamente 18 ms;
-- C5: maior duração por consultar a fonte externa a cada ciclo, com valores em torno de 0,9–1,3 s na maior parte das observações.
+| Cenário | `read_us` média ± DP | `fetch_us` média ± DP | `cycle_us` média ± DP |
+| --- | ---: | ---: | ---: |
+| C1 | 22.063,84 ± 174,64 µs | 1.097.986,80 ± 94.524,39 µs (n=5) | 132.007,34 ± 330.741,87 µs |
+| C2 | 18.317,66 ± 128,80 µs | 1.171.537,80 ± 261.052,55 µs (n=5) | 135.593,40 ± 361.018,23 µs |
+| C3 | 22.105,24 ± 118,39 µs | 208,60 ± 17,36 µs (n=50) | 22.458,14 ± 119,79 µs |
+| C4 | 18.290,34 ± 22,37 µs | 208,42 ± 19,05 µs (n=50) | 18.615,66 ± 28,42 µs |
+| C5 | 20.911,08 ± 1.805,41 µs | 1.015.675,58 ± 195.843,24 µs (n=45) | 935.221,30 ± 357.560,29 µs |
+
+A dispersão elevada de `cycle_us` em C1, C2 e C5 decorre da mistura entre ciclos com e sem consulta HTTP. Em C3 e C4, a indisponibilidade externa é detectada rapidamente e os tempos permanecem concentrados.
 
 ---
 

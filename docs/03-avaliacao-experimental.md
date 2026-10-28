@@ -1,6 +1,6 @@
 # Avaliação Experimental do SenseBridge
 
-> **Atualizado em:** 15/10/2026
+> **Atualizado em:** 24/10/2026
 
 ## 1. Objetivo
 
@@ -143,17 +143,17 @@ A implementação foi submetida aos seguintes conjuntos de testes:
 
 | Conjunto | Testes |
 |---|---:|
-| Testes unitários da biblioteca | 18 |
+| Testes unitários da biblioteca | 20 |
 | Integração Open-Meteo | 7 |
 | Cenários experimentais | 12 |
-| Console de captura | 14 |
+| Console de captura e análise | 21 |
 | Doctests | 2 |
-| **Total** | **53** |
+| **Total** | **62** |
 
 Resultado:
 
 ```text
-53 testes aprovados
+62 testes aprovados
 0 falhas
 ```
 
@@ -195,13 +195,17 @@ Excluindo o primeiro ciclo, o regime estável dessa captura apresentou:
 | Mínimo | 18.535 µs |
 | Máximo | 18.662 µs |
 
-Nos experimentos físicos finais, observou-se comportamento coerente com essa instrumentação:
+Nas 25 capturas oficiais, a consolidação por cenário produziu as seguintes estatísticas. O desvio-padrão é populacional; `fetch_us` considera somente os ciclos em que a consulta externa foi efetivamente executada.
 
-- C1: aproximadamente 21–22 ms nos ciclos sem nova consulta externa;
-- C2: aproximadamente 18–19 ms em regime estável;
-- C3: aproximadamente 22 ms;
-- C4: aproximadamente 18 ms;
-- C5: maior duração por consultar a fonte externa a cada ciclo, com valores em torno de 0,9–1,3 s na maior parte das observações.
+| Cenário | `read_us` média ± DP | `fetch_us` média ± DP | `cycle_us` média ± DP |
+| --- | ---: | ---: | ---: |
+| C1 | 22.063,84 ± 174,64 µs | 1.097.986,80 ± 94.524,39 µs (n=5) | 132.007,34 ± 330.741,87 µs |
+| C2 | 18.317,66 ± 128,80 µs | 1.171.537,80 ± 261.052,55 µs (n=5) | 135.593,40 ± 361.018,23 µs |
+| C3 | 22.105,24 ± 118,39 µs | 208,60 ± 17,36 µs (n=50) | 22.458,14 ± 119,79 µs |
+| C4 | 18.290,34 ± 22,37 µs | 208,42 ± 19,05 µs (n=50) | 18.615,66 ± 28,42 µs |
+| C5 | 20.911,08 ± 1.805,41 µs | 1.015.675,58 ± 195.843,24 µs (n=45) | 935.221,30 ± 357.560,29 µs |
+
+A dispersão elevada de `cycle_us` em C1, C2 e C5 decorre da mistura entre ciclos com e sem consulta HTTP. Em C3 e C4, a indisponibilidade externa é detectada rapidamente e os tempos permanecem concentrados.
 
 ---
 
@@ -217,16 +221,16 @@ xtensa-esp32-elf-size
 
 | Segmento | Tamanho |
 |---|---:|
-| `text` | 930.068 bytes |
-| `data` | 191.962 bytes |
-| `bss` | 19.891 bytes |
-| Total reportado | 1.141.921 bytes |
+| `text` | 931.968 bytes |
+| `data` | 192.906 bytes |
+| `bss` | 19.883 bytes |
+| Total reportado | 1.144.765 bytes |
 
 Estimativas:
 
 ```text
-Flash aproximada (text + data): 1.122.030 bytes
-RAM estática aproximada (data + bss): 211.853 bytes
+Flash aproximada (text + data): 1.124.874 bytes
+RAM estática aproximada (data + bss): 212.797 bytes
 ```
 
 ### 5.2 Firmware baseline
@@ -235,27 +239,27 @@ Foi construído um firmware-base com a mesma infraestrutura essencial de ESP-IDF
 
 | Segmento | Tamanho |
 |---|---:|
-| `text` | 919.716 bytes |
-| `data` | 178.426 bytes |
-| `bss` | 19.891 bytes |
-| Total reportado | 1.118.033 bytes |
+| `text` | 921.620 bytes |
+| `data` | 179.162 bytes |
+| `bss` | 19.883 bytes |
+| Total reportado | 1.120.665 bytes |
 
 Estimativas:
 
 ```text
-Flash aproximada (text + data): 1.098.142 bytes
-RAM estática aproximada (data + bss): 198.317 bytes
+Flash aproximada (text + data): 1.100.782 bytes
+RAM estática aproximada (data + bss): 199.045 bytes
 ```
 
 ### 5.3 Custo incremental
 
 | Métrica | SenseBridge | Baseline | Diferença |
 |---|---:|---:|---:|
-| Flash aproximada | 1.122.030 B | 1.098.142 B | **+23.888 B (+2,18%)** |
-| RAM estática aproximada | 211.853 B | 198.317 B | **+13.536 B (+6,83%)** |
-| `bss` | 19.891 B | 19.891 B | **0 B** |
+| Flash aproximada | 1.124.874 B | 1.100.782 B | **+24.092 B (+2,19%)** |
+| RAM estática aproximada | 212.797 B | 199.045 B | **+13.752 B (+6,91%)** |
+| `bss` | 19.891 B | 19.883 B | **+8 B** |
 
-O custo incremental observado corresponde à integração da solução SenseBridge no firmware de referência, e não ao tamanho binário isolado da crate.
+O custo incremental observado corresponde à integração da solução SenseBridge no firmware de referência, e não ao tamanho binário isolado da crate. O baseline final usa a mesma infraestrutura atual do firmware, inclusive `dht11-trace`, ESP-IDF, Wi-Fi, HTTP, temporização e métricas, retirando apenas a lógica da crate `sense_bridge`.
 
 ---
 
@@ -314,13 +318,13 @@ A avaliação demonstrou que o SenseBridge:
 - retorna a `Normal` no primeiro ciclo em que as condições necessárias voltam a ser válidas;
 - integra DHT11 e Open-Meteo em hardware real;
 - registra transições, falhas, latência e memória;
-- mantém 53 testes automatizados aprovados;
-- acrescenta aproximadamente 23,3 KiB de Flash e 13,2 KiB de RAM estática em relação ao baseline utilizado na D8.
+- mantém 62 testes automatizados aprovados;
+- acrescenta aproximadamente 23,5 KiB de Flash e 13,4 KiB de RAM estática em relação ao baseline equivalente utilizado na D8.
 
 Resultados consolidados:
 
 ```text
-53 testes automatizados aprovados
+62 testes automatizados aprovados
 25 repetições físicas oficiais
 250 ciclos experimentais oficiais
 5/5 cenários físicos aprovados

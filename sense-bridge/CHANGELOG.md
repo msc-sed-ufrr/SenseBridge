@@ -2,7 +2,7 @@
 
 Mudanças relevantes da crate `sense_bridge`. O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e as versões seguem o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
-## [Não publicado]
+## [0.1.0] - 2026-10-28
 
 Primeira versão, a ser publicada como 0.1.0.
 

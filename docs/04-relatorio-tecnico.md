@@ -1,6 +1,6 @@
 # Relatório Técnico — SenseBridge
 
-> **Rascunho de 21/10/2026**, montado a partir do [projeto de pesquisa](00-Projeto%20de%20Pesquisa%20-%20PTT4.pdf), do [PRD](01-prd.md), da [arquitetura](02-arch.md) e da [avaliação experimental](03-avaliacao-experimental.md). Trechos marcados com **[revisar]** pedem decisão ou complemento dos autores antes da entrega.
+> **Versão final consolidada em 28/10/2026**, baseada no [projeto de pesquisa](00-Projeto%20de%20Pesquisa%20-%20PTT4.pdf), no [PRD](01-prd.md), na [arquitetura](02-arch.md) e na [avaliação experimental](03-avaliacao-experimental.md).
 
 **Título:** Biblioteca Rust para Sistemas IoT Embarcados Context-Aware: Integração de Dados Ambientais e Tolerância a Falhas  
 **Discentes:** Ezequias Carlos Ferreira da Silva e Marcelo Gomes Barbosa  
@@ -11,7 +11,7 @@
 
 ## Resumo
 
-**[revisar]** Este relatório apresenta o SenseBridge, uma biblioteca em Rust para ESP32 que integra dados ambientais de uma fonte local, o sensor DHT11, e de uma fonte externa de contexto, a API Open-Meteo. A cada ciclo, a biblioteca valida as leituras, identifica a origem e o tipo de falha de cada fonte e determina um de quatro estados de operação: normal, degradado por falha local, degradado por falha externa ou erro. A biblioteca é `no_std`, não aloca memória e não tem dependências; o acesso ao hardware fica em traits implementadas pelo firmware. A verificação reúne 62 testes automatizados executados sem hardware e análise estática sem avisos. No ESP32, os cenários de operação normal, falha local, falha externa, falha simultânea e recuperação foram executados em 5 repetições de 10 ciclos cada, todas aprovadas. Os ciclos sem consulta externa duraram entre 18 e 22 ms, e a solução acrescentou cerca de 23,3 KiB de Flash e 13,2 KiB de RAM estática em relação a um firmware-base sem a biblioteca.
+Este relatório apresenta o SenseBridge, uma biblioteca em Rust para ESP32 que integra dados ambientais de uma fonte local, o sensor DHT11, e de uma fonte externa de contexto, a API Open-Meteo. A cada ciclo, a biblioteca valida as leituras, identifica a origem e o tipo de falha de cada fonte e determina um de quatro estados de operação: normal, degradado por falha local, degradado por falha externa ou erro. A biblioteca é `no_std`, não aloca memória e não tem dependências; o acesso ao hardware fica em traits implementadas pelo firmware. A verificação reúne 62 testes automatizados executados sem hardware e análise estática sem avisos. No ESP32, os cenários de operação normal, falha local, falha externa, falha simultânea e recuperação foram executados em 5 repetições de 10 ciclos cada, todas aprovadas. Os ciclos sem consulta externa duraram entre 18 e 22 ms, e a solução acrescentou cerca de 23,5 KiB de Flash e 13,4 KiB de RAM estática em relação a um firmware-base sem a biblioteca.
 
 **Palavras-chave:** sistemas embarcados; Rust; ESP32; tolerância a falhas; integração de dados.
 
@@ -124,7 +124,7 @@ As métricas são a correspondência entre o estado esperado e o observado, as f
 | C4 | `Error` | 50/50 ciclos em `Error`, com as duas falhas em todos os ciclos |
 | C5 | Recuperação | 5/5 recuperações; o primeiro ciclo em `Normal` foi o 3 em quatro repetições e o 4 em uma, quando o DHT11 só voltou a responder nesse ciclo |
 
-Uma execução de C5 teve um `Timeout` externo inesperado durante a falha local; foi excluída do conjunto oficial, preservada como evidência de interferência externa e repetida com sucesso.
+Uma execução de C5 teve um `Timeout` externo inesperado durante a falha local; ela não integrou o conjunto oficial e a repetição correspondente foi refeita com sucesso.
 
 ### 4.2 Latência
 
@@ -138,19 +138,29 @@ Uma execução de C5 teve um `Timeout` externo inesperado durante a falha local;
 
 O ciclo é dominado pela consulta HTTP quando ela acontece: na medição inicial de C2, o primeiro ciclo, com a primeira consulta, levou 648.301 µs.
 
-**[revisar]** O PRD (§10) pede média e dispersão por operação. A avaliação traz média, mínimo e máximo apenas para a medição inicial de C2; para os demais cenários, faixas típicas. Calcular média e desvio padrão de `read_us`, `fetch_us` e `cycle_us` por cenário a partir das capturas oficiais quando elas estiverem em `docs/evidencias/`.
+As 25 capturas oficiais foram consolidadas por cenário. A tabela abaixo apresenta a média e o desvio-padrão populacional dos tempos registrados. Em `read_us` e `cycle_us`, cada cenário reúne 50 ciclos. Em `fetch_us`, entram apenas os ciclos em que a consulta externa foi efetivamente executada.
+
+| Cenário | `read_us` média ± DP | `fetch_us` média ± DP | `cycle_us` média ± DP |
+| --- | ---: | ---: | ---: |
+| C1 | 22.063,84 ± 174,64 µs | 1.097.986,80 ± 94.524,39 µs (n=5) | 132.007,34 ± 330.741,87 µs |
+| C2 | 18.317,66 ± 128,80 µs | 1.171.537,80 ± 261.052,55 µs (n=5) | 135.593,40 ± 361.018,23 µs |
+| C3 | 22.105,24 ± 118,39 µs | 208,60 ± 17,36 µs (n=50) | 22.458,14 ± 119,79 µs |
+| C4 | 18.290,34 ± 22,37 µs | 208,42 ± 19,05 µs (n=50) | 18.615,66 ± 28,42 µs |
+| C5 | 20.911,08 ± 1.805,41 µs | 1.015.675,58 ± 195.843,24 µs (n=45) | 935.221,30 ± 357.560,29 µs |
+
+A maior dispersão de `cycle_us` em C1, C2 e C5 decorre da presença de ciclos com consulta HTTP, muito mais longos que os ciclos sem nova consulta externa. Em C3 e C4, a falha de conectividade é detectada rapidamente, por isso os tempos permanecem concentrados.
 
 ### 4.3 Memória
 
 | Métrica | SenseBridge | Firmware-base | Diferença |
 | --- | ---: | ---: | ---: |
-| Flash (`text` + `data`) | 1.122.030 B | 1.098.142 B | +23.888 B (+2,18%) |
-| RAM estática (`data` + `bss`) | 211.853 B | 198.317 B | +13.536 B (+6,83%) |
-| `bss` | 19.891 B | 19.891 B | 0 B |
+| Flash (`text` + `data`) | 1.124.874 B | 1.100.782 B | +24.092 B (+2,19%) |
+| RAM estática (`data` + `bss`) | 212.797 B | 199.045 B | +13.752 B (+6,91%) |
+| `bss` | 19.891 B | 19.883 B | +8 B |
 
 Em execução, na captura inicial de C2, o menor heap livre desde o boot foi de 201.120 B e a menor folga da pilha da tarefa principal, de 11.980 B. Nos experimentos finais, o firmware não foi interrompido por falta de memória.
 
-**[revisar]** O firmware atual, com a crate `dht11-trace`, é maior que o medido: `text` 939.744 B, `data` 192.802 B e `bss` 19.883 B. Registrar o commit medido ou repetir a medição, inclusive do firmware-base.
+A medição foi repetida com o firmware atual. O firmware SenseBridge apresentou `text` 931.968 B, `data` 192.906 B e `bss` 19.891 B; o firmware-base equivalente apresentou `text` 921.620 B, `data` 179.162 B e `bss` 19.883 B. Esse baseline mantém a infraestrutura atual, inclusive `dht11-trace`, e remove apenas a lógica da crate `sense_bridge`.
 
 ## 5. Discussão
 
@@ -166,11 +176,11 @@ Em execução, na captura inicial de C2, o menor heap livre desde o boot foi de 
 - As falhas foram induzidas manualmente; a indução de C3 por rede inexistente não exercita tempo limite nem erro do serviço, cobertos apenas nos testes automatizados.
 - O custo de memória medido é o da integração da solução no firmware, não o da crate isolada.
 - A duração do ciclo com consulta externa depende da rede e do serviço, fora do controle do experimento.
-- **[revisar]** Diferença entre o firmware medido e o atual (seção 4.3).
+- A comparação de memória representa o custo incremental da solução integrada em relação ao firmware-base, não o tamanho isolado da crate.
 
 ## 6. Conclusão
 
-**[revisar]** O SenseBridge mostrou que uma biblioteca `no_std`, sem alocação e sem dependências pode integrar uma fonte local e uma externa com comportamento definido diante de falhas parciais e totais, recuperando a operação normal no primeiro ciclo possível. Todos os cenários foram aprovados no ESP32, com ciclos de 18 a 22 ms sem consulta externa e um custo de cerca de 23,3 KiB de Flash e 13,2 KiB de RAM estática.
+O SenseBridge mostrou que uma biblioteca `no_std`, sem alocação e sem dependências pode integrar uma fonte local e uma externa com comportamento definido diante de falhas parciais e totais, recuperando a operação normal no primeiro ciclo possível. Todos os cenários foram aprovados no ESP32, com ciclos de 18 a 22 ms sem consulta externa e um custo de cerca de 23,5 KiB de Flash e 13,4 KiB de RAM estática.
 
 Como trabalhos futuros, ficam a publicação da biblioteca como crate (preparação em [docs/06](06-publicacao-crates-io.md)), o registro de software, a publicação do conjunto de dados experimentais e a validação com outros sensores e plataformas sem alterar o núcleo.
 

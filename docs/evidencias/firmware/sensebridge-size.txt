@@ -1,0 +1,2 @@
+   text	   data	    bss	    dec	    hex	filename
+ 931968	 192906	  19891	1144765	 1177bd	firmware/esp32/target/xtensa-esp32-espidf/release/sense_bridge_esp32

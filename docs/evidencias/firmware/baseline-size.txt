@@ -1,0 +1,2 @@
+   text	   data	    bss	    dec	    hex	filename
+ 921620	 179162	  19883	1120665	 111999	/Users/ezequias/SenseBridge-SB37-baseline-atual/target/xtensa-esp32-espidf/release/sense_bridge_esp32_baseline

@@ -61,7 +61,7 @@ Para cada captura, registrar nesta tabela as condições da execução:
 ## Pendências
 
 - [x] Versionar as 25 capturas oficiais (`c1-r1` a `c5-r5`, `.txt` e `.csv`). O conjunto oficial foi validado automaticamente: **25/25 capturas e 250/250 ciclos no estado esperado**.
-- [ ] Registrar o commit do firmware e a versão da toolchain `esp` usados nos experimentos e na medição de Flash e RAM.
+- [x] Registrar o commit do firmware e a versão da toolchain `esp` usados nos experimentos e na medição de Flash e RAM. As 25 capturas oficiais registram `App version: 3725e20` (`3725e2016747999582f5d94229695f7d051c341a`). A medição final D8 foi feita na árvore local em `cff24c3c8fa118a3cf23dd2e5601b1ba6727b88b`, com `rustc +esp 1.90.0-nightly (abf50ae2e 2025-09-16) (1.90.0.0)` e `cargo +esp 1.90.0-nightly (840b83a10 2025-07-30) (1.90.0.0)`.
 - [x] Versionar o código do firmware-base equivalente (D8) e as saídas do `xtensa-esp32-elf-size` do baseline e do firmware SenseBridge.
 - [x] Repetir a medição D8 com baseline equivalente ao firmware atual. SenseBridge: `text` 931.968 B, `data` 192.906 B, `bss` 19.891 B; baseline: `text` 921.620 B, `data` 179.162 B, `bss` 19.883 B. Diferença: **+24.092 B de Flash (+2,19%)** e **+13.752 B de RAM estática (+6,91%)**.
 - [x] Calcular automaticamente a correspondência entre estado esperado e observado (PRD, UC-008): `sense_bridge_console --analyze`, com o cenário e a repetição tirados do nome do arquivo.

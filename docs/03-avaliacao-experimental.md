@@ -223,7 +223,7 @@ xtensa-esp32-elf-size
 |---|---:|
 | `text` | 931.968 bytes |
 | `data` | 192.906 bytes |
-| `bss` | 19.891 bytes |
+| `bss` | 19.883 bytes |
 | Total reportado | 1.144.765 bytes |
 
 Estimativas:
@@ -239,27 +239,27 @@ Foi construído um firmware-base com a mesma infraestrutura essencial de ESP-IDF
 
 | Segmento | Tamanho |
 |---|---:|
-| `text` | 919.716 bytes |
-| `data` | 178.426 bytes |
-| `bss` | 19.891 bytes |
-| Total reportado | 1.118.033 bytes |
+| `text` | 921.620 bytes |
+| `data` | 179.162 bytes |
+| `bss` | 19.883 bytes |
+| Total reportado | 1.120.665 bytes |
 
 Estimativas:
 
 ```text
-Flash aproximada (text + data): 1.098.142 bytes
-RAM estática aproximada (data + bss): 198.317 bytes
+Flash aproximada (text + data): 1.100.782 bytes
+RAM estática aproximada (data + bss): 199.045 bytes
 ```
 
 ### 5.3 Custo incremental
 
 | Métrica | SenseBridge | Baseline | Diferença |
 |---|---:|---:|---:|
-| Flash aproximada | 1.124.874 B | 1.098.142 B | **+26.732 B (+2,43%)** |
-| RAM estática aproximada | 212.797 B | 198.317 B | **+14.480 B (+7,30%)** |
-| `bss` | 19.891 B | 19.891 B | **0 B** |
+| Flash aproximada | 1.124.874 B | 1.100.782 B | **+24.092 B (+2,19%)** |
+| RAM estática aproximada | 212.797 B | 199.045 B | **+13.752 B (+6,91%)** |
+| `bss` | 19.891 B | 19.883 B | **+8 B** |
 
-O custo incremental observado corresponde à integração da solução SenseBridge no firmware de referência, e não ao tamanho binário isolado da crate.
+O custo incremental observado corresponde à integração da solução SenseBridge no firmware de referência, e não ao tamanho binário isolado da crate. O baseline final usa a mesma infraestrutura atual do firmware, inclusive `dht11-trace`, ESP-IDF, Wi-Fi, HTTP, temporização e métricas, retirando apenas a lógica da crate `sense_bridge`.
 
 ---
 
@@ -319,7 +319,7 @@ A avaliação demonstrou que o SenseBridge:
 - integra DHT11 e Open-Meteo em hardware real;
 - registra transições, falhas, latência e memória;
 - mantém 62 testes automatizados aprovados;
-- acrescenta aproximadamente 26,1 KiB de Flash e 14,1 KiB de RAM estática em relação ao baseline utilizado na D8.
+- acrescenta aproximadamente 23,5 KiB de Flash e 13,4 KiB de RAM estática em relação ao baseline equivalente utilizado na D8.
 
 Resultados consolidados:
 

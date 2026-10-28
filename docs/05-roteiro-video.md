@@ -1,6 +1,6 @@
 # Roteiro do vídeo de demonstração
 
-> **Rascunho de 21/10/2026.** Duração prevista: cerca de 4 min 30 s (o limite é de 3 a 5 min).
+> **Versão preparada em 28/10/2026.** Duração prevista: cerca de 4 min 30 s (o limite é de 3 a 5 min).
 
 ## Preparação
 
@@ -23,7 +23,7 @@
 | 2:25–2:50 | C3 | Desligar o roteador: `DegradedExternal` e `NoConnectivity` | O sensor local segue válido; a leitura externa antiga é descartada, e não apresentada como atual. |
 | 2:50–3:10 | C4 | Com o roteador desligado, soltar o DHT11: `Error` | Mesmo em erro, o firmware continua tentando a cada ciclo. |
 | 3:10–3:30 | Recuperação total | Religar o DHT11 e o roteador: volta a `Normal`. Mostrar a linha de resumo do console | Recuperação automática, sem reiniciar o dispositivo. O resumo conta ciclos por estado e falhas por tipo. |
-| 3:30–4:10 | Resultados | Tabela de resultados do [README](../README.md#resultados) | C1–C5 com 5 repetições de 10 ciclos, todas aprovadas; ciclos de 18 a 22 ms sem consulta externa; cerca de 23,3 KiB de Flash e 13,2 KiB de RAM estática a mais que o firmware-base. |
+| 3:30–4:10 | Resultados | Tabela de resultados do [README](../README.md#resultados) | C1–C5 com 5 repetições de 10 ciclos, todas aprovadas; ciclos de 18 a 22 ms sem consulta externa; cerca de 23,5 KiB de Flash e 13,4 KiB de RAM estática a mais que o firmware-base equivalente. |
 | 4:10–4:30 | Encerramento | Página do repositório no GitHub | Código, dados, documentação e passo a passo de reprodução no repositório, sob licença MIT ou Apache-2.0. |
 
 ## Observações

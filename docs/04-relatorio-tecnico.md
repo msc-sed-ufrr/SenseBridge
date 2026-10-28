@@ -138,7 +138,17 @@ Uma execução de C5 teve um `Timeout` externo inesperado durante a falha local;
 
 O ciclo é dominado pela consulta HTTP quando ela acontece: na medição inicial de C2, o primeiro ciclo, com a primeira consulta, levou 648.301 µs.
 
-**[revisar]** O PRD (§10) pede média e dispersão por operação. A avaliação traz média, mínimo e máximo apenas para a medição inicial de C2; para os demais cenários, faixas típicas. Calcular média e desvio padrão de `read_us`, `fetch_us` e `cycle_us` por cenário a partir das capturas oficiais quando elas estiverem em `docs/evidencias/`.
+As 25 capturas oficiais foram consolidadas por cenário. A tabela abaixo apresenta a média e o desvio-padrão populacional dos tempos registrados. Em `read_us` e `cycle_us`, cada cenário reúne 50 ciclos. Em `fetch_us`, entram apenas os ciclos em que a consulta externa foi efetivamente executada.
+
+| Cenário | `read_us` média ± DP | `fetch_us` média ± DP | `cycle_us` média ± DP |
+| --- | ---: | ---: | ---: |
+| C1 | 22.063,84 ± 174,64 µs | 1.097.986,80 ± 94.524,39 µs (n=5) | 132.007,34 ± 330.741,87 µs |
+| C2 | 18.317,66 ± 128,80 µs | 1.171.537,80 ± 261.052,55 µs (n=5) | 135.593,40 ± 361.018,23 µs |
+| C3 | 22.105,24 ± 118,39 µs | 208,60 ± 17,36 µs (n=50) | 22.458,14 ± 119,79 µs |
+| C4 | 18.290,34 ± 22,37 µs | 208,42 ± 19,05 µs (n=50) | 18.615,66 ± 28,42 µs |
+| C5 | 20.911,08 ± 1.805,41 µs | 1.015.675,58 ± 195.843,24 µs (n=45) | 935.221,30 ± 357.560,29 µs |
+
+A maior dispersão de `cycle_us` em C1, C2 e C5 decorre da presença de ciclos com consulta HTTP, muito mais longos que os ciclos sem nova consulta externa. Em C3 e C4, a falha de conectividade é detectada rapidamente, por isso os tempos permanecem concentrados.
 
 ### 4.3 Memória
 

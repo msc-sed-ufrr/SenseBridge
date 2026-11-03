@@ -2,6 +2,12 @@
 
 Mudanças relevantes da crate `sense_bridge`. O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e as versões seguem o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [Não lançado]
+
+### Adicionado
+
+- `FreezeDetector`, opcional, que marca como suspeita de congelamento a leitura local válida repetida, idêntica, por um número configurável de ciclos. Não altera a validação, o `Record` nem o estado de operação.
+
 ## [0.1.0] - 2026-10-28
 
 Primeira versão, a ser publicada como 0.1.0.

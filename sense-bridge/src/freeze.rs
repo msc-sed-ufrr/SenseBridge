@@ -71,6 +71,14 @@ impl FreezeDetector {
     pub const fn is_suspect(&self) -> bool {
         self.run >= self.threshold.get()
     }
+
+    /// Se a última observação completou um múltiplo do limiar: verdadeiro no ciclo em que a
+    /// suspeita começa e, enquanto a leitura não mudar, de novo a cada
+    /// [`FreezeDetector::threshold`] ciclos. Serve para limitar a frequência de uma reação à
+    /// suspeita, como reiniciar o sensor, a uma vez por limiar.
+    pub const fn reached_threshold(&self) -> bool {
+        self.run != 0 && self.run % self.threshold.get() == 0
+    }
 }
 
 #[cfg(test)]
@@ -124,6 +132,40 @@ mod tests {
         assert_eq!(detector.observe(&Err(LocalFailure::NoResponse)), 0);
         assert!(!detector.is_suspect());
         assert_eq!(detector.observe(&READING), 1);
+    }
+
+    #[test]
+    fn the_threshold_is_reached_once_per_period_while_the_reading_persists() {
+        let mut detector = detector(3);
+
+        let reached: [bool; 7] = core::array::from_fn(|_| {
+            detector.observe(&READING);
+            detector.reached_threshold()
+        });
+
+        assert_eq!(reached, [false, false, true, false, false, true, false]);
+    }
+
+    #[test]
+    fn a_change_restarts_the_period() {
+        let mut detector = detector(2);
+        detector.observe(&READING);
+        detector.observe(&READING);
+        assert!(detector.reached_threshold());
+
+        detector.observe(&Ok(LocalReading::new(25.0, 37.0)));
+        assert!(!detector.reached_threshold());
+        detector.observe(&Ok(LocalReading::new(25.0, 37.0)));
+        assert!(detector.reached_threshold());
+    }
+
+    #[test]
+    fn no_threshold_is_reached_without_a_reading() {
+        let mut detector = detector(1);
+
+        detector.observe(&Err(LocalFailure::Checksum));
+
+        assert!(!detector.reached_threshold());
     }
 
     #[test]

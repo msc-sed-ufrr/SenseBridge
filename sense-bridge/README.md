@@ -83,7 +83,7 @@ assert!(detector.is_suspect());
 assert_eq!(detector.run(), 360);
 ```
 
-Uma falha da fonte local recomeça a contagem. Com a resolução de 1 °C e 1 %UR do DHT11, repetições legítimas são comuns: nas capturas do projeto, a mesma leitura se repetiu por até 64 ciclos de 5 s (cerca de 5 min 20 s) com o sensor funcionando. O limiar deve ficar bem acima da maior sequência legítima esperada no ambiente de uso. Mesmo assim, a suspeita não distingue um sensor travado de um ambiente que não mudou.
+Para reagir à suspeita sem repetir a reação em todo ciclo, `reached_threshold()` é verdadeiro no ciclo em que a suspeita começa e, enquanto a leitura não mudar, de novo a cada limiar; o firmware de referência o usa para reiniciar o sensor no máximo uma vez por limiar. Uma falha da fonte local recomeça a contagem. Com a resolução de 1 °C e 1 %UR do DHT11, repetições legítimas são comuns: nas capturas do projeto, a mesma leitura se repetiu por até 64 ciclos de 5 s (cerca de 5 min 20 s) com o sensor funcionando. O limiar deve ficar bem acima da maior sequência legítima esperada no ambiente de uso. Mesmo assim, a suspeita não distingue um sensor travado de um ambiente que não mudou.
 
 ## Open-Meteo
 

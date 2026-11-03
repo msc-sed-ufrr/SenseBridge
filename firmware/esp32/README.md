@@ -57,11 +57,23 @@ Preencha `wifi_ssid` e `wifi_password`. O `cfg.toml` é ignorado pelo git; as cr
 | `external_refresh_ms` | 900000 (15 min) | D5a, fechada |
 | `dht11_gpio` | 4 | — |
 | `dht11_power_gpio` | ausente (VCC no 3V3) | — |
-| `local_frozen_after` | 0 (desligado) | — |
+| `local_frozen_after` | 0 (desligado) | D14 |
+| `local_frozen_restart` | false | D14 |
 
 Para observar falha e recuperação da fonte externa sem esperar 15 minutos, reduza `external_refresh_ms` para 5000, como nos experimentos C3–C5 (PRD, D10): com o ciclo de 5 s, a fonte externa passa a ser consultada aproximadamente a cada ciclo. Uma falha de rede durante a reutilização só aparece na consulta seguinte.
 
 A validação de faixa aceita um DHT11 travado em um valor plausível. Com `local_frozen_after = N`, N > 0, o `FreezeDetector` da biblioteca marca `local_suspect = true` quando a mesma leitura local válida se repete em N ciclos seguidos. A leitura continua válida e o estado não muda. Com a resolução de 1 °C e 1 %UR, repetições legítimas são comuns: nas capturas, houve até 64 ciclos de 5 s iguais com o sensor funcionando, e em C1 e C3 as 10 leituras foram idênticas em 9 das 10 repetições. Por isso, use um valor bem acima, como 360 (30 min). Os experimentos C1–C5 foram feitos sem o detector.
+
+Com `local_frozen_restart = true`, que exige `local_frozen_after` > 0 e `dht11_power_gpio`, o firmware também reinicia o DHT11 por suspeita: no ciclo em que a suspeita começa e, enquanto a leitura não mudar, de novo a cada `local_frozen_after` ciclos. Com 360, são no máximo um reinício a cada 30 min. O reinício usa o mesmo desligamento das falhas seguidas, depois da linha CSV e fora da janela medida, e o estado não muda. A contagem continua depois do reinício, e o log do ciclo seguinte diz o resultado:
+
+```text
+W (...) sense_bridge_esp32: DHT11: mesma leitura há 360 ciclos; suspeita de leitura congelada
+W (...) sense_bridge_esp32::local: DHT11: suspeita de leitura congelada; desligando o sensor por 1000 ms
+W (...) sense_bridge_esp32: DHT11: a leitura mudou após o reinício, indício de sensor travado
+W (...) sense_bridge_esp32: DHT11: a leitura persistiu após o reinício (361 ciclos iguais): ambiente estável ou defeito que o reinício não resolve
+```
+
+Uma leitura que muda depois do reinício indica um sensor travado; uma que persiste indica, mais provavelmente, um ambiente estável, ou um defeito que o reinício não resolve, como um sensor obstruído. Esse resultado serve também para calibrar o limiar. Sem `local_frozen_restart`, a suspeita só gera o aviso `mesma leitura há N ciclos; suspeita de leitura congelada`.
 
 ## Compilar e gravar
 

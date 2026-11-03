@@ -37,3 +37,9 @@ dht11_gpio = 4
 # leitura continua válida e o estado não muda. Com a resolução do DHT11, repetições legítimas
 # de até 64 ciclos de 5 s foram observadas: use um valor bem acima, como 360 (30 min).
 # local_frozen_after = 360
+
+# Reinício do DHT11 por suspeita de leitura congelada (opcional; padrão: false). Exige
+# local_frozen_after > 0 e dht11_power_gpio. O sensor é desligado e religado quando a suspeita
+# começa e, enquanto a leitura não mudar, de novo a cada local_frozen_after ciclos; o log do
+# ciclo seguinte diz se a leitura mudou ou persistiu. O estado não muda.
+# local_frozen_restart = true

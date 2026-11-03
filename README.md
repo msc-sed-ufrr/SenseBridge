@@ -28,6 +28,8 @@ A cada ciclo, a biblioteca `sense_bridge`:
 - sinaliza explicitamente o estado de erro quando as duas fontes estão indisponíveis;
 - retorna à operação normal no primeiro ciclo em que as duas fontes voltam.
 
+Opcionalmente, o `FreezeDetector` marca como suspeita uma leitura local repetida por muitos ciclos, sem mudar o estado: a validação de faixa não detecta um sensor travado em um valor plausível. Foi acrescentado depois da v0.1.0 e ainda não foi avaliado em hardware.
+
 A biblioteca é `no_std`, não aloca memória e não tem dependências. O uso da API está no [README da crate](sense-bridge/README.md).
 
 ## Resultados
@@ -40,7 +42,7 @@ A biblioteca é `no_std`, não aloca memória e não tem dependências. O uso da
 | C4 — Falha simultânea | Indisponível | Indisponível | `Error` | 50/50 ciclos em `Error` |
 | C5 — Recuperação | Recuperado | Recuperado | Retorno a `Normal` | 5/5 recuperações no primeiro ciclo com as duas fontes válidas |
 
-- **Testes automatizados:** 62, executados sem hardware, cobrindo C1–C5, validação, transições e a interpretação de respostas reais da Open-Meteo.
+- **Testes automatizados:** 62 na versão avaliada (74 com o detector de leitura congelada, acrescentado depois), executados sem hardware, cobrindo C1–C5, validação, transições e a interpretação de respostas reais da Open-Meteo.
 - **Latência:** ciclos sem consulta externa entre 18 e 22 ms.
 - **Memória:** cerca de 23,5 KiB de Flash e 13,4 KiB de RAM estática a mais que um firmware-base equivalente sem a biblioteca.
 
@@ -92,7 +94,7 @@ SenseBridge/
 Requer apenas o Rust, instalado pelo [rustup](https://rustup.rs) (versão 1.85 ou mais recente). Na raiz do repositório:
 
 ```sh
-cargo test                                     # 62 testes da biblioteca e do console, com C1–C5
+cargo test                                     # 74 testes da biblioteca e do console, com C1–C6
 cargo clippy --all-targets -- -D warnings      # análise estática
 cargo run -p sense_bridge --example simulate   # imprime os cenários simulados em CSV
 scripts/evidencias.sh                          # registra tudo em docs/evidencias/verificacao.md

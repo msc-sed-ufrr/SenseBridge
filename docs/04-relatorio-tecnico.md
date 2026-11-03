@@ -177,12 +177,15 @@ A medição foi repetida com o firmware atual. O firmware SenseBridge apresentou
 - O custo de memória medido é o da integração da solução no firmware, não o da crate isolada.
 - A duração do ciclo com consulta externa depende da rede e do serviço, fora do controle do experimento.
 - A comparação de memória representa o custo incremental da solução integrada em relação ao firmware-base, não o tamanho isolado da crate.
+- A validação da versão avaliada não detecta leitura congelada: um DHT11 travado em um valor plausível passa pela validação de faixa, e o estado fica em `Normal`. Detectá-la exige cuidado com a resolução de 1 °C e 1 %UR do sensor, que torna repetições legítimas comuns: em C1 e C3, as 10 leituras locais foram idênticas em 9 das 10 repetições, e, em uma captura exploratória, a mesma leitura se repetiu por 64 ciclos de 5 s (cerca de 5 min 20 s) com o sensor funcionando. Depois da v0.1.0, foi acrescentado um detector opcional que marca a leitura como suspeita sem mudar o estado (seção 6), ainda não avaliado em hardware.
 
 ## 6. Conclusão
 
 O SenseBridge mostrou que uma biblioteca `no_std`, sem alocação e sem dependências pode integrar uma fonte local e uma externa com comportamento definido diante de falhas parciais e totais, recuperando a operação normal no primeiro ciclo possível. Todos os cenários foram aprovados no ESP32, com ciclos de 18 a 22 ms sem consulta externa e um custo de cerca de 23,5 KiB de Flash e 13,4 KiB de RAM estática.
 
 Como trabalhos futuros, ficam a publicação da biblioteca como crate (preparação em [docs/06](06-publicacao-crates-io.md)), o registro de software, a publicação do conjunto de dados experimentais e a validação com outros sensores e plataformas sem alterar o núcleo.
+
+A detecção de leitura congelada também fica como trabalho futuro. Depois da versão avaliada, a biblioteca ganhou o `FreezeDetector`, opcional, que conta os ciclos seguidos com a mesma leitura local válida e marca a leitura como suspeita a partir de um limiar configurável. A leitura continua válida e o estado não muda, porque, com a resolução do DHT11, a repetição não distingue um sensor travado de um ambiente estável (PRD, D14; arquitetura, ADR-010). Falta avaliá-lo em hardware, em um cenário C6, e calibrar o limiar com capturas longas.
 
 ## Referências
 

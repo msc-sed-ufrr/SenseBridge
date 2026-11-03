@@ -142,6 +142,7 @@ A implementação atual apresenta:
 - Nenhum registro apresenta como válido um valor reprovado na validação.
 - A divergência entre DHT11 e Open-Meteo não altera a validade de nenhuma das leituras nem o estado de operação.
 - A validação é determinística: a mesma leitura produz sempre a mesma classificação.
+- A validação não detecta leitura congelada: um sensor travado em um valor plausível é aceito. O `FreezeDetector`, opcional, marca como suspeita a leitura local válida repetida por um número configurável de ciclos, sem alterar a sua validade nem o estado de operação (D14).
 
 ### Integração e registro
 
@@ -380,6 +381,7 @@ A implementação atual apresenta:
 | Indução manual de falhas pouco reproduzível | Média | Médio | Documentar o procedimento passo a passo; quando possível, induzir falhas de forma controlada por software |
 | Consultas frequentes excederem os limites de uso da Open-Meteo | Baixa | Baixo | Intervalo de consulta externa configurável e conservador, independente do ciclo local; revisar a nova tentativa a cada ciclo durante indisponibilidade (D11) |
 | Consulta externa lenta atrasar o ciclo inteiro, afetando a cadência do DHT11 e a latência medida em C3 | Média | Médio | Tempo limite curto; relatar a latência de C3 separadamente; medir a duração do ciclo sob tempo limite |
+| DHT11 travado em um valor plausível passar pela validação | Baixa | Médio | Detector opcional de leitura congelada, que marca a suspeita sem mudar o estado; limiar bem acima das repetições legítimas observadas (D14) |
 | Licença aberta conflitar com a política de propriedade intelectual da UFRR ou com o registro de software previsto | Baixa | Médio | Confirmar titularidade e licença com o orientador e o núcleo de inovação antes de tornar o repositório público |
 
 ---
@@ -428,7 +430,8 @@ A integração real do DHT11 já foi concluída e validada. Em uma montagem post
 - avaliar publicação da biblioteca como crate (preparação em [docs/06](06-publicacao-crates-io.md));
 - avaliar registro de software;
 - avaliar publicação do conjunto de dados experimental;
-- testar outros sensores e plataformas sem alterar o núcleo da biblioteca.
+- testar outros sensores e plataformas sem alterar o núcleo da biblioteca;
+- avaliar em hardware o detector de leitura congelada (cenário C6) e calibrar o seu limiar com capturas longas (D14).
 
 ---
 
@@ -502,6 +505,7 @@ Registro das decisões que moldam o comportamento da biblioteca e o protocolo ex
 | D11 | Nova tentativa após falha externa | Nova tentativa em cada ciclo enquanto a fonte estiver indisponível |
 | D12 | Pilha ESP32 | `esp-idf` / `esp-idf-svc`, com `std`, Wi-Fi, TLS e HTTP |
 | D13 | Leitura do DHT11 no firmware de referência | Crate `dht11-trace`, de autoria própria e publicada à parte no crates.io, que identifica a etapa do protocolo em que a leitura falhou; o protocolo continua fora da biblioteca (projeto de pesquisa, §6.2) |
+| D14 | Leitura local congelada (após a v0.1.0) | Detector opcional (`FreezeDetector`), desligado por padrão, que marca como suspeita a leitura local válida repetida, idêntica, por N ciclos seguidos. A suspeita não altera a validade nem o estado, porque a resolução do DHT11 torna repetições legítimas comuns (até 64 ciclos de 5 s nas capturas). Limiar sugerido: 360 ciclos (30 min), ainda não validado |
 
 ### Protocolo experimental consolidado
 

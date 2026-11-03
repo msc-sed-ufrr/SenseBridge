@@ -81,8 +81,8 @@ Sistemas IoT embarcados que combinam leituras de sensores locais com informaçõ
 | Cenários C1–C5 em hardware | ✅ 100% | Protocolo físico final executado: 5 repetições de 10 ciclos por cenário, todas aprovadas (ver [avaliação experimental](03-avaliacao-experimental.md)) |
 | Documentação da API e exemplos | ✅ 100% | Todos os itens públicos documentados; README da crate com doctests; README do projeto com o roteiro de reprodução |
 | Avaliação experimental | ✅ 100% | Documento `docs/03-avaliacao-experimental.md` criado com resultados atuais |
-| Preparação para o crates.io | ✅ 100% | Metadados, documentação, CHANGELOG, CI e pacote verificados; a publicação fica para depois da disciplina ([docs/06](06-publicacao-crates-io.md)) |
-| Entregáveis finais | 🔶 80% | README de reprodutibilidade concluído; relatório técnico e roteiro do vídeo em rascunho; faltam revisar o relatório, gravar o vídeo e versionar os dados brutos |
+| Publicação no crates.io | ✅ 100% | `sense_bridge` 0.1.0 publicada em 28/10/2026, após a confirmação da titularidade e da licença ([docs/06](06-publicacao-crates-io.md)) |
+| Entregáveis finais | 🔶 90% | README de reprodutibilidade, dados brutos versionados e relatório técnico final (`docs/SenseBridge - Entrega Final PTT4.pdf`); falta gravar o vídeo e inserir o link no relatório |
 
 ### Resultados já obtidos
 
@@ -103,9 +103,9 @@ A implementação atual apresenta:
 
 | Pendência | Severidade | Área |
 | --- | --- | --- |
-| Versionar os dados brutos de C1–C5 e o firmware-base em `docs/evidencias/` | Alta | Evidências |
-| Registrar o firmware medido ou remedir Flash e RAM com o firmware atual | Média | Métricas |
-| Revisar o relatório técnico e gravar o vídeo de demonstração | Alta | Entrega |
+| Gravar o vídeo de demonstração e inserir o link no Quadro 12 do relatório final | Alta | Entrega |
+
+Concluídas: dados brutos de C1–C5 e firmware-base versionados em `docs/evidencias/`, medição de Flash e RAM repetida com baseline equivalente e relatório técnico final em `docs/`.
 
 ---
 
@@ -380,7 +380,7 @@ A implementação atual apresenta:
 | Indução manual de falhas pouco reproduzível | Média | Médio | Documentar o procedimento passo a passo; quando possível, induzir falhas de forma controlada por software |
 | Consultas frequentes excederem os limites de uso da Open-Meteo | Baixa | Baixo | Intervalo de consulta externa configurável e conservador, independente do ciclo local; revisar a nova tentativa a cada ciclo durante indisponibilidade (D11) |
 | Consulta externa lenta atrasar o ciclo inteiro, afetando a cadência do DHT11 e a latência medida em C3 | Média | Médio | Tempo limite curto; relatar a latência de C3 separadamente; medir a duração do ciclo sob tempo limite |
-| Licença aberta conflitar com a política de propriedade intelectual da UFRR ou com o registro de software previsto | Baixa | Médio | Confirmar titularidade e licença com o orientador e o núcleo de inovação antes de tornar o repositório público |
+| Licença aberta conflitar com a política de propriedade intelectual da UFRR ou com o registro de software previsto | Baixa | Médio | Confirmar titularidade e licença com o orientador e o núcleo de inovação antes de tornar o repositório público; confirmadas antes da publicação da crate |
 
 ---
 
@@ -425,7 +425,7 @@ A integração real do DHT11 já foi concluída e validada. Em uma montagem post
 
 ### Pós-disciplina
 
-- avaliar publicação da biblioteca como crate (preparação em [docs/06](06-publicacao-crates-io.md));
+- ~~avaliar publicação da biblioteca como crate~~: `sense_bridge` 0.1.0 publicada em 28/10/2026 ([docs/06](06-publicacao-crates-io.md));
 - avaliar registro de software;
 - avaliar publicação do conjunto de dados experimental;
 - testar outros sensores e plataformas sem alterar o núcleo da biblioteca.
@@ -475,7 +475,7 @@ A integração real do DHT11 já foi concluída e validada. Em uma montagem post
 - Envio de registros a servidores ou serviços em nuvem e armazenamento de longo prazo no dispositivo.
 - Firmware e validação experimental para outras placas (por exemplo, Arduino Mega), outros sensores ou múltiplos sensores simultâneos na entrega da disciplina.
 - Configuração de Wi-Fi em tempo de execução (provisionamento) e atualização remota de firmware (OTA).
-- Publicação da crate e registro de software dentro do prazo da disciplina (ficam para depois).
+- Registro de software dentro do prazo da disciplina (fica para depois). A crate, prevista inicialmente para depois, foi publicada em 28/10/2026.
 
 ---
 

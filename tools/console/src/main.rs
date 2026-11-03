@@ -7,7 +7,9 @@
 //! espflash monitor --non-interactive | cargo run -q -p sense_bridge_console
 //! ```
 //!
-//! Com `--analyze`, confere capturas gravadas com o estado esperado em cada cenário (C1–C5).
+//! Com `--analyze`, confere capturas gravadas com o estado esperado em cada cenário (C1–C6). Com
+//! `--repeats`, mede a maior sequência de leituras locais iguais em capturas de qualquer nome,
+//! para calibrar o limiar de `local_frozen_after`.
 
 mod analysis;
 mod record;
@@ -33,13 +35,16 @@ const FIRMWARE_TAG: &str = ") sense_bridge_esp32";
 const USAGE: &str = "\
 Uso: espflash monitor --non-interactive | sense_bridge_console [opções]
      sense_bridge_console --analyze <c<cenário>-r<repetição>.csv>...
+     sense_bridge_console --repeats <captura.csv>...
 
 Opções:
   --logs            mostra todos os logs do ESP-IDF, esmaecidos
   --out <prefixo>   grava em <prefixo>.txt e <prefixo>.csv (padrão: capturas/<data UTC>)
   --no-save         não grava a captura
   --analyze         confere as capturas seguintes com o estado esperado em cada cenário
-                    (C1–C5) e termina com código 1 se alguma divergir
+                    (C1–C6) e termina com código 1 se alguma divergir
+  --repeats         mede a maior sequência de leituras locais iguais nas capturas seguintes,
+                    para calibrar local_frozen_after
   -h, --help        mostra esta ajuda";
 
 enum Mode {
@@ -47,6 +52,8 @@ enum Mode {
     Monitor(Options),
     /// Confere as capturas gravadas.
     Analyze(Vec<PathBuf>),
+    /// Mede as sequências de leituras locais iguais.
+    Repeats(Vec<PathBuf>),
 }
 
 struct Options {
@@ -69,6 +76,9 @@ fn main() -> ExitCode {
     let result = match &mode {
         Mode::Monitor(options) => run(options).map(|()| true),
         Mode::Analyze(files) => analysis::run(files, &mut io::stdout().lock(), style()),
+        Mode::Repeats(files) => {
+            analysis::repeats(files, &mut io::stdout().lock(), style()).map(|()| true)
+        }
     };
     match result {
         // O terminal ou o pipe de saída fechou: nada mais a mostrar.
@@ -103,6 +113,13 @@ fn parse_args(mut args: impl Iterator<Item = String>) -> Result<Option<Mode>, St
                     return Err("--analyze precisa de ao menos uma captura .csv".to_owned());
                 }
                 return Ok(Some(Mode::Analyze(files)));
+            }
+            "--repeats" => {
+                let files: Vec<PathBuf> = args.map(PathBuf::from).collect();
+                if files.is_empty() {
+                    return Err("--repeats precisa de ao menos uma captura .csv".to_owned());
+                }
+                return Ok(Some(Mode::Repeats(files)));
             }
             "-h" | "--help" => return Ok(None),
             other => return Err(format!("opção desconhecida: {other}")),
@@ -361,5 +378,13 @@ mod tests {
             _ => panic!("--analyze não foi reconhecido"),
         }
         assert!(args(&["--analyze"]).is_err());
+
+        match args(&["--repeats", "capturas/longa.csv"]) {
+            Ok(Some(Mode::Repeats(files))) => {
+                assert_eq!(files, [PathBuf::from("capturas/longa.csv")]);
+            }
+            _ => panic!("--repeats não foi reconhecido"),
+        }
+        assert!(args(&["--repeats"]).is_err());
     }
 }

@@ -1,4 +1,6 @@
-//! Correspondência entre o estado esperado e o observado nas capturas de C1–C5 (PRD, UC-008).
+//! Correspondência entre o estado esperado e o observado nas capturas de C1–C6 (PRD, UC-008)
+//! e, para calibrar o limiar da suspeita de leitura congelada, as sequências de leituras
+//! locais iguais em qualquer captura.
 //!
 //! O CSV do firmware não traz o cenário nem a repetição: eles vêm do nome do arquivo,
 //! `c<cenário>-r<repetição>.csv`, como em `docs/evidencias/experimentos/c2-r1.csv`.
@@ -11,7 +13,7 @@ use std::path::{Path, PathBuf};
 use sense_bridge::{OperationState, determine_state};
 
 use crate::record::{self, Columns, Cycle, Kind};
-use crate::view::Style;
+use crate::view::{Style, clock};
 
 /// Cenário do protocolo experimental.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -21,6 +23,8 @@ enum Scenario {
     C3,
     C4,
     C5,
+    /// Leitura local congelada por injeção de falha, com suspeita e reinício do sensor (D14).
+    C6,
 }
 
 impl Scenario {
@@ -31,25 +35,28 @@ impl Scenario {
             3 => Some(Self::C3),
             4 => Some(Self::C4),
             5 => Some(Self::C5),
+            6 => Some(Self::C6),
             _ => None,
         }
     }
 
     /// Estado de todos os ciclos, pela tabela de cenários do README. `None` em C5, em que a
-    /// falha é desfeita durante a captura.
+    /// falha é desfeita durante a captura, e em C6, em que o reinício do sensor pode custar uma
+    /// leitura.
     fn fixed_state(self) -> Option<OperationState> {
         match self {
             Self::C1 => Some(OperationState::Normal),
             Self::C2 => Some(OperationState::DegradedLocal),
             Self::C3 => Some(OperationState::DegradedExternal),
             Self::C4 => Some(OperationState::Error),
-            Self::C5 => None,
+            Self::C5 | Self::C6 => None,
         }
     }
 
     fn expected(self, cycle: &Cycle) -> OperationState {
         // Em C5, o ciclo em que a fonte religada volta a responder depende do hardware: espera-se
-        // o estado da disponibilidade observada, e a recuperação é conferida à parte.
+        // o estado da disponibilidade observada, e a recuperação é conferida à parte. Em C6, a
+        // leitura congelada é válida e não muda o estado; a suspeita é conferida à parte.
         self.fixed_state()
             .unwrap_or_else(|| determine_state(cycle.local.is_ok(), cycle.external.is_ok()))
     }
@@ -83,29 +90,7 @@ impl Capture {
         };
         let (scenario, repetition) = identify(path)
             .ok_or_else(|| invalid("o nome não segue o padrão c<cenário>-r<repetição>.csv"))?;
-        let text = fs::read_to_string(path).map_err(|error| {
-            io::Error::new(error.kind(), format!("{}: {error}", path.display()))
-        })?;
-
-        let mut lines = text
-            .lines()
-            .enumerate()
-            .filter(|(_, line)| !line.is_empty());
-        let columns = match lines.next() {
-            Some((_, header)) if record::classify(header) == Kind::Header => Columns::parse(header),
-            _ => return Err(invalid("a primeira linha não é o cabeçalho do CSV")),
-        };
-        let cycles = lines
-            .map(|(index, line)| {
-                columns.cycle(line).ok_or_else(|| {
-                    invalid(&format!("a linha {} não é um ciclo íntegro", index + 1))
-                })
-            })
-            .collect::<io::Result<Vec<_>>>()?;
-        if cycles.is_empty() {
-            return Err(invalid("a captura não tem ciclos"));
-        }
-
+        let cycles = read_cycles(path)?;
         Ok(Self {
             name: path
                 .file_stem()
@@ -134,8 +119,41 @@ impl Capture {
         Check {
             divergences,
             recovery: (self.scenario == Scenario::C5).then(|| recovery(&self.cycles)),
+            frozen: (self.scenario == Scenario::C6).then(|| frozen(&self.cycles)),
         }
     }
+}
+
+/// Ciclos de um CSV gravado pelo console, com o cabeçalho na primeira linha.
+fn read_cycles(path: &Path) -> io::Result<Vec<Cycle>> {
+    let invalid = |message: &str| {
+        io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("{}: {message}", path.display()),
+        )
+    };
+    let text = fs::read_to_string(path)
+        .map_err(|error| io::Error::new(error.kind(), format!("{}: {error}", path.display())))?;
+
+    let mut lines = text
+        .lines()
+        .enumerate()
+        .filter(|(_, line)| !line.is_empty());
+    let columns = match lines.next() {
+        Some((_, header)) if record::classify(header) == Kind::Header => Columns::parse(header),
+        _ => return Err(invalid("a primeira linha não é o cabeçalho do CSV")),
+    };
+    let cycles = lines
+        .map(|(index, line)| {
+            columns
+                .cycle(line)
+                .ok_or_else(|| invalid(&format!("a linha {} não é um ciclo íntegro", index + 1)))
+        })
+        .collect::<io::Result<Vec<_>>>()?;
+    if cycles.is_empty() {
+        return Err(invalid("a captura não tem ciclos"));
+    }
+    Ok(cycles)
 }
 
 /// Ciclo em que o estado observado difere do esperado.
@@ -149,11 +167,62 @@ struct Check<'a> {
     divergences: Vec<Divergence<'a>>,
     /// Em C5, o ciclo da recuperação ou por que ela não vale.
     recovery: Option<Result<u64, &'static str>>,
+    /// Em C6, a suspeita e o reinício ou por que não valem.
+    frozen: Option<Result<Frozen, &'static str>>,
 }
 
 impl Check<'_> {
     fn passed(&self) -> bool {
-        self.divergences.is_empty() && !matches!(self.recovery, Some(Err(_)))
+        self.divergences.is_empty()
+            && !matches!(self.recovery, Some(Err(_)))
+            && !matches!(self.frozen, Some(Err(_)))
+    }
+}
+
+/// Resultado de C6 que passou na conferência.
+#[derive(Debug, PartialEq, Eq)]
+struct Frozen {
+    /// Primeiro ciclo com a leitura marcada como suspeita.
+    suspect: u64,
+    /// Limiar do detector, inferido desse ciclo: a contagem em que a suspeita começa.
+    threshold: u64,
+    /// Primeiro ciclo depois do reinício por suspeita, já com leitura nova.
+    restarted: u64,
+}
+
+/// Leitura congelada em C6 (PRD, D14): a captura tem as colunas do detector; a suspeita
+/// coincide, em todo ciclo, com a contagem igual ou acima do limiar; depois da primeira
+/// suspeita há um reinício por suspeita; e o ciclo seguinte a ele traz uma leitura nova.
+fn frozen(cycles: &[Cycle]) -> Result<Frozen, &'static str> {
+    if cycles.iter().all(|cycle| cycle.local_repeat.is_none()) {
+        return Err("sem as colunas do detector (local_frozen_after = 0?)");
+    }
+    let first = cycles
+        .iter()
+        .position(|cycle| cycle.local_suspect == Some(true))
+        .ok_or("nenhuma leitura marcada como suspeita")?;
+    let threshold = cycles[first]
+        .local_repeat
+        .ok_or("suspeita sem a contagem de leituras iguais")?;
+    let consistent = cycles.iter().all(|cycle| match cycle.local_repeat {
+        Some(run) => cycle.local_suspect == Some(run >= threshold),
+        None => cycle.local_suspect.is_none(),
+    });
+    if !consistent {
+        return Err("suspeita inconsistente com a contagem de leituras iguais");
+    }
+    let restart = cycles[first + 1..]
+        .iter()
+        .find(|cycle| cycle.local_restart.as_deref() == Some("suspect"))
+        .ok_or("sem reinício por suspeita (local_frozen_restart = false?)")?;
+    match (&restart.local, restart.local_repeat) {
+        (Err(_), _) => Err("sem leitura válida depois do reinício"),
+        (Ok(_), Some(1)) => Ok(Frozen {
+            suspect: cycles[first].cycle,
+            threshold,
+            restarted: restart.cycle,
+        }),
+        _ => Err("a leitura persistiu depois do reinício"),
     }
 }
 
@@ -211,6 +280,75 @@ impl fmt::Display for Tally {
     }
 }
 
+/// Maior sequência de ciclos seguidos com a mesma leitura local válida: o número de ciclos e o
+/// intervalo, em ms, entre o primeiro e o último. Uma falha local encerra a sequência, como no
+/// `FreezeDetector`.
+fn longest_repeat(cycles: &[Cycle]) -> Option<(usize, u64)> {
+    let same = |a: &Cycle, b: &Cycle| matches!((&a.local, &b.local), (Ok(x), Ok(y)) if x == y);
+    cycles
+        .chunk_by(same)
+        .filter(|run| run[0].local.is_ok())
+        .map(|run| {
+            let span = run[run.len() - 1].timestamp_ms - run[0].timestamp_ms;
+            (run.len(), span)
+        })
+        .max()
+}
+
+/// Para calibrar o limiar de `local_frozen_after`: a maior sequência de leituras locais iguais
+/// de cada captura, com qualquer nome, e a maior de todas. Sem conferência de cenário.
+pub fn repeats(files: &[PathBuf], out: &mut impl Write, style: Style) -> io::Result<()> {
+    writeln!(
+        out,
+        "{}",
+        style.bold(&format!(
+            "{:<32}  {:>7}  {:>16}",
+            "captura", "válidas", "maior sequência"
+        ))
+    )?;
+    let mut longest: Option<(usize, u64, String)> = None;
+    for path in files {
+        let name = path
+            .file_stem()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .into_owned();
+        // Uma captura vazia ou sem cabeçalho, como a de uma sessão interrompida, não impede a
+        // calibração com as demais.
+        let cycles = match read_cycles(path) {
+            Ok(cycles) => cycles,
+            Err(error) => {
+                let message = error.to_string();
+                let reason = message
+                    .split_once(": ")
+                    .map_or(message.as_str(), |(_, r)| r);
+                writeln!(out, "{name:<32}  ignorada: {reason}")?;
+                continue;
+            }
+        };
+        let valid = cycles.iter().filter(|cycle| cycle.local.is_ok()).count();
+        let text = match longest_repeat(&cycles) {
+            Some((run, span)) => {
+                if longest.as_ref().is_none_or(|(best, ..)| run > *best) {
+                    longest = Some((run, span, name.clone()));
+                }
+                format!("{run} ({})", clock(span))
+            }
+            None => "—".to_owned(),
+        };
+        writeln!(out, "{name:<32}  {valid:>7}  {text:>16}")?;
+    }
+    let total = match longest {
+        Some((run, span, name)) => format!(
+            "── maior sequência: {run} ciclos iguais ({}), em {name}; o limiar deve ficar bem \
+             acima",
+            clock(span)
+        ),
+        None => "── nenhuma leitura local válida".to_owned(),
+    };
+    writeln!(out, "{}", style.bold(&total))
+}
+
 /// Lê as capturas e escreve a conferência de cada uma, de cada cenário e do conjunto.
 /// Devolve `false` se alguma captura divergir do esperado.
 pub fn run(files: &[PathBuf], out: &mut impl Write, style: Style) -> io::Result<bool> {
@@ -253,9 +391,10 @@ fn report(captures: &[Capture], out: &mut impl Write, style: Style) -> io::Resul
 /// Uma linha por captura e, abaixo dela, uma por sequência de ciclos com a mesma divergência.
 fn line(capture: &Capture, check: &Check, style: Style) -> String {
     // Cada coluna é alinhada antes de receber cor, para que os escapes não contem na largura.
-    let expected = match capture.scenario.fixed_state() {
-        Some(state) => style.state(state.as_str(), &format!("{:<16}", state.as_str())),
-        None => format!("{:<16}", "recuperação"),
+    let expected = match (capture.scenario.fixed_state(), capture.scenario) {
+        (Some(state), _) => style.state(state.as_str(), &format!("{:<16}", state.as_str())),
+        (None, Scenario::C6) => format!("{:<16}", "congelamento"),
+        (None, _) => format!("{:<16}", "recuperação"),
     };
     let total = capture.cycles.len();
     let matched = format!("{}/{total}", total - check.divergences.len());
@@ -268,6 +407,15 @@ fn line(capture: &Capture, check: &Check, style: Style) -> String {
     // Escrever em uma String não falha.
     let _ = match check.recovery {
         Some(Ok(cycle)) => write!(line, ", recuperação no ciclo {cycle}"),
+        Some(Err(reason)) => write!(line, ": {reason}"),
+        None => Ok(()),
+    };
+    let _ = match &check.frozen {
+        Some(Ok(frozen)) => write!(
+            line,
+            ", suspeita no ciclo {} (limiar {}), leitura nova no ciclo {} após o reinício",
+            frozen.suspect, frozen.threshold, frozen.restarted
+        ),
         Some(Err(reason)) => write!(line, ": {reason}"),
         None => Ok(()),
     };
@@ -351,8 +499,9 @@ mod tests {
             Some((Scenario::C2, 1))
         );
         assert_eq!(id("c5-r10.csv"), Some((Scenario::C5, 10)));
+        assert_eq!(id("c6-r2.csv"), Some((Scenario::C6, 2)));
         for name in [
-            "c6-r1.csv",
+            "c7-r1.csv",
             "c0-r1.csv",
             "c1.csv",
             "c1-r1-b.csv",
@@ -450,6 +599,144 @@ mod tests {
              ── C5: 1/1 capturas aprovadas, 6/6 ciclos no estado esperado\n\
              ── total: 2/3 capturas aprovadas, 9/12 ciclos no estado esperado\n"
         );
+    }
+
+    /// C6: leitura congelada a partir do ciclo 2, suspeita no ciclo 6 (limiar 5), reinício
+    /// depois dele e leitura nova no ciclo 7.
+    fn frozen_capture() -> Capture {
+        let row = |number: u64, reading: &str, run: u64, restart: &str| {
+            let suspect = run >= 5;
+            let line = format!(
+                "{number},{},Normal,{reading},,29.1,76.0,0,,,,22000,,22254,206948,201476,12436,\
+                 {run},{suspect},{restart}",
+                number * 5000
+            );
+            Columns::default().cycle(&line).unwrap()
+        };
+        let cycles = vec![
+            row(0, "30.0,31.0", 1, ""),
+            row(1, "30.0,31.0", 2, ""),
+            row(2, "40.0,80.0", 1, ""),
+            row(3, "40.0,80.0", 2, ""),
+            row(4, "40.0,80.0", 3, ""),
+            row(5, "40.0,80.0", 4, ""),
+            row(6, "40.0,80.0", 5, ""),
+            row(7, "30.0,31.0", 1, "suspect"),
+            row(8, "30.0,31.0", 2, ""),
+        ];
+        capture("c6-r1", cycles)
+    }
+
+    #[test]
+    fn accepts_a_frozen_reading_flagged_and_cleared_by_the_restart() {
+        let capture = frozen_capture();
+        let check = capture.check();
+        assert!(check.divergences.is_empty());
+        assert_eq!(
+            check.frozen,
+            Some(Ok(Frozen {
+                suspect: 6,
+                threshold: 5,
+                restarted: 7
+            }))
+        );
+        assert!(check.passed());
+    }
+
+    #[test]
+    fn rejects_frozen_runs_without_suspicion_restart_or_change() {
+        let reason = |capture: Capture| capture.check().frozen.unwrap().unwrap_err();
+
+        let mut no_detector = frozen_capture();
+        for cycle in &mut no_detector.cycles {
+            cycle.local_repeat = None;
+            cycle.local_suspect = None;
+        }
+        assert_eq!(
+            reason(no_detector),
+            "sem as colunas do detector (local_frozen_after = 0?)"
+        );
+
+        let mut no_restart = frozen_capture();
+        no_restart.cycles[7].local_restart = None;
+        assert_eq!(
+            reason(no_restart),
+            "sem reinício por suspeita (local_frozen_restart = false?)"
+        );
+
+        let mut persisted = frozen_capture();
+        persisted.cycles[7].local_repeat = Some(6);
+        persisted.cycles[7].local_suspect = Some(true);
+        assert_eq!(reason(persisted), "a leitura persistiu depois do reinício");
+
+        let mut inconsistent = frozen_capture();
+        // Contagem acima do limiar sem a suspeita marcada.
+        inconsistent.cycles[8].local_repeat = Some(6);
+        assert_eq!(
+            reason(inconsistent),
+            "suspeita inconsistente com a contagem de leituras iguais"
+        );
+
+        let mut never = frozen_capture();
+        for cycle in &mut never.cycles {
+            cycle.local_suspect = Some(false);
+        }
+        assert_eq!(reason(never), "nenhuma leitura marcada como suspeita");
+    }
+
+    #[test]
+    fn reports_a_frozen_capture() {
+        let mut out = Vec::new();
+        assert!(report(&[frozen_capture()], &mut out, PLAIN).unwrap());
+        assert!(String::from_utf8(out).unwrap().contains(
+            "c6-r1     congelamento          9/9  ok, suspeita no ciclo 6 (limiar 5), leitura nova \
+             no ciclo 7 após o reinício"
+        ));
+    }
+
+    #[test]
+    fn finds_the_longest_run_of_equal_readings() {
+        let cycles = frozen_capture().cycles;
+        // Ciclos 2 a 6, de 10 s a 30 s.
+        assert_eq!(longest_repeat(&cycles), Some((5, 20_000)));
+
+        let mut interrupted = cycles.clone();
+        interrupted[4] = cycle(4, "DegradedLocal", "NoResponse", "", "");
+        assert_eq!(longest_repeat(&interrupted), Some((2, 5_000)));
+
+        let failures = vec![cycle(0, "DegradedLocal", "NoResponse", "", "")];
+        assert_eq!(longest_repeat(&failures), None);
+    }
+
+    #[test]
+    fn calibration_skips_unreadable_captures() {
+        let dir = std::env::temp_dir().join(format!("sense_bridge_repeats_{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let empty = dir.join("vazia.csv");
+        fs::write(&empty, "").unwrap();
+        let long = dir.join("longa.csv");
+        let row = |n: u64| {
+            format!(
+                "{n},{},Normal,27.0,41.0,,29.1,76.0,0,,,,21911,,22282,206832,201476,12436",
+                n * 5000
+            )
+        };
+        let rows: Vec<String> = (0..4).map(row).collect();
+        fs::write(
+            &long,
+            format!("{}\n{}\n", record::DEFAULT_HEADER, rows.join("\n")),
+        )
+        .unwrap();
+
+        let mut out = Vec::new();
+        repeats(&[empty, long], &mut out, PLAIN).unwrap();
+        let text = String::from_utf8(out).unwrap();
+        assert!(text.contains(
+            "vazia                             ignorada: a primeira linha não é o cabeçalho do CSV"
+        ));
+        assert!(text.contains("longa                                   4      4 (00:00:15)"));
+        assert!(text.contains("── maior sequência: 4 ciclos iguais (00:00:15), em longa"));
+        fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]

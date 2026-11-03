@@ -7,7 +7,7 @@ use std::fmt::Write;
 use std::time::Duration;
 
 use esp_idf_svc::sys;
-use sense_bridge::Record;
+use sense_bridge::{FreezeDetector, Record};
 
 pub const HEADER: &str = include!("csv_header.in");
 
@@ -19,14 +19,21 @@ pub struct Timing {
     pub cycle: Duration,
 }
 
-pub fn row(record: &Record, timing: &Timing) -> String {
-    let mut line = String::with_capacity(192);
+/// `freeze` já observou `record`. Sem ele (`local_frozen_after = 0`), `local_repeat` e
+/// `local_suspect` ficam vazias.
+pub fn row(record: &Record, timing: &Timing, freeze: Option<&FreezeDetector>) -> String {
+    let mut line = String::with_capacity(200);
     // Escrever em uma String não falha.
-    let _ = write_row(&mut line, record, timing);
+    let _ = write_row(&mut line, record, timing, freeze);
     line
 }
 
-fn write_row(line: &mut String, record: &Record, timing: &Timing) -> std::fmt::Result {
+fn write_row(
+    line: &mut String,
+    record: &Record,
+    timing: &Timing,
+    freeze: Option<&FreezeDetector>,
+) -> std::fmt::Result {
     write!(
         line,
         "{},{},{},",
@@ -72,7 +79,15 @@ fn write_row(line: &mut String, record: &Record, timing: &Timing) -> std::fmt::R
             sys::uxTaskGetStackHighWaterMark(core::ptr::null_mut()),
         )
     };
-    write!(line, "{heap_free},{heap_min_free},{stack_min_free}")
+    write!(line, "{heap_free},{heap_min_free},{stack_min_free},")?;
+
+    match freeze {
+        Some(freeze) => write!(line, "{},{}", freeze.run(), freeze.is_suspect()),
+        None => {
+            line.push(',');
+            Ok(())
+        }
+    }
 }
 
 fn micros(duration: Option<Duration>) -> String {

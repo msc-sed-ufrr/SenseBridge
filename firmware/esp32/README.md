@@ -57,8 +57,11 @@ Preencha `wifi_ssid` e `wifi_password`. O `cfg.toml` é ignorado pelo git; as cr
 | `external_refresh_ms` | 900000 (15 min) | D5a, fechada |
 | `dht11_gpio` | 4 | — |
 | `dht11_power_gpio` | ausente (VCC no 3V3) | — |
+| `local_frozen_after` | 0 (desligado) | — |
 
 Para observar falha e recuperação da fonte externa sem esperar 15 minutos, reduza `external_refresh_ms` para 5000, como nos experimentos C3–C5 (PRD, D10): com o ciclo de 5 s, a fonte externa passa a ser consultada aproximadamente a cada ciclo. Uma falha de rede durante a reutilização só aparece na consulta seguinte.
+
+A validação de faixa aceita um DHT11 travado em um valor plausível. Com `local_frozen_after = N`, N > 0, o `FreezeDetector` da biblioteca marca `local_suspect = true` quando a mesma leitura local válida se repete em N ciclos seguidos. A leitura continua válida e o estado não muda. Com a resolução de 1 °C e 1 %UR, repetições legítimas são comuns: nas capturas, houve até 64 ciclos de 5 s iguais com o sensor funcionando, e em C1 e C3 as 10 leituras foram idênticas em 9 das 10 repetições. Por isso, use um valor bem acima, como 360 (30 min). Os experimentos C1–C5 foram feitos sem o detector.
 
 ## Compilar e gravar
 
@@ -82,6 +85,9 @@ Depois dos logs de inicialização, a serial mostra o cabeçalho e uma linha por
 | `transition`, `recovery` | Transição em relação ao ciclo anterior e se ela é uma recuperação |
 | `read_us`, `fetch_us`, `cycle_us` | Duração da leitura local, da consulta externa (vazia quando a leitura é reutilizada) e do ciclo inteiro; validação e integração correspondem a `cycle_us - read_us - fetch_us` |
 | `heap_free`, `heap_min_free`, `stack_min_free` | Heap livre, mínimo de heap livre desde o boot e folga mínima da pilha da tarefa principal, em bytes |
+| `local_repeat`, `local_suspect` | Ciclos seguidos com a mesma leitura local válida e a suspeita de leitura congelada; vazias com `local_frozen_after = 0` |
+
+As duas últimas colunas vieram depois da v0.1.0. O console aceita linhas sem elas, como as das capturas oficiais de C1–C5.
 
 As linhas de dados começam por um número, e as de log por `I (`, `W (` ou `E (`. Para separar os dados de uma captura:
 

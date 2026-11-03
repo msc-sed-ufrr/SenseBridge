@@ -31,3 +31,9 @@ dht11_gpio = 4
 # desliga e religa o sensor a cada 3 falhas seguidas de leitura. O build aceita os mesmos
 # GPIOs de dht11_gpio, exceto o próprio, e avisa sobre os pinos de strapping.
 # dht11_power_gpio = 23
+
+# Suspeita de leitura congelada (opcional; padrão: 0, desligado). Com N > 0, a leitura local
+# válida repetida, idêntica, por N ciclos seguidos sai com local_suspect = true no CSV; a
+# leitura continua válida e o estado não muda. Com a resolução do DHT11, repetições legítimas
+# de até 64 ciclos de 5 s foram observadas: use um valor bem acima, como 360 (30 min).
+# local_frozen_after = 360

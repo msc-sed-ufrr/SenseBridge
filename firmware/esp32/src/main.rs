@@ -12,6 +12,7 @@ mod config {
     include!(concat!(env!("OUT_DIR"), "/config.rs"));
 }
 
+use std::num::NonZeroU32;
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -22,7 +23,7 @@ use esp_idf_svc::nvs::EspDefaultNvsPartition;
 use esp_idf_svc::sys::{self, EspError};
 use esp_idf_svc::wifi::{self, AuthMethod, ClientConfiguration, EspWifi, WifiEvent};
 use log::{info, warn};
-use sense_bridge::{Config, SenseBridge};
+use sense_bridge::{Config, FreezeDetector, SenseBridge};
 
 use crate::csv::Timing;
 use crate::external::OpenMeteo;
@@ -142,6 +143,14 @@ fn run(bridge: &mut Bridge) -> ! {
     let interval = Duration::from_millis(config::CYCLE_INTERVAL_MS);
     let start = Instant::now();
     let mut deadline = start;
+    // Suspeita de leitura congelada, opcional (`local_frozen_after`): não muda o estado.
+    let mut freeze = NonZeroU32::new(config::LOCAL_FROZEN_AFTER).map(FreezeDetector::new);
+    if let Some(freeze) = &freeze {
+        info!(
+            "suspeita de leitura congelada após {} ciclos iguais",
+            freeze.threshold()
+        );
+    }
     println!("{}", csv::HEADER);
 
     loop {
@@ -152,7 +161,11 @@ fn run(bridge: &mut Bridge) -> ! {
             read: bridge.local_mut().take(),
             fetch: bridge.external_mut().take(),
         };
-        println!("{}", csv::row(&record, &timing));
+        // Fora da janela medida, como a emissão do CSV.
+        if let Some(freeze) = &mut freeze {
+            freeze.observe(&record.local);
+        }
+        println!("{}", csv::row(&record, &timing, freeze.as_ref()));
         // Fora da janela medida: o log da falha do DHT11 e, se preciso, o reinício do sensor.
         bridge.local_mut().source_mut().after_cycle();
 

@@ -40,6 +40,10 @@ pub fn classify(line: &str) -> Kind {
     }
 }
 
+/// Colunas acrescentadas ao fim da linha depois da v0.1.0 do firmware. Uma linha pode vir sem
+/// elas, como nas capturas oficiais de C1–C5, e então os campos ficam vazios.
+const OPTIONAL_TRAILING: [&str; 2] = ["local_repeat", "local_suspect"];
+
 /// Nomes das colunas, na ordem do cabeçalho.
 #[derive(Debug, Clone)]
 pub struct Columns(Vec<String>);
@@ -54,18 +58,36 @@ impl Columns {
         self.0.join(",")
     }
 
+    /// Quantas colunas do fim do cabeçalho podem faltar em uma linha: as de
+    /// [`OPTIONAL_TRAILING`] presentes, na ordem, no fim do cabeçalho.
+    fn optional_trailing(&self) -> usize {
+        (1..=OPTIONAL_TRAILING.len())
+            .rev()
+            .find(|&count| {
+                self.0.len() > count
+                    && self.0[self.0.len() - count..]
+                        .iter()
+                        .map(String::as_str)
+                        .eq(OPTIONAL_TRAILING[..count].iter().copied())
+            })
+            .unwrap_or(0)
+    }
+
     /// Interpreta uma linha de ciclo. `None` quando o número de campos não bate com o
     /// cabeçalho ou uma coluna numérica não é um número: a linha não é um ciclo íntegro.
+    /// Só as colunas opcionais do fim do cabeçalho podem faltar, todas juntas.
     pub fn cycle(&self, line: &str) -> Option<Cycle> {
         let fields: Vec<&str> = line.split(',').collect();
-        if fields.len() != self.0.len() {
+        let complete = self.0.len();
+        if fields.len() != complete && fields.len() != complete - self.optional_trailing() {
             return None;
         }
         let get = |name: &str| {
             self.0
                 .iter()
                 .position(|column| column == name)
-                .map_or("", |index| fields[index])
+                .and_then(|index| fields.get(index).copied())
+                .unwrap_or("")
         };
         let failure = |name: &str| Some(get(name).to_owned()).filter(|text| !text.is_empty());
 
@@ -103,6 +125,13 @@ impl Columns {
             heap_free: get("heap_free").parse().ok()?,
             heap_min_free: get("heap_min_free").parse().ok()?,
             stack_min_free: get("stack_min_free").parse().ok()?,
+            local_repeat: optional(get("local_repeat"))?,
+            local_suspect: match get("local_suspect") {
+                "" => None,
+                "true" => Some(true),
+                "false" => Some(false),
+                _ => return None,
+            },
         })
     }
 }
@@ -156,6 +185,11 @@ pub struct Cycle {
     pub heap_free: u64,
     pub heap_min_free: u64,
     pub stack_min_free: u64,
+    /// Ciclos seguidos com a mesma leitura local válida; vazia com o detector desligado ou em
+    /// capturas anteriores à coluna.
+    pub local_repeat: Option<u64>,
+    /// Suspeita de leitura congelada; vazia como `local_repeat`.
+    pub local_suspect: Option<bool>,
 }
 
 #[cfg(test)]
@@ -261,6 +295,41 @@ mod tests {
         let line = NORMAL_WITH_FETCH.replacen("0,21", "21,0", 1);
         let cycle = columns.cycle(&line).unwrap();
         assert_eq!((cycle.cycle, cycle.timestamp_ms), (0, 21));
+    }
+
+    #[test]
+    fn rows_without_the_trailing_columns_leave_them_empty() {
+        let cycle = Columns::default().cycle(NORMAL_WITH_FETCH).unwrap();
+        assert_eq!((cycle.local_repeat, cycle.local_suspect), (None, None));
+    }
+
+    #[test]
+    fn parses_the_frozen_reading_columns() {
+        let columns = Columns::default();
+
+        let suspect = columns
+            .cycle(&format!("{NORMAL_WITH_FETCH},360,true"))
+            .unwrap();
+        assert_eq!(suspect.local_repeat, Some(360));
+        assert_eq!(suspect.local_suspect, Some(true));
+
+        let off = columns.cycle(&format!("{NORMAL_WITH_FETCH},,")).unwrap();
+        assert_eq!((off.local_repeat, off.local_suspect), (None, None));
+
+        assert_eq!(columns.cycle(&format!("{NORMAL_WITH_FETCH},3,yes")), None);
+        assert_eq!(columns.cycle(&format!("{NORMAL_WITH_FETCH},3")), None);
+    }
+
+    #[test]
+    fn a_header_without_the_trailing_columns_still_requires_every_field() {
+        let legacy = DEFAULT_HEADER.replace(",local_repeat,local_suspect", "");
+        let columns = Columns::parse(&legacy);
+
+        assert!(columns.cycle(NORMAL_WITH_FETCH).is_some());
+        assert_eq!(
+            columns.cycle(&NORMAL_WITH_FETCH.replacen(",12436", "", 1)),
+            None
+        );
     }
 
     #[test]

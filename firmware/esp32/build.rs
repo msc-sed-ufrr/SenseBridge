@@ -56,6 +56,7 @@ struct Config {
     external_refresh_ms: i64,
     dht11_gpio: i64,
     dht11_power_gpio: Option<i64>,
+    local_frozen_after: i64,
 }
 
 impl Config {
@@ -79,6 +80,7 @@ impl Config {
                 Value::Integer(number) => number,
                 _ => fail("dht11_power_gpio deve ser um inteiro"),
             }),
+            local_frozen_after: integer(take("local_frozen_after"), "local_frozen_after", 0),
         };
 
         if let Some(key) = table.keys().next() {
@@ -112,6 +114,9 @@ impl Config {
         }
         if self.external_refresh_ms < 0 {
             fail("external_refresh_ms não pode ser negativo");
+        }
+        if !(0..=i64::from(u32::MAX)).contains(&self.local_frozen_after) {
+            fail("local_frozen_after deve estar entre 0 (desligado) e 4294967295 ciclos");
         }
         if !DHT11_GPIOS.contains(&self.dht11_gpio) {
             fail(&format!(
@@ -155,6 +160,7 @@ impl Config {
              pub const EXTERNAL_REFRESH_MS: u64 = {};\n\
              pub const DHT11_GPIO: u8 = {gpio};\n\
              pub const DHT11_POWER_GPIO: Option<u8> = {power:?};\n\
+             pub const LOCAL_FROZEN_AFTER: u32 = {frozen};\n\
              pub fn dht11_pins(pins: esp_idf_svc::hal::gpio::Pins) -> (\
              esp_idf_svc::hal::gpio::AnyIOPin<'static>, \
              Option<esp_idf_svc::hal::gpio::AnyOutputPin<'static>>) \
@@ -168,6 +174,7 @@ impl Config {
             self.external_refresh_ms,
             gpio = self.dht11_gpio,
             power = self.dht11_power_gpio,
+            frozen = self.local_frozen_after,
             power_pin = self.dht11_power_gpio.map_or_else(
                 || "None".to_owned(),
                 |gpio| format!("Some(pins.gpio{gpio}.into())")

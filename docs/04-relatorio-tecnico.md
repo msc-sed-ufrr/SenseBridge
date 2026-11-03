@@ -177,7 +177,7 @@ A medição foi repetida com o firmware atual. O firmware SenseBridge apresentou
 - O custo de memória medido é o da integração da solução no firmware, não o da crate isolada.
 - A duração do ciclo com consulta externa depende da rede e do serviço, fora do controle do experimento.
 - A comparação de memória representa o custo incremental da solução integrada em relação ao firmware-base, não o tamanho isolado da crate.
-- A validação da versão avaliada não detecta leitura congelada: um DHT11 travado em um valor plausível passa pela validação de faixa, e o estado fica em `Normal`. Detectá-la exige cuidado com a resolução de 1 °C e 1 %UR do sensor, que torna repetições legítimas comuns: em C1 e C3, as 10 leituras locais foram idênticas em 9 das 10 repetições, e, em uma captura exploratória, a mesma leitura se repetiu por 64 ciclos de 5 s (cerca de 5 min 20 s) com o sensor funcionando. Depois da v0.1.0, foi acrescentado um detector opcional que marca a leitura como suspeita sem mudar o estado (seção 6), ainda não avaliado em hardware.
+- A validação da versão avaliada não detecta leitura congelada, lacuna apontada durante a validação de outro trabalho, o laboratório SENTINELA (UNIVERSIDADE FEDERAL DE RORAIMA, 2026): um DHT11 travado em um valor plausível passa pela validação de faixa, e o estado fica em `Normal`. Detectá-la exige cuidado com a resolução de 1 °C e 1 %UR do sensor, que torna repetições legítimas comuns: em C1 e C3, as 10 leituras locais foram idênticas em 9 das 10 repetições, e, em uma captura exploratória, a mesma leitura se repetiu por 64 ciclos de 5 s (cerca de 5 min 20 s) com o sensor funcionando. Depois da v0.1.0, foi acrescentado um detector opcional que marca a leitura como suspeita sem mudar o estado e pode reiniciar o sensor (seção 6), ainda não avaliado em hardware.
 
 ## 6. Conclusão
 
@@ -185,7 +185,7 @@ O SenseBridge mostrou que uma biblioteca `no_std`, sem alocação e sem dependê
 
 Como trabalhos futuros, ficam a publicação da biblioteca como crate (preparação em [docs/06](06-publicacao-crates-io.md)), o registro de software, a publicação do conjunto de dados experimentais e a validação com outros sensores e plataformas sem alterar o núcleo.
 
-A detecção de leitura congelada também fica como trabalho futuro. Depois da versão avaliada, a biblioteca ganhou o `FreezeDetector`, opcional, que conta os ciclos seguidos com a mesma leitura local válida e marca a leitura como suspeita a partir de um limiar configurável. A leitura continua válida e o estado não muda, porque, com a resolução do DHT11, a repetição não distingue um sensor travado de um ambiente estável (PRD, D14; arquitetura, ADR-010). Falta avaliá-lo em hardware, em um cenário C6, e calibrar o limiar com capturas longas.
+A detecção de leitura congelada também fica como trabalho futuro. Depois da versão avaliada, a biblioteca ganhou o `FreezeDetector`, opcional, que conta os ciclos seguidos com a mesma leitura local válida e marca a leitura como suspeita a partir de um limiar configurável. A leitura continua válida e o estado não muda, porque, com a resolução do DHT11, a repetição não distingue um sensor travado de um ambiente estável (PRD, D14; arquitetura, ADR-010). Opcionalmente, o firmware reinicia o DHT11 pelo GPIO de alimentação no máximo uma vez por limiar e registra se a leitura mudou, indício de sensor travado, ou persistiu. O estímulo foi o laboratório SENTINELA, cujo intertravamento trata a leitura congelada como falha e desliga o gerador; no SenseBridge, que não aciona nada perigoso, a reação é tentar recuperar o sensor sem mudar o estado. Falta avaliar o detector e o reinício em hardware, em um cenário C6, e calibrar o limiar com capturas longas.
 
 ## Referências
 
@@ -204,6 +204,8 @@ OPEN-METEO. **Open-Meteo API Documentation**. Disponível em: <https://open-mete
 RUST FOUNDATION. **The Embedded Rust Book**. Disponível em: <https://doc.rust-lang.org/stable/embedded-book/>. Acesso em: 9 set. 2026.
 
 STALLINGS, William. **Arquitetura e organização de computadores**. 10. ed. São Paulo: Pearson Education do Brasil, 2017.
+
+UNIVERSIDADE FEDERAL DE RORAIMA. Programa de Pós-Graduação em Computação Aplicada. **Laboratório — Projeto SENTINELA: do circuito digital ao IP Core**. Boa Vista: UFRR, 2026. Roteiro de laboratório da disciplina Arquitetura e Organização de Computadores.
 
 ## Apêndice — Reprodutibilidade
 

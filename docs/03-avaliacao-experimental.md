@@ -332,3 +332,30 @@ Resultados consolidados:
 ```
 
 Com a execução física de C1–C5 e a medição do baseline de RAM/Flash, a avaliação experimental prevista para o SenseBridge está concluída.
+
+---
+
+## 10. Após a v0.1.0: leitura congelada
+
+As seções anteriores descrevem a versão avaliada, v0.1.0, e não mudam. Esta seção registra uma lacuna identificada depois dela e o que foi acrescentado.
+
+**Estímulo.** A lacuna foi apontada durante a validação de outro trabalho, o laboratório SENTINELA (UFRR/PPCA, Arquitetura e Organização de Computadores, 2026). No SENTINELA, um nó sensor de borda detecta leitura congelada (a mesma amostra por 8 amostras seguidas) e a trata como falha do sensor, indo para um estado seguro que desliga o gerador.
+
+**Lacuna.** A validação aceita qualquer valor finito dentro da faixa. Um DHT11 travado em um valor plausível, que continue respondendo com checksum correto, passa por ela, e o estado fica em `Normal`. O firmware não reaproveita leituras: cada ciclo faz uma transação nova com o sensor.
+
+**Repetições legítimas nas capturas.** Maior sequência de ciclos seguidos com a mesma temperatura e a mesma umidade, com ciclo de 5 s:
+
+| Capturas | Sequência máxima |
+|---|---|
+| C1, 5 repetições oficiais | 10 de 10 leituras em todas |
+| C3, 5 repetições oficiais | 10 de 10 em quatro; 9 de 10 em uma |
+| `capturas/2026-10-07T00-57-50` (exploratória) | 64 ciclos, cerca de 5 min 20 s |
+| `capturas/2026-10-03T20-27-06` (exploratória) | 44 ciclos, cerca de 3 min 40 s |
+
+Com a resolução de 1 °C e 1 %UR, e com a casa decimal descartada pelo firmware, uma regra de poucas leituras iguais reprovaria o sensor em operação normal.
+
+**O que foi acrescentado.** O `FreezeDetector`, opcional, conta os ciclos seguidos com a mesma leitura local válida e marca a leitura como suspeita a partir de um limiar. A suspeita não altera a validade, o `Record` nem o estado (PRD, D14; arquitetura, ADR-010). No firmware, `local_frozen_after` em `cfg.toml` liga o detector (padrão: desligado), e o CSV ganha `local_repeat` e `local_suspect` no fim da linha. Com `local_frozen_restart`, que exige o GPIO de alimentação do sensor, o firmware também reinicia o DHT11 no ciclo em que a suspeita começa e, enquanto a leitura não mudar, de novo a cada limiar, e registra no log do ciclo seguinte se a leitura mudou ou persistiu. O console aceita linhas sem as duas colunas: `--analyze` dá o mesmo resultado para as 25 capturas oficiais antes e depois da mudança (25/25 capturas e 250/250 ciclos no estado esperado).
+
+**Testes.** A suíte passou de 62 para 77 testes: 8 unitários do detector, inclusive a regra que limita a reação a uma vez por limiar, 3 do cenário C6 simulado (leitura congelada marcada como suspeita, que continua válida e em `Normal`; suspeita desfeita por um valor novo; sequência encerrada por falha local), 3 do console para as colunas novas e 1 exemplo da documentação.
+
+**Não avaliado.** Nem o detector nem o reinício por suspeita foram executados em hardware; as validações da configuração foram conferidas no build. Falta um cenário C6 físico e a calibração do limiar com capturas longas; o padrão sugerido, 360 ciclos (30 min), está bem acima da maior sequência observada, mas não foi validado.

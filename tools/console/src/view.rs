@@ -66,6 +66,9 @@ pub fn header(style: Style) -> String {
 pub fn cycle(cycle: &Cycle, style: Style) -> String {
     // Cada coluna é alinhada antes de receber cor, para que os escapes não contem na largura.
     let local = match &cycle.local {
+        Ok(reading) if cycle.local_suspect == Some(true) => {
+            style.yellow(&format!("{:<12}", format!("{}?", reading_text(reading))))
+        }
         Ok(reading) => format!("{:<12}", reading_text(reading)),
         Err(failure) => style.red(&format!("{failure:<12}")),
     };

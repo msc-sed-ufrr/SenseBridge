@@ -63,6 +63,28 @@ assert_eq!(record.external, Err(ExternalFailure::Timeout));
 
 Para serializar registros, `OperationState`, `LocalFailure` e `ExternalFailure` têm nomes estáveis em `as_str()`, como `DegradedLocal`, `NoResponse` e `Invalid(OutOfRange)`. Ao contrário da saída de `Debug`, esses nomes fazem parte da API.
 
+## Leitura congelada
+
+A validação de faixa aceita um sensor travado em um valor plausível. O `FreezeDetector`, opcional, conta os ciclos seguidos com a mesma leitura local válida e marca a leitura como suspeita quando a contagem atinge um limiar. A suspeita é só um indicador: a leitura continua válida e o estado não muda.
+
+```rust
+use core::num::NonZeroU32;
+use sense_bridge::{FreezeDetector, LocalReading};
+
+// Suspeita a partir de 360 ciclos iguais: 30 min com ciclo de 5 s.
+let mut detector = FreezeDetector::new(NonZeroU32::new(360).unwrap());
+
+// A cada ciclo: detector.observe(&record.local);
+let reading = Ok(LocalReading::new(24.0, 37.0));
+for _ in 0..360 {
+    detector.observe(&reading);
+}
+assert!(detector.is_suspect());
+assert_eq!(detector.run(), 360);
+```
+
+Para reagir à suspeita sem repetir a reação em todo ciclo, `reached_threshold()` é verdadeiro no ciclo em que a suspeita começa e, enquanto a leitura não mudar, de novo a cada limiar; o firmware de referência o usa para reiniciar o sensor no máximo uma vez por limiar. Uma falha da fonte local recomeça a contagem. Com a resolução de 1 °C e 1 %UR do DHT11, repetições legítimas são comuns: nas capturas do projeto, a mesma leitura se repetiu por até 64 ciclos de 5 s (cerca de 5 min 20 s) com o sensor funcionando. O limiar deve ficar bem acima da maior sequência legítima esperada no ambiente de uso. Mesmo assim, a suspeita não distingue um sensor travado de um ambiente que não mudou.
+
 ## Open-Meteo
 
 O módulo `open_meteo` monta o caminho da consulta e interpreta a resposta da API, sem alocar memória. A implementação de `ExternalSource` fica apenas com o transporte: envia a requisição, aplica o tempo limite e entrega o status e o corpo a `interpret`.

@@ -2,6 +2,15 @@
 
 Mudanças relevantes da crate `sense_bridge`. O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e as versões seguem o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [Não lançado]
+
+A lacuna da leitura congelada foi apontada durante a validação de outro trabalho, o laboratório SENTINELA (UFRR/PPCA, Arquitetura e Organização de Computadores, 2026), cujo intertravamento trata leitura congelada como falha do sensor.
+
+### Adicionado
+
+- `FreezeDetector`, opcional, que marca como suspeita de congelamento a leitura local válida repetida, idêntica, por um número configurável de ciclos. Não altera a validação, o `Record` nem o estado de operação.
+- `FreezeDetector::reached_threshold`, verdadeiro no ciclo em que a suspeita começa e a cada limiar seguinte sem mudança, para limitar uma reação à suspeita, como reiniciar o sensor.
+
 ## [0.1.0] - 2026-10-28
 
 Primeira versão, publicada no crates.io.

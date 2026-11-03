@@ -73,14 +73,23 @@ impl<'d> Dht11<'d> {
         };
         let failures = self.driver.failures();
         warn!("DHT11: {} (falha {failures} seguida)", describe(&fault));
-        if self.switchable && failures >= POWER_CYCLE_AFTER {
-            // Um DHT11 travado só volta a responder depois de perder a alimentação. A crate
-            // mantém o DATA em nível baixo enquanto o sensor está desligado e espera o tempo de
-            // energização antes de devolver.
-            warn!("DHT11: {failures} falhas seguidas; desligando o sensor por 1000 ms");
-            if let Err(error) = self.driver.power_cycle() {
-                warn!("DHT11: erro no GPIO ao reiniciar o sensor: {error}");
-            }
+        if failures >= POWER_CYCLE_AFTER {
+            self.power_cycle(&format!("{failures} falhas seguidas"));
+        }
+    }
+
+    /// Desliga e religa o sensor, quando ele é alimentado por um GPIO; sem o GPIO, não faz
+    /// nada. Bloqueia por cerca de 2 s e deve ser chamado fora da janela medida.
+    pub fn power_cycle(&mut self, reason: &str) {
+        if !self.switchable {
+            return;
+        }
+        // Um DHT11 travado só volta a responder depois de perder a alimentação. A crate mantém
+        // o DATA em nível baixo enquanto o sensor está desligado e espera o tempo de
+        // energização antes de devolver.
+        warn!("DHT11: {reason}; desligando o sensor por 1000 ms");
+        if let Err(error) = self.driver.power_cycle() {
+            warn!("DHT11: erro no GPIO ao reiniciar o sensor: {error}");
         }
     }
 }

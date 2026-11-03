@@ -58,6 +58,9 @@ struct Config {
     dht11_power_gpio: Option<i64>,
     local_frozen_after: i64,
     local_frozen_restart: bool,
+    freeze_test_from_cycle: i64,
+    freeze_test_temperature: f64,
+    freeze_test_humidity: f64,
 }
 
 impl Config {
@@ -87,6 +90,17 @@ impl Config {
                 "local_frozen_restart",
                 false,
             ),
+            freeze_test_from_cycle: integer(
+                take("freeze_test_from_cycle"),
+                "freeze_test_from_cycle",
+                0,
+            ),
+            freeze_test_temperature: float(
+                take("freeze_test_temperature"),
+                "freeze_test_temperature",
+                40.0,
+            ),
+            freeze_test_humidity: float(take("freeze_test_humidity"), "freeze_test_humidity", 80.0),
         };
 
         if let Some(key) = table.keys().next() {
@@ -130,6 +144,24 @@ impl Config {
         if self.local_frozen_restart && self.dht11_power_gpio.is_none() {
             fail(
                 "local_frozen_restart exige dht11_power_gpio: sem ele, o sensor não pode ser reiniciado",
+            );
+        }
+        if self.freeze_test_from_cycle < 0 {
+            fail("freeze_test_from_cycle não pode ser negativo (0 desliga a injeção)");
+        }
+        // O valor congelado precisa passar pela validação de faixa do DHT11 (PRD, D3): é um
+        // sensor travado em um valor plausível, não uma leitura fora de faixa.
+        if !(0.0..=50.0).contains(&self.freeze_test_temperature) {
+            fail("freeze_test_temperature deve estar na faixa do DHT11, de 0 a 50 °C");
+        }
+        if !(20.0..=90.0).contains(&self.freeze_test_humidity) {
+            fail("freeze_test_humidity deve estar na faixa do DHT11, de 20 a 90 %UR");
+        }
+        if self.freeze_test_from_cycle > 0 {
+            println!(
+                "cargo:warning=injeção de falha do C6 ligada (freeze_test_from_cycle = {}): use \
+                 este firmware só no experimento",
+                self.freeze_test_from_cycle
             );
         }
         if !DHT11_GPIOS.contains(&self.dht11_gpio) {
@@ -176,6 +208,9 @@ impl Config {
              pub const DHT11_POWER_GPIO: Option<u8> = {power:?};\n\
              pub const LOCAL_FROZEN_AFTER: u32 = {frozen};\n\
              pub const LOCAL_FROZEN_RESTART: bool = {restart};\n\
+             pub const FREEZE_TEST_FROM_CYCLE: u64 = {freeze_from};\n\
+             pub const FREEZE_TEST_TEMPERATURE: f32 = {freeze_temperature:?};\n\
+             pub const FREEZE_TEST_HUMIDITY: f32 = {freeze_humidity:?};\n\
              pub fn dht11_pins(pins: esp_idf_svc::hal::gpio::Pins) -> (\
              esp_idf_svc::hal::gpio::AnyIOPin<'static>, \
              Option<esp_idf_svc::hal::gpio::AnyOutputPin<'static>>) \
@@ -191,6 +226,9 @@ impl Config {
             power = self.dht11_power_gpio,
             frozen = self.local_frozen_after,
             restart = self.local_frozen_restart,
+            freeze_from = self.freeze_test_from_cycle,
+            freeze_temperature = self.freeze_test_temperature as f32,
+            freeze_humidity = self.freeze_test_humidity as f32,
             power_pin = self.dht11_power_gpio.map_or_else(
                 || "None".to_owned(),
                 |gpio| format!("Some(pins.gpio{gpio}.into())")

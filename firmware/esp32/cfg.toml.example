@@ -43,3 +43,12 @@ dht11_gpio = 4
 # começa e, enquanto a leitura não mudar, de novo a cada local_frozen_after ciclos; o log do
 # ciclo seguinte diz se a leitura mudou ou persistiu. O estado não muda.
 # local_frozen_restart = true
+
+# Injeção de falha do cenário C6 (opcional; padrão: 0, desligada). Com K > 0, a partir do ciclo
+# K o firmware devolve sempre a leitura abaixo, como um DHT11 travado em um valor plausível, até
+# o próximo reinício do sensor. Use um valor diferente do ambiente, dentro da faixa do DHT11
+# (0–50 °C, 20–90 %UR). Protocolo do C6: freeze_test_from_cycle = 2, local_frozen_after = 5,
+# local_frozen_restart = true e dht11_power_gpio ligado. Só para o experimento.
+# freeze_test_from_cycle = 2
+# freeze_test_temperature = 40
+# freeze_test_humidity = 80

@@ -40,9 +40,10 @@ pub fn classify(line: &str) -> Kind {
     }
 }
 
-/// Colunas acrescentadas ao fim da linha depois da v0.1.0 do firmware. Uma linha pode vir sem
-/// elas, como nas capturas oficiais de C1–C5, e então os campos ficam vazios.
-const OPTIONAL_TRAILING: [&str; 2] = ["local_repeat", "local_suspect"];
+/// Colunas acrescentadas ao fim da linha depois da v0.1.0 do firmware, na ordem em que vieram.
+/// Uma linha pode vir sem as últimas delas, como nas capturas oficiais de C1–C5, que não têm
+/// nenhuma, e então os campos ficam vazios.
+const OPTIONAL_TRAILING: [&str; 3] = ["local_repeat", "local_suspect", "local_restart"];
 
 /// Nomes das colunas, na ordem do cabeçalho.
 #[derive(Debug, Clone)]
@@ -75,11 +76,11 @@ impl Columns {
 
     /// Interpreta uma linha de ciclo. `None` quando o número de campos não bate com o
     /// cabeçalho ou uma coluna numérica não é um número: a linha não é um ciclo íntegro.
-    /// Só as colunas opcionais do fim do cabeçalho podem faltar, todas juntas.
+    /// Só as colunas opcionais do fim do cabeçalho podem faltar, a partir da última.
     pub fn cycle(&self, line: &str) -> Option<Cycle> {
         let fields: Vec<&str> = line.split(',').collect();
         let complete = self.0.len();
-        if fields.len() != complete && fields.len() != complete - self.optional_trailing() {
+        if !(complete - self.optional_trailing()..=complete).contains(&fields.len()) {
             return None;
         }
         let get = |name: &str| {
@@ -130,6 +131,11 @@ impl Columns {
                 "" => None,
                 "true" => Some(true),
                 "false" => Some(false),
+                _ => return None,
+            },
+            local_restart: match get("local_restart") {
+                "" => None,
+                cause @ ("failures" | "suspect") => Some(cause.to_owned()),
                 _ => return None,
             },
         })
@@ -190,6 +196,9 @@ pub struct Cycle {
     pub local_repeat: Option<u64>,
     /// Suspeita de leitura congelada; vazia como `local_repeat`.
     pub local_suspect: Option<bool>,
+    /// Reinício do sensor feito antes deste ciclo: `failures` (falhas seguidas) ou `suspect`
+    /// (suspeita de leitura congelada).
+    pub local_restart: Option<String>,
 }
 
 #[cfg(test)]
@@ -308,21 +317,44 @@ mod tests {
         let columns = Columns::default();
 
         let suspect = columns
-            .cycle(&format!("{NORMAL_WITH_FETCH},360,true"))
+            .cycle(&format!("{NORMAL_WITH_FETCH},360,true,"))
             .unwrap();
         assert_eq!(suspect.local_repeat, Some(360));
         assert_eq!(suspect.local_suspect, Some(true));
+        assert_eq!(suspect.local_restart, None);
 
-        let off = columns.cycle(&format!("{NORMAL_WITH_FETCH},,")).unwrap();
+        let restarted = columns
+            .cycle(&format!("{NORMAL_WITH_FETCH},1,false,suspect"))
+            .unwrap();
+        assert_eq!(restarted.local_restart.as_deref(), Some("suspect"));
+
+        let off = columns
+            .cycle(&format!("{NORMAL_WITH_FETCH},,,failures"))
+            .unwrap();
         assert_eq!((off.local_repeat, off.local_suspect), (None, None));
+        assert_eq!(off.local_restart.as_deref(), Some("failures"));
 
-        assert_eq!(columns.cycle(&format!("{NORMAL_WITH_FETCH},3,yes")), None);
-        assert_eq!(columns.cycle(&format!("{NORMAL_WITH_FETCH},3")), None);
+        // Linhas do firmware anterior à coluna `local_restart`.
+        let without_restart = columns
+            .cycle(&format!("{NORMAL_WITH_FETCH},3,false"))
+            .unwrap();
+        assert_eq!(without_restart.local_repeat, Some(3));
+        assert_eq!(without_restart.local_restart, None);
+
+        assert_eq!(columns.cycle(&format!("{NORMAL_WITH_FETCH},3,yes,")), None);
+        assert_eq!(
+            columns.cycle(&format!("{NORMAL_WITH_FETCH},3,true,boot")),
+            None
+        );
+        assert_eq!(
+            columns.cycle(&format!("{NORMAL_WITH_FETCH},3,true,suspect,extra")),
+            None
+        );
     }
 
     #[test]
     fn a_header_without_the_trailing_columns_still_requires_every_field() {
-        let legacy = DEFAULT_HEADER.replace(",local_repeat,local_suspect", "");
+        let legacy = DEFAULT_HEADER.replace(",local_repeat,local_suspect,local_restart", "");
         let columns = Columns::parse(&legacy);
 
         assert!(columns.cycle(NORMAL_WITH_FETCH).is_some());

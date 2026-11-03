@@ -65,7 +65,7 @@ Componentes, fluxo do ciclo, princípios e decisões de arquitetura estão em [d
 ```text
 SenseBridge/
 ├── Cargo.toml          # workspace: biblioteca e ferramentas de host
-├── sense-bridge/       # biblioteca (no_std, independente de hardware), preparada para o crates.io
+├── sense-bridge/       # biblioteca (no_std, independente de hardware), publicada no crates.io
 │   ├── src/
 │   ├── tests/          # cenários C1–C5 com fontes simuladas e respostas gravadas da Open-Meteo
 │   ├── examples/
@@ -170,7 +170,7 @@ Em 21/10/2026, com macOS em Apple Silicon:
 | [Avaliação experimental](docs/03-avaliacao-experimental.md) | Protocolo e resultados de C1–C5, latência, Flash e RAM |
 | [Relatório técnico](docs/04-relatorio-tecnico.md) | Rascunho do relatório conclusivo |
 | [Roteiro do vídeo](docs/05-roteiro-video.md) | Demonstração de 3–5 minutos |
-| [Publicação no crates.io](docs/06-publicacao-crates-io.md) | Preparação e passo a passo da publicação da crate |
+| [Publicação no crates.io](docs/06-publicacao-crates-io.md) | Publicação da 0.1.0 e passo a passo para as próximas versões |
 | [Evidências](docs/evidencias/README.md) | Verificação do código e capturas dos experimentos |
 
 ## Tecnologias

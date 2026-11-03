@@ -4,7 +4,7 @@ Mudanças relevantes da crate `sense_bridge`. O formato segue o [Keep a Changelo
 
 ## [0.1.0] - 2026-10-28
 
-Primeira versão, a ser publicada como 0.1.0.
+Primeira versão, publicada no crates.io.
 
 ### Adicionado
 

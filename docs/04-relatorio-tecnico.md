@@ -182,7 +182,7 @@ A medição foi repetida com o firmware atual. O firmware SenseBridge apresentou
 
 O SenseBridge mostrou que uma biblioteca `no_std`, sem alocação e sem dependências pode integrar uma fonte local e uma externa com comportamento definido diante de falhas parciais e totais, recuperando a operação normal no primeiro ciclo possível. Todos os cenários foram aprovados no ESP32, com ciclos de 18 a 22 ms sem consulta externa e um custo de cerca de 23,5 KiB de Flash e 13,4 KiB de RAM estática.
 
-Como trabalhos futuros, ficam a publicação da biblioteca como crate (preparação em [docs/06](06-publicacao-crates-io.md)), o registro de software, a publicação do conjunto de dados experimentais e a validação com outros sensores e plataformas sem alterar o núcleo.
+A crate `sense_bridge` foi publicada no crates.io na versão 0.1.0, em 28/10/2026, após a confirmação da titularidade e da licença com o orientador e o núcleo de inovação da UFRR ([docs/06](06-publicacao-crates-io.md)). Como trabalhos futuros, ficam o registro de software, a publicação do conjunto de dados experimentais e a validação com outros sensores e plataformas sem alterar o núcleo.
 
 ## Referências
 

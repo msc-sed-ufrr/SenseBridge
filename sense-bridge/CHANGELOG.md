@@ -2,9 +2,11 @@
 
 Mudanças relevantes da crate `sense_bridge`. O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), e as versões seguem o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
-## [Não lançado]
+## [0.1.1] - 2026-11-22
 
 A lacuna da leitura congelada foi apontada durante a validação de outro trabalho, o laboratório SENTINELA (UFRR/PPCA, Arquitetura e Organização de Computadores, 2026), cujo intertravamento trata leitura congelada como falha do sensor.
+
+O cenário C6, que exercita o detector no ESP32 por injeção de falha, está no firmware de referência e no console do repositório. Ele ainda não foi executado em hardware, e o limiar sugerido de 360 ciclos ainda não foi validado.
 
 ### Adicionado
 

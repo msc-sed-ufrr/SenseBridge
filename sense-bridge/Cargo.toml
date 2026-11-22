@@ -1,6 +1,6 @@
 [package]
 name = "sense_bridge"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 rust-version = "1.85"
 description = "Integração resiliente de dados ambientais locais e externos para sistemas embarcados"

@@ -29,7 +29,7 @@ The firmware is outside the root workspace and outside CI: build it with the ESP
 | Firmware configuration, wiring, CSV format, C6 protocol | `firmware/esp32/README.md` |
 | Library API | `sense-bridge/README.md` |
 
-Do not read all of `docs/` without a reason. `docs/memory/` is history: read a log only when the task is about how something got where it is. `docs/evidencias/` holds the official captures and verification records; `docs/00-Projeto de Pesquisa - PTT4.pdf` is the approved research project the scope comes from.
+Do not read all of `docs/` without a reason. `docs/memory/` is history: read a log only when the task is about how something got where it is. `docs/evidencias/` holds the official captures and verification records; `docs/memory/2026-09-17-projeto-de-pesquisa-ptt4.pdf` is the approved research project the scope comes from.
 
 ## Where to write
 

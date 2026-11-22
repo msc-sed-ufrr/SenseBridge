@@ -35,7 +35,7 @@ O desenvolvimento estava adiantado em relação ao cronograma original do projet
 | Análise de resultados | Avançada | Versionar os dados brutos e registrar o firmware medido |
 | Documentação | Concluída | README de reprodutibilidade, PRD e arquitetura atualizados |
 | Relatório | Rascunho | Revisar o relatório técnico |
-| Vídeo | Roteiro pronto | Gravar seguindo o [roteiro](../05-roteiro-video.md) |
+| Vídeo | Roteiro pronto | Gravar seguindo o roteiro |
 
 Próximas atividades listadas em 22/10:
 

@@ -166,7 +166,7 @@ Em 21/10/2026, com macOS em Apple Silicon:
 
 | Documento | Conteúdo |
 | --- | --- |
-| [Projeto de pesquisa](docs/00-Projeto%20de%20Pesquisa%20-%20PTT4.pdf) | Proposta aprovada: problema, objetivos, escopo e entregáveis |
+| [Projeto de pesquisa](docs/memory/2026-09-17-projeto-de-pesquisa-ptt4.pdf) | Proposta aprovada: problema, objetivos, escopo e entregáveis |
 | [Produto](docs/knowledge/product.md) | Propósito, regras de negócio com o motivo, casos de uso e perguntas em aberto |
 | [Arquitetura](docs/knowledge/architecture.md) | Componentes, fluxo do ciclo, stack e invariantes |
 | [Decisões](docs/memory/decisions/) | ADR-001 a ADR-010, uma por arquivo |

@@ -1,6 +1,6 @@
 # Relatório Técnico — SenseBridge
 
-> **Versão final consolidada em 28/10/2026**, baseada no [projeto de pesquisa](../00-Projeto%20de%20Pesquisa%20-%20PTT4.pdf), no [PRD](../01-prd.md), na [arquitetura](../02-arch.md) e na [avaliação experimental](2026-10-24-avaliacao-experimental.md).
+> **Versão final consolidada em 28/10/2026**, baseada no [projeto de pesquisa](2026-09-17-projeto-de-pesquisa-ptt4.pdf), no [PRD](../knowledge/product.md), na [arquitetura](../knowledge/architecture.md) e na [avaliação experimental](2026-10-24-avaliacao-experimental.md).
 
 **Título:** Biblioteca Rust para Sistemas IoT Embarcados Context-Aware: Integração de Dados Ambientais e Tolerância a Falhas  
 **Discentes:** Ezequias Carlos Ferreira da Silva e Marcelo Gomes Barbosa  
@@ -49,7 +49,7 @@ O objetivo geral é desenvolver e validar uma biblioteca embarcada em Rust para 
 
 ### 3.1 Requisitos e propriedades
 
-Os requisitos estão no [PRD](../01-prd.md). As propriedades centrais, usadas como critério de teste, são:
+Os requisitos estão no [PRD](../knowledge/product.md). As propriedades centrais, usadas como critério de teste, são:
 
 - nenhum valor reprovado na validação aparece como válido;
 - cada valor identifica a sua origem, e cada falha, o seu tipo;

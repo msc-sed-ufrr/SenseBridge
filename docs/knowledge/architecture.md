@@ -139,7 +139,7 @@ flowchart LR
 
 | Escolha | Por quê |
 | --- | --- |
-| Rust, edition 2024, `rust-version = 1.85` | Rust oferece "segurança de memória, abstrações de baixo nível e suporte a desenvolvimento com recursos restritos" ([projeto de pesquisa](../00-Projeto%20de%20Pesquisa%20-%20PTT4.pdf), §2.1). O motivo da versão mínima 1.85: não informado |
+| Rust, edition 2024, `rust-version = 1.85` | Rust oferece "segurança de memória, abstrações de baixo nível e suporte a desenvolvimento com recursos restritos" ([projeto de pesquisa](../memory/2026-09-17-projeto-de-pesquisa-ptt4.pdf), §2.1). O motivo da versão mínima 1.85: não informado |
 | Crate `no_std`, sem alocação e sem dependências | O alvo tem RAM e Flash restritas e o projeto mede o custo próprio da biblioteca: cada dependência entra nessa conta e precisa compilar para o alvo ([ADR-002](../memory/decisions/ADR-002.md)) |
 | Fontes como traits genéricas, não `dyn` | Move a parte não determinística para fora do código testado, com custo nulo em tempo de execução, sem vtable no caminho do ciclo ([ADR-001](../memory/decisions/ADR-001.md)) |
 | Tipos `Copy` e `Result` por fonte | Nada vai para o heap, e a indisponibilidade de uma fonte fica no tipo, não em sentinela ou flag paralela ([ADR-006](../memory/decisions/ADR-006.md)) |

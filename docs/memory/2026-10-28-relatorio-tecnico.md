@@ -1,6 +1,6 @@
 # Relatório Técnico — SenseBridge
 
-> **Versão final consolidada em 28/10/2026**, baseada no [projeto de pesquisa](00-Projeto%20de%20Pesquisa%20-%20PTT4.pdf), no [PRD](01-prd.md), na [arquitetura](02-arch.md) e na [avaliação experimental](03-avaliacao-experimental.md).
+> **Versão final consolidada em 28/10/2026**, baseada no [projeto de pesquisa](2026-09-17-projeto-de-pesquisa-ptt4.pdf), no [PRD](../knowledge/product.md), na [arquitetura](../knowledge/architecture.md) e na [avaliação experimental](2026-10-24-avaliacao-experimental.md).
 
 **Título:** Biblioteca Rust para Sistemas IoT Embarcados Context-Aware: Integração de Dados Ambientais e Tolerância a Falhas  
 **Discentes:** Ezequias Carlos Ferreira da Silva e Marcelo Gomes Barbosa  
@@ -49,7 +49,7 @@ O objetivo geral é desenvolver e validar uma biblioteca embarcada em Rust para 
 
 ### 3.1 Requisitos e propriedades
 
-Os requisitos estão no [PRD](01-prd.md). As propriedades centrais, usadas como critério de teste, são:
+Os requisitos estão no [PRD](../knowledge/product.md). As propriedades centrais, usadas como critério de teste, são:
 
 - nenhum valor reprovado na validação aparece como válido;
 - cada valor identifica a sua origem, e cada falha, o seu tipo;
@@ -68,7 +68,7 @@ Os requisitos estão no [PRD](01-prd.md). As propriedades centrais, usadas como 
 
 ### 3.2 Arquitetura
 
-O repositório separa a biblioteca (`sense-bridge/`), independente de hardware, o firmware de referência (`firmware/esp32/`) e o console de host (`tools/console/`). A biblioteca expõe `SenseBridge::cycle(now_ms)`, que lê a fonte local, obtém a externa (ou reutiliza a última leitura válida dentro do intervalo de consulta), valida as duas, determina o estado e devolve um `Record` com o resultado de cada fonte e a transição. As decisões que sustentam o desenho estão registradas como ADRs na [arquitetura](02-arch.md#8-decisões-de-arquitetura):
+O repositório separa a biblioteca (`sense-bridge/`), independente de hardware, o firmware de referência (`firmware/esp32/`) e o console de host (`tools/console/`). A biblioteca expõe `SenseBridge::cycle(now_ms)`, que lê a fonte local, obtém a externa (ou reutiliza a última leitura válida dentro do intervalo de consulta), valida as duas, determina o estado e devolve um `Record` com o resultado de cada fonte e a transição. As decisões que sustentam o desenho estão registradas como ADRs na [arquitetura](decisions/):
 
 - fontes como traits e núcleo sem hardware (ADR-001);
 - crate sem `std`, sem alocação e sem dependências (ADR-002);
@@ -90,7 +90,7 @@ O firmware lê o DHT11 com a crate `dht11-trace`, extraída do driver do firmwar
 - **Testes automatizados:** 62, executados sem ESP32, sensor ou rede — 20 unitários da biblioteca, 7 de interpretação de respostas reais gravadas da Open-Meteo, 12 de cenários C1–C5 e propriedades do ciclo, 21 do console e 2 exemplos da documentação.
 - **Análise estática:** clippy com avisos tratados como erro na biblioteca, no console e no firmware.
 - **Integração contínua:** a cada push, formatação, clippy, testes, documentação e empacotamento da crate, além da compilação com Rust 1.85 (a versão mínima declarada) e para um alvo sem `std`.
-- O registro da verificação de um commit fica em [docs/evidencias/verificacao.md](evidencias/verificacao.md).
+- O registro da verificação de um commit fica em [docs/evidencias/verificacao.md](../evidencias/verificacao.md).
 
 ### 3.5 Protocolo experimental
 
@@ -177,12 +177,15 @@ A medição foi repetida com o firmware atual. O firmware SenseBridge apresentou
 - O custo de memória medido é o da integração da solução no firmware, não o da crate isolada.
 - A duração do ciclo com consulta externa depende da rede e do serviço, fora do controle do experimento.
 - A comparação de memória representa o custo incremental da solução integrada em relação ao firmware-base, não o tamanho isolado da crate.
+- A validação da versão avaliada não detecta leitura congelada, lacuna apontada durante a validação de outro trabalho, o laboratório SENTINELA (UNIVERSIDADE FEDERAL DE RORAIMA, 2026): um DHT11 travado em um valor plausível passa pela validação de faixa, e o estado fica em `Normal`. Detectá-la exige cuidado com a resolução de 1 °C e 1 %UR do sensor, que torna repetições legítimas comuns: em C1 e C3, as 10 leituras locais foram idênticas em 9 das 10 repetições, e, em uma captura exploratória, a mesma leitura se repetiu por 64 ciclos de 5 s (cerca de 5 min 20 s) com o sensor funcionando. Depois da v0.1.0, foi acrescentado um detector opcional que marca a leitura como suspeita sem mudar o estado e pode reiniciar o sensor (seção 6), ainda não avaliado em hardware.
 
 ## 6. Conclusão
 
 O SenseBridge mostrou que uma biblioteca `no_std`, sem alocação e sem dependências pode integrar uma fonte local e uma externa com comportamento definido diante de falhas parciais e totais, recuperando a operação normal no primeiro ciclo possível. Todos os cenários foram aprovados no ESP32, com ciclos de 18 a 22 ms sem consulta externa e um custo de cerca de 23,5 KiB de Flash e 13,4 KiB de RAM estática.
 
-Como trabalhos futuros, ficam a publicação da biblioteca como crate (preparação em [docs/06](06-publicacao-crates-io.md)), o registro de software, a publicação do conjunto de dados experimentais e a validação com outros sensores e plataformas sem alterar o núcleo.
+A crate `sense_bridge` foi publicada no crates.io na versão 0.1.0, em 28/10/2026, após a confirmação da titularidade e da licença com o orientador e o núcleo de inovação da UFRR ([docs/06](2026-10-28-publicacao-sense-bridge-0.1.0.md)). Como trabalhos futuros, ficam o registro de software, a publicação do conjunto de dados experimentais e a validação com outros sensores e plataformas sem alterar o núcleo.
+
+A detecção de leitura congelada também fica como trabalho futuro. Depois da versão avaliada, a biblioteca ganhou o `FreezeDetector`, opcional, que conta os ciclos seguidos com a mesma leitura local válida e marca a leitura como suspeita a partir de um limiar configurável. A leitura continua válida e o estado não muda, porque, com a resolução do DHT11, a repetição não distingue um sensor travado de um ambiente estável (PRD, D14; arquitetura, ADR-010). Opcionalmente, o firmware reinicia o DHT11 pelo GPIO de alimentação no máximo uma vez por limiar e registra se a leitura mudou, indício de sensor travado, ou persistiu. O estímulo foi o laboratório SENTINELA, cujo intertravamento trata a leitura congelada como falha e desliga o gerador; no SenseBridge, que não aciona nada perigoso, a reação é tentar recuperar o sensor sem mudar o estado. Falta avaliar o detector e o reinício em hardware, em um cenário C6, e calibrar o limiar com capturas longas.
 
 ## Referências
 
@@ -202,6 +205,8 @@ RUST FOUNDATION. **The Embedded Rust Book**. Disponível em: <https://doc.rust-l
 
 STALLINGS, William. **Arquitetura e organização de computadores**. 10. ed. São Paulo: Pearson Education do Brasil, 2017.
 
+UNIVERSIDADE FEDERAL DE RORAIMA. Programa de Pós-Graduação em Computação Aplicada. **Laboratório — Projeto SENTINELA: do circuito digital ao IP Core**. Boa Vista: UFRR, 2026. Roteiro de laboratório da disciplina Arquitetura e Organização de Computadores.
+
 ## Apêndice — Reprodutibilidade
 
-O passo a passo para executar os testes, gravar o firmware e repetir os cenários está no [README do projeto](../README.md#como-reproduzir); as evidências, em [docs/evidencias](evidencias/README.md).
+O passo a passo para executar os testes, gravar o firmware e repetir os cenários está no [README do projeto](../../README.md#como-reproduzir); as evidências, em [docs/evidencias](../evidencias/README.md).

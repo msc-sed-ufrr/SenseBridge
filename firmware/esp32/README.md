@@ -1,6 +1,6 @@
 # Firmware de referência — ESP32
 
-Caso de uso da biblioteca [`sense_bridge`](../../sense-bridge) no ESP32 clássico (ESP32-WROOM-32), com ESP-IDF e `std` (PRD, D12). O DHT11 é a fonte local, a Open-Meteo é a fonte externa, e cada ciclo emite uma linha CSV pela serial.
+Caso de uso da biblioteca [`sense_bridge`](../../sense-bridge) no ESP32 clássico (ESP32-WROOM-32), com ESP-IDF e `std` (D12). O DHT11 é a fonte local, a Open-Meteo é a fonte externa, e cada ciclo emite uma linha CSV pela serial.
 
 Este diretório fica fora do workspace da raiz: usa a toolchain Xtensa e compila apenas para o ESP32.
 
@@ -49,16 +49,47 @@ cp cfg.toml.example cfg.toml
 
 Preencha `wifi_ssid` e `wifi_password`. O `cfg.toml` é ignorado pelo git; as credenciais nunca vão para o repositório. O build valida os valores: um ciclo abaixo de 1000 ms (intervalo mínimo do DHT11) ou um tempo limite igual ou maior que o ciclo interrompem a compilação com uma mensagem.
 
-| Chave | Padrão | Decisão no PRD |
+| Chave | Padrão | Regra ([product.md](../../docs/knowledge/product.md)) |
 | --- | --- | --- |
-| `latitude`, `longitude` | 2.82, −60.67 (Boa Vista/RR) | D6, fechada |
-| `cycle_interval_ms` | 5000 | D5b, fechada |
-| `http_timeout_ms` | 3000 | D5c, fechada |
-| `external_refresh_ms` | 900000 (15 min) | D5a, fechada |
+| `latitude`, `longitude` | 2.82, −60.67 (Boa Vista/RR) | BR-35 (D6) |
+| `cycle_interval_ms` | 5000 | BR-04 (D5b) |
+| `http_timeout_ms` | 3000 | BR-03 (D5c) |
+| `external_refresh_ms` | 900000 (15 min) | BR-05 (D5a) |
 | `dht11_gpio` | 4 | — |
 | `dht11_power_gpio` | ausente (VCC no 3V3) | — |
+| `local_frozen_after` | 0 (desligado) | BR-18 (D14) |
+| `local_frozen_restart` | false | BR-18 (D14) |
+| `freeze_test_from_cycle`, `freeze_test_temperature`, `freeze_test_humidity` | 0 (desligada), 40, 80 | BR-32, cenário C6 |
 
-Para observar falha e recuperação da fonte externa sem esperar 15 minutos, reduza `external_refresh_ms` para 5000, como nos experimentos C3–C5 (PRD, D10): com o ciclo de 5 s, a fonte externa passa a ser consultada aproximadamente a cada ciclo. Uma falha de rede durante a reutilização só aparece na consulta seguinte.
+Para observar falha e recuperação da fonte externa sem esperar 15 minutos, reduza `external_refresh_ms` para 5000, como nos experimentos C3–C5 (BR-31, D10): com o ciclo de 5 s, a fonte externa passa a ser consultada aproximadamente a cada ciclo. Uma falha de rede durante a reutilização só aparece na consulta seguinte.
+
+A validação de faixa aceita um DHT11 travado em um valor plausível. Com `local_frozen_after = N`, N > 0, o `FreezeDetector` da biblioteca marca `local_suspect = true` quando a mesma leitura local válida se repete em N ciclos seguidos. A leitura continua válida e o estado não muda. Com a resolução de 1 °C e 1 %UR, repetições legítimas são comuns: nas capturas, houve até 64 ciclos de 5 s iguais com o sensor funcionando, e em C1 e C3 as 10 leituras foram idênticas em 9 das 10 repetições. Por isso, use um valor bem acima, como 360 (30 min). Os experimentos C1–C5 foram feitos sem o detector.
+
+Com `local_frozen_restart = true`, que exige `local_frozen_after` > 0 e `dht11_power_gpio`, o firmware também reinicia o DHT11 por suspeita: no ciclo em que a suspeita começa e, enquanto a leitura não mudar, de novo a cada `local_frozen_after` ciclos. Com 360, são no máximo um reinício a cada 30 min. O reinício usa o mesmo desligamento das falhas seguidas, depois da linha CSV e fora da janela medida, e o estado não muda. A contagem continua depois do reinício, e o log do ciclo seguinte diz o resultado:
+
+```text
+W (...) sense_bridge_esp32: DHT11: mesma leitura há 360 ciclos; suspeita de leitura congelada
+W (...) sense_bridge_esp32::local: DHT11: suspeita de leitura congelada; desligando o sensor por 1000 ms
+W (...) sense_bridge_esp32: DHT11: a leitura mudou após o reinício, indício de sensor travado
+W (...) sense_bridge_esp32: DHT11: a leitura persistiu após o reinício (361 ciclos iguais): ambiente estável ou defeito que o reinício não resolve
+```
+
+Uma leitura que muda depois do reinício indica um sensor travado; uma que persiste indica, mais provavelmente, um ambiente estável, ou um defeito que o reinício não resolve, como um sensor obstruído. Esse resultado serve também para calibrar o limiar. Sem `local_frozen_restart`, a suspeita só gera o aviso `mesma leitura há N ciclos; suspeita de leitura congelada`.
+
+### Cenário C6: leitura congelada por injeção de falha
+
+Um DHT11 real não trava quando se quer. Para executar o C6, `freeze_test_from_cycle = K`, K > 0, faz o firmware devolver, a partir do ciclo K, sempre a leitura `freeze_test_temperature` / `freeze_test_humidity` (padrão: 40 °C e 80 %UR), como um sensor travado em um valor plausível. A transação com o sensor continua acontecendo, para que a duração da leitura siga a de um sensor real. A injeção termina no primeiro reinício do sensor depois de começar, que é o que destrava um DHT11 real; sem reinício, ela dura a captura inteira. O build avisa quando a injeção está ligada, e o log marca o início e o fim dela com `C6:`. O valor congelado deve diferir do ambiente e ficar na faixa do DHT11, que o build confere.
+
+Configuração do protocolo, com limiar curto só para o experimento:
+
+```toml
+freeze_test_from_cycle = 2
+local_frozen_after = 5
+local_frozen_restart = true
+dht11_power_gpio = 23
+```
+
+Com ela, os ciclos 2 a 6 trazem a leitura congelada, a suspeita começa no ciclo 6, o sensor é reiniciado depois dele e o ciclo 7 já traz a leitura real, com `local_restart = suspect`. O estado fica em `Normal` o tempo todo.
 
 ## Compilar e gravar
 
@@ -82,6 +113,10 @@ Depois dos logs de inicialização, a serial mostra o cabeçalho e uma linha por
 | `transition`, `recovery` | Transição em relação ao ciclo anterior e se ela é uma recuperação |
 | `read_us`, `fetch_us`, `cycle_us` | Duração da leitura local, da consulta externa (vazia quando a leitura é reutilizada) e do ciclo inteiro; validação e integração correspondem a `cycle_us - read_us - fetch_us` |
 | `heap_free`, `heap_min_free`, `stack_min_free` | Heap livre, mínimo de heap livre desde o boot e folga mínima da pilha da tarefa principal, em bytes |
+| `local_repeat`, `local_suspect` | Ciclos seguidos com a mesma leitura local válida e a suspeita de leitura congelada; vazias com `local_frozen_after = 0` |
+| `local_restart` | Reinício do DHT11 feito antes deste ciclo: `failures` (3 falhas seguidas) ou `suspect` (suspeita de leitura congelada); vazia sem reinício |
+
+As três últimas colunas vieram depois da v0.1.0. O console aceita linhas sem elas, a partir da última, como as das capturas oficiais de C1–C5, que não têm nenhuma.
 
 As linhas de dados começam por um número, e as de log por `I (`, `W (` ou `E (`. Para separar os dados de uma captura:
 

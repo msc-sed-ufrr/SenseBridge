@@ -21,6 +21,35 @@ const POWER_CYCLE_AFTER: u32 = 3;
 
 type Data<'d> = PinDriver<'d, InputOutput>;
 
+/// Motivo de um reinício do sensor, emitido na coluna `local_restart` do ciclo seguinte.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Restart {
+    /// `POWER_CYCLE_AFTER` falhas de leitura seguidas.
+    Failures,
+    /// Suspeita de leitura congelada (`local_frozen_restart`).
+    Suspect,
+}
+
+impl Restart {
+    /// Nome estável, reconhecido pelo console.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Failures => "failures",
+            Self::Suspect => "suspect",
+        }
+    }
+}
+
+/// Injeção de falha do cenário C6 (`freeze_test_from_cycle`): a partir da leitura de número
+/// `from`, contada a partir de 0 como os ciclos, o adaptador devolve sempre `reading`, como um
+/// sensor travado em um valor plausível. A injeção termina no primeiro reinício do sensor
+/// depois de começar, que é o que destrava um DHT11 real.
+#[derive(Debug, Clone, Copy)]
+pub struct FreezeTest {
+    pub from: u64,
+    pub reading: LocalReading,
+}
+
 /// Erro dos pinos do `esp-idf-hal` pelo `embedded-hal`.
 type PinError = <Data<'static> as ErrorType>::Error;
 
@@ -36,10 +65,21 @@ pub struct Dht11<'d> {
     switchable: bool,
     powered_at: Instant,
     last_fault: Option<Fault<PinError>>,
+    /// Leituras feitas desde o boot; a próxima tem este número.
+    reads: u64,
+    /// Reinício feito depois do último ciclo, para a linha CSV do próximo.
+    restarted: Option<Restart>,
+    freeze_test: Option<FreezeTest>,
+    /// O início da injeção já foi registrado no log.
+    freeze_test_announced: bool,
 }
 
 impl<'d> Dht11<'d> {
-    pub fn new(data: Data<'d>, power: Option<PinDriver<'d, Output>>) -> Result<Self, EspError> {
+    pub fn new(
+        data: Data<'d>,
+        power: Option<PinDriver<'d, Output>>,
+        freeze_test: Option<FreezeTest>,
+    ) -> Result<Self, EspError> {
         let switchable = power.is_some();
         let platform = Esp32 {
             section: IsrCriticalSection::new(),
@@ -54,6 +94,10 @@ impl<'d> Dht11<'d> {
             switchable,
             powered_at: Instant::now(),
             last_fault: None,
+            reads: 0,
+            restarted: None,
+            freeze_test,
+            freeze_test_announced: false,
         })
     }
 
@@ -65,29 +109,73 @@ impl<'d> Dht11<'d> {
         }
     }
 
-    /// Chamado depois de cada ciclo, fora da janela medida: registra a etapa em que a última
-    /// leitura falhou e, a cada `POWER_CYCLE_AFTER` falhas seguidas, reinicia o sensor.
+    /// Chamado depois de cada ciclo, fora da janela medida: registra o início da injeção do
+    /// C6, a etapa em que a última leitura falhou e, a cada `POWER_CYCLE_AFTER` falhas
+    /// seguidas, reinicia o sensor.
     pub fn after_cycle(&mut self) {
+        if let Some(test) = self.active_freeze_test()
+            && !self.freeze_test_announced
+        {
+            self.freeze_test_announced = true;
+            warn!(
+                "C6: injeção de falha: leitura local congelada em {:.0} °C e {:.0} %UR a partir \
+                 do ciclo {}, até o próximo reinício do sensor",
+                test.reading.temperature, test.reading.humidity, test.from
+            );
+        }
         let Some(fault) = self.last_fault.take() else {
             return;
         };
         let failures = self.driver.failures();
         warn!("DHT11: {} (falha {failures} seguida)", describe(&fault));
-        if self.switchable && failures >= POWER_CYCLE_AFTER {
-            // Um DHT11 travado só volta a responder depois de perder a alimentação. A crate
-            // mantém o DATA em nível baixo enquanto o sensor está desligado e espera o tempo de
-            // energização antes de devolver.
-            warn!("DHT11: {failures} falhas seguidas; desligando o sensor por 1000 ms");
-            if let Err(error) = self.driver.power_cycle() {
-                warn!("DHT11: erro no GPIO ao reiniciar o sensor: {error}");
-            }
+        if failures >= POWER_CYCLE_AFTER {
+            self.power_cycle(Restart::Failures, &format!("{failures} falhas seguidas"));
         }
+    }
+
+    /// Desliga e religa o sensor, quando ele é alimentado por um GPIO; sem o GPIO, não faz
+    /// nada. Bloqueia por cerca de 2 s e deve ser chamado fora da janela medida. Encerra a
+    /// injeção do C6, se ela já começou.
+    pub fn power_cycle(&mut self, cause: Restart, reason: &str) {
+        if !self.switchable {
+            return;
+        }
+        // Um DHT11 travado só volta a responder depois de perder a alimentação. A crate mantém
+        // o DATA em nível baixo enquanto o sensor está desligado e espera o tempo de
+        // energização antes de devolver.
+        warn!("DHT11: {reason}; desligando o sensor por 1000 ms");
+        if let Err(error) = self.driver.power_cycle() {
+            warn!("DHT11: erro no GPIO ao reiniciar o sensor: {error}");
+        }
+        self.restarted = Some(cause);
+        if self.active_freeze_test().is_some() {
+            self.freeze_test = None;
+            warn!("C6: injeção de falha desfeita pelo reinício do sensor");
+        }
+    }
+
+    /// Motivo do reinício feito depois do último ciclo, se houve; a chamada o consome.
+    pub fn take_restart(&mut self) -> Option<Restart> {
+        self.restarted.take()
+    }
+
+    /// A injeção do C6, se ela já começou e não foi desfeita.
+    fn active_freeze_test(&self) -> Option<FreezeTest> {
+        self.freeze_test.filter(|test| self.reads > test.from)
     }
 }
 
 impl LocalSource for Dht11<'_> {
     fn read(&mut self) -> Result<LocalReading, LocalFailure> {
-        match self.driver.read() {
+        // A transação com o sensor acontece mesmo durante a injeção do C6, para que a duração
+        // da leitura e a cadência de amostragem continuem as de um sensor real.
+        let result = self.driver.read();
+        self.reads += 1;
+        if let Some(test) = self.active_freeze_test() {
+            self.last_fault = None;
+            return Ok(test.reading);
+        }
+        match result {
             // Partes inteiras, com o bit 7 da temperatura como sinal: a conversão da crate
             // `dht-sensor` 0.3, mantida para que as leituras sigam comparáveis.
             Ok(reading) => {

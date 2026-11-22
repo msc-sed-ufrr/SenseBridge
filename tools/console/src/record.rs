@@ -40,6 +40,11 @@ pub fn classify(line: &str) -> Kind {
     }
 }
 
+/// Colunas acrescentadas ao fim da linha depois da v0.1.0 do firmware, na ordem em que vieram.
+/// Uma linha pode vir sem as últimas delas, como nas capturas oficiais de C1–C5, que não têm
+/// nenhuma, e então os campos ficam vazios.
+const OPTIONAL_TRAILING: [&str; 3] = ["local_repeat", "local_suspect", "local_restart"];
+
 /// Nomes das colunas, na ordem do cabeçalho.
 #[derive(Debug, Clone)]
 pub struct Columns(Vec<String>);
@@ -54,18 +59,36 @@ impl Columns {
         self.0.join(",")
     }
 
+    /// Quantas colunas do fim do cabeçalho podem faltar em uma linha: as de
+    /// [`OPTIONAL_TRAILING`] presentes, na ordem, no fim do cabeçalho.
+    fn optional_trailing(&self) -> usize {
+        (1..=OPTIONAL_TRAILING.len())
+            .rev()
+            .find(|&count| {
+                self.0.len() > count
+                    && self.0[self.0.len() - count..]
+                        .iter()
+                        .map(String::as_str)
+                        .eq(OPTIONAL_TRAILING[..count].iter().copied())
+            })
+            .unwrap_or(0)
+    }
+
     /// Interpreta uma linha de ciclo. `None` quando o número de campos não bate com o
     /// cabeçalho ou uma coluna numérica não é um número: a linha não é um ciclo íntegro.
+    /// Só as colunas opcionais do fim do cabeçalho podem faltar, a partir da última.
     pub fn cycle(&self, line: &str) -> Option<Cycle> {
         let fields: Vec<&str> = line.split(',').collect();
-        if fields.len() != self.0.len() {
+        let complete = self.0.len();
+        if !(complete - self.optional_trailing()..=complete).contains(&fields.len()) {
             return None;
         }
         let get = |name: &str| {
             self.0
                 .iter()
                 .position(|column| column == name)
-                .map_or("", |index| fields[index])
+                .and_then(|index| fields.get(index).copied())
+                .unwrap_or("")
         };
         let failure = |name: &str| Some(get(name).to_owned()).filter(|text| !text.is_empty());
 
@@ -103,6 +126,18 @@ impl Columns {
             heap_free: get("heap_free").parse().ok()?,
             heap_min_free: get("heap_min_free").parse().ok()?,
             stack_min_free: get("stack_min_free").parse().ok()?,
+            local_repeat: optional(get("local_repeat"))?,
+            local_suspect: match get("local_suspect") {
+                "" => None,
+                "true" => Some(true),
+                "false" => Some(false),
+                _ => return None,
+            },
+            local_restart: match get("local_restart") {
+                "" => None,
+                cause @ ("failures" | "suspect") => Some(cause.to_owned()),
+                _ => return None,
+            },
         })
     }
 }
@@ -156,6 +191,14 @@ pub struct Cycle {
     pub heap_free: u64,
     pub heap_min_free: u64,
     pub stack_min_free: u64,
+    /// Ciclos seguidos com a mesma leitura local válida; vazia com o detector desligado ou em
+    /// capturas anteriores à coluna.
+    pub local_repeat: Option<u64>,
+    /// Suspeita de leitura congelada; vazia como `local_repeat`.
+    pub local_suspect: Option<bool>,
+    /// Reinício do sensor feito antes deste ciclo: `failures` (falhas seguidas) ou `suspect`
+    /// (suspeita de leitura congelada).
+    pub local_restart: Option<String>,
 }
 
 #[cfg(test)]
@@ -261,6 +304,64 @@ mod tests {
         let line = NORMAL_WITH_FETCH.replacen("0,21", "21,0", 1);
         let cycle = columns.cycle(&line).unwrap();
         assert_eq!((cycle.cycle, cycle.timestamp_ms), (0, 21));
+    }
+
+    #[test]
+    fn rows_without_the_trailing_columns_leave_them_empty() {
+        let cycle = Columns::default().cycle(NORMAL_WITH_FETCH).unwrap();
+        assert_eq!((cycle.local_repeat, cycle.local_suspect), (None, None));
+    }
+
+    #[test]
+    fn parses_the_frozen_reading_columns() {
+        let columns = Columns::default();
+
+        let suspect = columns
+            .cycle(&format!("{NORMAL_WITH_FETCH},360,true,"))
+            .unwrap();
+        assert_eq!(suspect.local_repeat, Some(360));
+        assert_eq!(suspect.local_suspect, Some(true));
+        assert_eq!(suspect.local_restart, None);
+
+        let restarted = columns
+            .cycle(&format!("{NORMAL_WITH_FETCH},1,false,suspect"))
+            .unwrap();
+        assert_eq!(restarted.local_restart.as_deref(), Some("suspect"));
+
+        let off = columns
+            .cycle(&format!("{NORMAL_WITH_FETCH},,,failures"))
+            .unwrap();
+        assert_eq!((off.local_repeat, off.local_suspect), (None, None));
+        assert_eq!(off.local_restart.as_deref(), Some("failures"));
+
+        // Linhas do firmware anterior à coluna `local_restart`.
+        let without_restart = columns
+            .cycle(&format!("{NORMAL_WITH_FETCH},3,false"))
+            .unwrap();
+        assert_eq!(without_restart.local_repeat, Some(3));
+        assert_eq!(without_restart.local_restart, None);
+
+        assert_eq!(columns.cycle(&format!("{NORMAL_WITH_FETCH},3,yes,")), None);
+        assert_eq!(
+            columns.cycle(&format!("{NORMAL_WITH_FETCH},3,true,boot")),
+            None
+        );
+        assert_eq!(
+            columns.cycle(&format!("{NORMAL_WITH_FETCH},3,true,suspect,extra")),
+            None
+        );
+    }
+
+    #[test]
+    fn a_header_without_the_trailing_columns_still_requires_every_field() {
+        let legacy = DEFAULT_HEADER.replace(",local_repeat,local_suspect,local_restart", "");
+        let columns = Columns::parse(&legacy);
+
+        assert!(columns.cycle(NORMAL_WITH_FETCH).is_some());
+        assert_eq!(
+            columns.cycle(&NORMAL_WITH_FETCH.replacen(",12436", "", 1)),
+            None
+        );
     }
 
     #[test]

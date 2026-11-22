@@ -66,6 +66,9 @@ pub fn header(style: Style) -> String {
 pub fn cycle(cycle: &Cycle, style: Style) -> String {
     // Cada coluna é alinhada antes de receber cor, para que os escapes não contem na largura.
     let local = match &cycle.local {
+        Ok(reading) if cycle.local_suspect == Some(true) => {
+            style.yellow(&format!("{:<12}", format!("{}?", reading_text(reading))))
+        }
         Ok(reading) => format!("{:<12}", reading_text(reading)),
         Err(failure) => style.red(&format!("{failure:<12}")),
     };
@@ -94,6 +97,17 @@ pub fn cycle(cycle: &Cycle, style: Style) -> String {
         style.state(&cycle.state, &format!("{:<16}", cycle.state)),
         duration(cycle.cycle_us),
     );
+    if let Some(cause) = &cycle.local_restart {
+        let cause = match cause.as_str() {
+            "suspect" => "suspeita de leitura congelada",
+            _ => "falhas seguidas",
+        };
+        line.push('\n');
+        line.push_str(&style.yellow(&format!(
+            "{:>5}  ↳ DHT11 reiniciado antes deste ciclo ({cause})",
+            ""
+        )));
+    }
     if let Some(transition) = &cycle.transition {
         let recovery = if transition.recovery {
             " (recuperação)"
@@ -177,6 +191,17 @@ mod tests {
             super::cycle(&cycle, PLAIN),
             "   13  00:01:05  DegradedLocal     NoResponse    29.1°C 76%  (1 min)      22 ms\n\
              \x20      ↳ Normal → DegradedLocal"
+        );
+    }
+
+    #[test]
+    fn shows_a_sensor_restart_before_the_cycle() {
+        let row = "9,45005,Normal,30.0,31.0,,29.1,76.0,0,,,,22010,1100000,1122000,206000,199000,\
+            12380,1,false,suspect";
+        let cycle = Columns::default().cycle(row).unwrap();
+        assert!(
+            super::cycle(&cycle, PLAIN)
+                .ends_with("↳ DHT11 reiniciado antes deste ciclo (suspeita de leitura congelada)")
         );
     }
 

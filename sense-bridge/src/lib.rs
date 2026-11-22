@@ -3,6 +3,7 @@
 #![doc = include_str!("../README.md")]
 
 pub mod bridge;
+pub mod freeze;
 pub mod open_meteo;
 pub mod reading;
 pub mod record;
@@ -13,6 +14,8 @@ pub mod validation;
 
 // API pública principal do SenseBridge
 pub use bridge::{Config, SenseBridge};
+
+pub use freeze::FreezeDetector;
 
 pub use reading::{ExternalFailure, ExternalReading, InvalidReason, LocalFailure, LocalReading};
 

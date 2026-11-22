@@ -1,6 +1,6 @@
 # Evidências
 
-Dados brutos e registros de verificação que sustentam a [avaliação experimental](../03-avaliacao-experimental.md) e o relatório técnico.
+Dados brutos e registros de verificação que sustentam a [avaliação experimental](../memory/2026-10-24-avaliacao-experimental.md) e o relatório técnico.
 
 ## Conteúdo
 

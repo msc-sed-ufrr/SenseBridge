@@ -4,4 +4,5 @@
 "cycle,timestamp_ms,state,\
  local_temperature_c,local_humidity_pct,local_failure,\
  external_temperature_c,external_humidity_pct,external_age_ms,external_failure,\
- transition,recovery,read_us,fetch_us,cycle_us,heap_free,heap_min_free,stack_min_free"
+ transition,recovery,read_us,fetch_us,cycle_us,heap_free,heap_min_free,stack_min_free,\
+ local_repeat,local_suspect,local_restart"

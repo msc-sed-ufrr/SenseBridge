@@ -28,6 +28,8 @@ A cada ciclo, a biblioteca `sense_bridge`:
 - sinaliza explicitamente o estado de erro quando as duas fontes estão indisponíveis;
 - retorna à operação normal no primeiro ciclo em que as duas fontes voltam.
 
+Opcionalmente, o `FreezeDetector` marca como suspeita uma leitura local repetida por muitos ciclos, sem mudar o estado: a validação de faixa não detecta um sensor travado em um valor plausível. O firmware pode também reiniciar o sensor por suspeita, no máximo uma vez por limiar. A lacuna foi apontada pela validação do laboratório SENTINELA (UFRR/PPCA); o detector foi acrescentado depois da v0.1.0 e ainda não foi avaliado em hardware.
+
 A biblioteca é `no_std`, não aloca memória e não tem dependências. O uso da API está no [README da crate](sense-bridge/README.md).
 
 ## Resultados
@@ -40,11 +42,11 @@ A biblioteca é `no_std`, não aloca memória e não tem dependências. O uso da
 | C4 — Falha simultânea | Indisponível | Indisponível | `Error` | 50/50 ciclos em `Error` |
 | C5 — Recuperação | Recuperado | Recuperado | Retorno a `Normal` | 5/5 recuperações no primeiro ciclo com as duas fontes válidas |
 
-- **Testes automatizados:** 62, executados sem hardware, cobrindo C1–C5, validação, transições e a interpretação de respostas reais da Open-Meteo.
+- **Testes automatizados:** 62 na versão avaliada (83 com o detector de leitura congelada e o cenário C6, acrescentados depois), executados sem hardware, cobrindo C1–C5, validação, transições e a interpretação de respostas reais da Open-Meteo.
 - **Latência:** ciclos sem consulta externa entre 18 e 22 ms.
 - **Memória:** cerca de 23,5 KiB de Flash e 13,4 KiB de RAM estática a mais que um firmware-base equivalente sem a biblioteca.
 
-A metodologia e os números completos estão na [avaliação experimental](docs/03-avaliacao-experimental.md). O projeto não inclui medição de consumo energético.
+A metodologia e os números completos estão na [avaliação experimental](docs/memory/2026-10-24-avaliacao-experimental.md). O projeto não inclui medição de consumo energético.
 
 ## Arquitetura
 
@@ -58,14 +60,14 @@ flowchart TB
     Log["Console e logs<br/>ciclos · tempo · heap e pilha · medições"]
 ```
 
-Componentes, fluxo do ciclo, princípios e decisões de arquitetura estão em [docs/02-arch.md](docs/02-arch.md).
+Componentes, fluxo do ciclo, princípios e decisões de arquitetura estão em [docs/knowledge/architecture.md](docs/knowledge/architecture.md).
 
 ## Estrutura
 
 ```text
 SenseBridge/
 ├── Cargo.toml          # workspace: biblioteca e ferramentas de host
-├── sense-bridge/       # biblioteca (no_std, independente de hardware), preparada para o crates.io
+├── sense-bridge/       # biblioteca (no_std, independente de hardware), publicada no crates.io
 │   ├── src/
 │   ├── tests/          # cenários C1–C5 com fontes simuladas e respostas gravadas da Open-Meteo
 │   ├── examples/
@@ -75,7 +77,7 @@ SenseBridge/
 │   └── console/        # console de host: acompanha os ciclos pela serial e grava as capturas
 ├── firmware/           # casos de uso, um projeto por placa (não publicados)
 │   └── esp32/          # DHT11 + Open-Meteo
-├── docs/               # projeto de pesquisa, PRD, arquitetura, avaliação, relatório e evidências
+├── docs/               # projeto de pesquisa, produto e arquitetura (knowledge/), histórico e decisões (memory/), avaliação, relatório e evidências
 ├── scripts/
 │   └── evidencias.sh   # gera docs/evidencias/verificacao.md
 ├── capturas/           # capturas de trabalho gravadas pelo console (ignoradas pelo git)
@@ -92,7 +94,7 @@ SenseBridge/
 Requer apenas o Rust, instalado pelo [rustup](https://rustup.rs) (versão 1.85 ou mais recente). Na raiz do repositório:
 
 ```sh
-cargo test                                     # 62 testes da biblioteca e do console, com C1–C5
+cargo test                                     # 83 testes da biblioteca e do console, com C1–C6
 cargo clippy --all-targets -- -D warnings      # análise estática
 cargo run -p sense_bridge --example simulate   # imprime os cenários simulados em CSV
 scripts/evidencias.sh                          # registra tudo em docs/evidencias/verificacao.md
@@ -147,7 +149,7 @@ O protocolo usa 5 repetições de 10 ciclos por cenário, com ciclo de 5 s (`cyc
 | C4 | C2 e C3 ao mesmo tempo | `Error` |
 | C5 | Iniciar com o DHT11 desconectado e religá-lo depois do ciclo 2 | Transição para `Normal`, marcada como recuperação, no primeiro ciclo com as duas fontes válidas |
 
-O console mostra o estado de cada ciclo e, ao final, um resumo com a contagem por estado e por tipo de falha. Uma captura gravada pode ser revista com `cargo run -q -p sense_bridge_console -- --no-save < capturas/c2-r1.txt`, e `cargo run -q -p sense_bridge_console -- --analyze capturas/c*.csv` confere cada captura com o estado esperado no seu cenário, identificado pelo nome do arquivo. As capturas oficiais ficam em [docs/evidencias](docs/evidencias/README.md).
+O console mostra o estado de cada ciclo e, ao final, um resumo com a contagem por estado e por tipo de falha. Uma captura gravada pode ser revista com `cargo run -q -p sense_bridge_console -- --no-save < capturas/c2-r1.txt`, e `cargo run -q -p sense_bridge_console -- --analyze capturas/c*.csv` confere cada captura com o estado esperado no seu cenário, identificado pelo nome do arquivo. O cenário C6, leitura congelada por injeção de falha, tem a configuração no [README do firmware](firmware/esp32/README.md#cenário-c6-leitura-congelada-por-injeção-de-falha). Para calibrar o limiar de `local_frozen_after`, `cargo run -q -p sense_bridge_console -- --repeats capturas/*.csv` mede a maior sequência de leituras locais iguais em capturas de qualquer nome. As capturas oficiais ficam em [docs/evidencias](docs/evidencias/README.md).
 
 ### Versões verificadas
 
@@ -164,13 +166,13 @@ Em 21/10/2026, com macOS em Apple Silicon:
 
 | Documento | Conteúdo |
 | --- | --- |
-| [Projeto de pesquisa](docs/00-Projeto%20de%20Pesquisa%20-%20PTT4.pdf) | Proposta aprovada: problema, objetivos, escopo e entregáveis |
-| [PRD](docs/01-prd.md) | Requisitos, regras de negócio, casos de uso e decisões de projeto |
-| [Arquitetura](docs/02-arch.md) | Componentes, fluxo de dados, princípios e ADRs |
-| [Avaliação experimental](docs/03-avaliacao-experimental.md) | Protocolo e resultados de C1–C5, latência, Flash e RAM |
-| [Relatório técnico](docs/04-relatorio-tecnico.md) | Rascunho do relatório conclusivo |
-| [Roteiro do vídeo](docs/05-roteiro-video.md) | Demonstração de 3–5 minutos |
-| [Publicação no crates.io](docs/06-publicacao-crates-io.md) | Preparação e passo a passo da publicação da crate |
+| [Projeto de pesquisa](docs/memory/2026-09-17-projeto-de-pesquisa-ptt4.pdf) | Proposta aprovada: problema, objetivos, escopo e entregáveis |
+| [Produto](docs/knowledge/product.md) | Propósito, regras de negócio com o motivo, casos de uso e perguntas em aberto |
+| [Arquitetura](docs/knowledge/architecture.md) | Componentes, fluxo do ciclo, stack e invariantes |
+| [Decisões](docs/memory/decisions/) | ADR-001 a ADR-010, uma por arquivo |
+| [Avaliação experimental](docs/memory/2026-10-24-avaliacao-experimental.md) | Protocolo e resultados de C1–C5, latência, Flash e RAM |
+| [Relatório técnico](docs/memory/2026-10-28-relatorio-tecnico.md) | Relatório conclusivo, com a versão entregue em [PDF](docs/memory/2026-11-03-entrega-final-ptt4.pdf) |
+| [Publicação de uma versão](docs/knowledge/release.md) | Passo a passo para publicar a crate; o registro da 0.1.0 está em [docs/memory](docs/memory/2026-10-28-publicacao-sense-bridge-0.1.0.md) |
 | [Evidências](docs/evidencias/README.md) | Verificação do código e capturas dos experimentos |
 
 ## Tecnologias

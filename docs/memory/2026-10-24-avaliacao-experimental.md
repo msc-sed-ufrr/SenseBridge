@@ -292,7 +292,7 @@ O experimento em hardware utilizou:
 - atualização externa normal de 900 segundos;
 - atualização externa experimental de 5 segundos em C3–C5.
 
-As evidências de cada repetição foram capturadas pelo `sense_bridge_console` em CSV/TXT. A correspondência entre o estado esperado e o observado pode ser recalculada a partir delas com `--analyze` ([evidências](evidencias/README.md#capturas-dos-experimentos)).
+As evidências de cada repetição foram capturadas pelo `sense_bridge_console` em CSV/TXT. A correspondência entre o estado esperado e o observado pode ser recalculada a partir delas com `--analyze` ([evidências](../evidencias/README.md#capturas-dos-experimentos)).
 
 ---
 
@@ -332,3 +332,46 @@ Resultados consolidados:
 ```
 
 Com a execução física de C1–C5 e a medição do baseline de RAM/Flash, a avaliação experimental prevista para o SenseBridge está concluída.
+
+---
+
+## 10. Após a v0.1.0: leitura congelada
+
+As seções anteriores descrevem a versão avaliada, v0.1.0, e não mudam. Esta seção registra uma lacuna identificada depois dela e o que foi acrescentado.
+
+**Estímulo.** A lacuna foi apontada durante a validação de outro trabalho, o laboratório SENTINELA (UFRR/PPCA, Arquitetura e Organização de Computadores, 2026). No SENTINELA, um nó sensor de borda detecta leitura congelada (a mesma amostra por 8 amostras seguidas) e a trata como falha do sensor, indo para um estado seguro que desliga o gerador.
+
+**Lacuna.** A validação aceita qualquer valor finito dentro da faixa. Um DHT11 travado em um valor plausível, que continue respondendo com checksum correto, passa por ela, e o estado fica em `Normal`. O firmware não reaproveita leituras: cada ciclo faz uma transação nova com o sensor.
+
+**Repetições legítimas nas capturas.** Maior sequência de ciclos seguidos com a mesma temperatura e a mesma umidade, com ciclo de 5 s:
+
+| Capturas | Sequência máxima |
+|---|---|
+| C1, 5 repetições oficiais | 10 de 10 leituras em todas |
+| C3, 5 repetições oficiais | 10 de 10 em quatro; 9 de 10 em uma |
+| `capturas/2026-10-07T00-57-50` (exploratória) | 64 ciclos, cerca de 5 min 20 s |
+| `capturas/2026-10-03T20-27-06` (exploratória) | 44 ciclos, cerca de 3 min 40 s |
+
+Com a resolução de 1 °C e 1 %UR, e com a casa decimal descartada pelo firmware, uma regra de poucas leituras iguais reprovaria o sensor em operação normal.
+
+**O que foi acrescentado.** O `FreezeDetector`, opcional, conta os ciclos seguidos com a mesma leitura local válida e marca a leitura como suspeita a partir de um limiar. A suspeita não altera a validade, o `Record` nem o estado (PRD, D14; arquitetura, ADR-010). No firmware, `local_frozen_after` em `cfg.toml` liga o detector (padrão: desligado), e o CSV ganha `local_repeat` e `local_suspect` no fim da linha. Com `local_frozen_restart`, que exige o GPIO de alimentação do sensor, o firmware também reinicia o DHT11 no ciclo em que a suspeita começa e, enquanto a leitura não mudar, de novo a cada limiar, e registra no log do ciclo seguinte se a leitura mudou ou persistiu. O console aceita linhas sem as duas colunas: `--analyze` dá o mesmo resultado para as 25 capturas oficiais antes e depois da mudança (25/25 capturas e 250/250 ciclos no estado esperado).
+
+**Testes.** A suíte passou de 62 para 77 testes: 8 unitários do detector, inclusive a regra que limita a reação a uma vez por limiar, 3 do cenário C6 simulado (leitura congelada marcada como suspeita, que continua válida e em `Normal`; suspeita desfeita por um valor novo; sequência encerrada por falha local), 3 do console para as colunas novas e 1 exemplo da documentação.
+
+**Cenário C6 — leitura congelada.** Um DHT11 real não trava quando se quer, então o C6 usa injeção de falha no firmware. Com `freeze_test_from_cycle = 2`, o adaptador do DHT11 devolve, a partir do ciclo 2, sempre 40 °C e 80 %UR, valores plausíveis e diferentes do ambiente, até o próximo reinício do sensor; a transação com o sensor continua acontecendo, para manter a duração real da leitura. Protocolo, com o limiar curto só para o experimento:
+
+| Parâmetro | Valor |
+|---|---|
+| `freeze_test_from_cycle` | 2 |
+| `local_frozen_after` | 5 |
+| `local_frozen_restart` | `true` |
+| `dht11_power_gpio` | ligado (exigido pelo reinício) |
+| Repetições | 5 de 10 ciclos (D7), capturas `c6-r1` a `c6-r5` |
+
+Esperado em cada repetição: estado `Normal` em todos os ciclos; leitura congelada nos ciclos 2 a 6; suspeita a partir do ciclo 6; reinício por suspeita depois dele; e, no ciclo 7, a leitura real, com `local_restart = suspect` e a contagem de volta a 1. O console confere isso com `--analyze` nas capturas `c6-r*.csv`: os estados, a suspeita coerente com a contagem em todos os ciclos, o reinício por suspeita e a leitura nova depois dele. O reinício só pode ser feito com o GPIO de alimentação do DHT11, que o build exige.
+
+**Calibração do limiar.** `sense_bridge_console --repeats` mede a maior sequência de leituras locais iguais em capturas de qualquer nome. Nas capturas disponíveis, ela reproduz os valores da tabela acima, com 64 ciclos iguais na captura `2026-10-07T00-57-50`. Capturas longas no ambiente de uso, de horas, são o que falta para fixar um limiar.
+
+**Testes.** O C6 e a calibração acrescentaram 6 testes do console, e a suíte chegou a 83: a leitura e a exibição da coluna `local_restart`, a conferência de C6 aprovada e as reprovações (sem detector, sem suspeita, suspeita incoerente com a contagem, sem reinício e leitura que persiste), o relatório de C6, a maior sequência de leituras iguais e a calibração com capturas vazias.
+
+**Não avaliado.** O C6 ainda não foi executado no ESP32: o firmware compila com a configuração do protocolo, e as validações dela foram conferidas no build. O padrão sugerido para uso, 360 ciclos (30 min), está bem acima da maior sequência observada, mas não foi validado com capturas longas.

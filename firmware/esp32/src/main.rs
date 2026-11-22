@@ -12,6 +12,7 @@ mod config {
     include!(concat!(env!("OUT_DIR"), "/config.rs"));
 }
 
+use std::num::{NonZeroU32, NonZeroU64};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -22,11 +23,11 @@ use esp_idf_svc::nvs::EspDefaultNvsPartition;
 use esp_idf_svc::sys::{self, EspError};
 use esp_idf_svc::wifi::{self, AuthMethod, ClientConfiguration, EspWifi, WifiEvent};
 use log::{info, warn};
-use sense_bridge::{Config, SenseBridge};
+use sense_bridge::{Config, FreezeDetector, LocalFailure, LocalReading, SenseBridge};
 
 use crate::csv::Timing;
 use crate::external::OpenMeteo;
-use crate::local::Dht11;
+use crate::local::{Dht11, FreezeTest, Restart};
 use crate::timed::Timed;
 
 type Bridge = SenseBridge<Timed<Dht11<'static>>, Timed<OpenMeteo<'static>>>;
@@ -53,9 +54,25 @@ fn main() -> Result<(), EspError> {
         None => info!("DHT11 no GPIO{}", config::DHT11_GPIO),
     }
     let (data_pin, power_pin) = config::dht11_pins(peripherals.pins);
+    // Injeção de falha do C6 (`freeze_test_from_cycle`), desligada fora do experimento.
+    let freeze_test = NonZeroU64::new(config::FREEZE_TEST_FROM_CYCLE).map(|from| FreezeTest {
+        from: from.get(),
+        reading: LocalReading::new(
+            config::FREEZE_TEST_TEMPERATURE,
+            config::FREEZE_TEST_HUMIDITY,
+        ),
+    });
+    if freeze_test.is_some() {
+        warn!(
+            "C6: injeção de falha ligada (freeze_test_from_cycle = {}); não use este firmware \
+             fora do experimento",
+            config::FREEZE_TEST_FROM_CYCLE
+        );
+    }
     let dht11 = Dht11::new(
         PinDriver::input_output_od(data_pin, Pull::Up)?,
         power_pin.map(PinDriver::output).transpose()?,
+        freeze_test,
     )?;
 
     // O ESP-IDF não reassocia sozinho: a cada queda, ou tentativa frustrada, uma nova
@@ -142,6 +159,21 @@ fn run(bridge: &mut Bridge) -> ! {
     let interval = Duration::from_millis(config::CYCLE_INTERVAL_MS);
     let start = Instant::now();
     let mut deadline = start;
+    // Suspeita de leitura congelada, opcional (`local_frozen_after`): não muda o estado.
+    let mut freeze = NonZeroU32::new(config::LOCAL_FROZEN_AFTER).map(FreezeDetector::new);
+    if let Some(freeze) = &freeze {
+        info!(
+            "suspeita de leitura congelada após {} ciclos iguais{}",
+            freeze.threshold(),
+            if config::LOCAL_FROZEN_RESTART {
+                ", com reinício do DHT11"
+            } else {
+                ""
+            }
+        );
+    }
+    // Leitura que motivou o último reinício por suspeita, comparada no ciclo seguinte.
+    let mut restarted_from = None;
     println!("{}", csv::HEADER);
 
     loop {
@@ -152,9 +184,22 @@ fn run(bridge: &mut Bridge) -> ! {
             read: bridge.local_mut().take(),
             fetch: bridge.external_mut().take(),
         };
-        println!("{}", csv::row(&record, &timing));
+        // Fora da janela medida, como a emissão do CSV.
+        if let Some(freeze) = &mut freeze {
+            freeze.observe(&record.local);
+        }
+        let restart = bridge.local_mut().source_mut().take_restart();
+        println!("{}", csv::row(&record, &timing, freeze.as_ref(), restart));
         // Fora da janela medida: o log da falha do DHT11 e, se preciso, o reinício do sensor.
         bridge.local_mut().source_mut().after_cycle();
+        if let Some(freeze) = &freeze {
+            restarted_from = react_to_freeze(
+                freeze,
+                &record.local,
+                restarted_from,
+                bridge.local_mut().source_mut(),
+            );
+        }
 
         deadline += interval;
         match deadline.checked_duration_since(Instant::now()) {
@@ -163,4 +208,43 @@ fn run(bridge: &mut Bridge) -> ! {
             None => deadline = Instant::now(),
         }
     }
+}
+
+/// Reação à suspeita de leitura congelada, fora da janela medida. Registra o resultado do
+/// reinício anterior, se houve, e, no ciclo em que a contagem completa um múltiplo do limiar,
+/// avisa e, com `local_frozen_restart`, reinicia o DHT11. Devolve a leitura que motivou o
+/// reinício, para a comparação no ciclo seguinte.
+fn react_to_freeze(
+    freeze: &FreezeDetector,
+    local: &Result<LocalReading, LocalFailure>,
+    restarted_from: Option<LocalReading>,
+    dht11: &mut Dht11<'static>,
+) -> Option<LocalReading> {
+    if let Some(before) = restarted_from {
+        match local {
+            Ok(reading) if *reading == before => warn!(
+                "DHT11: a leitura persistiu após o reinício ({} ciclos iguais): ambiente \
+                 estável ou defeito que o reinício não resolve",
+                freeze.run()
+            ),
+            Ok(_) => warn!("DHT11: a leitura mudou após o reinício, indício de sensor travado"),
+            Err(_) => warn!("DHT11: sem leitura válida após o reinício"),
+        }
+    }
+
+    let Ok(reading) = local else {
+        return None;
+    };
+    if !freeze.reached_threshold() {
+        return None;
+    }
+    warn!(
+        "DHT11: mesma leitura há {} ciclos; suspeita de leitura congelada",
+        freeze.run()
+    );
+    if !config::LOCAL_FROZEN_RESTART {
+        return None;
+    }
+    dht11.power_cycle(Restart::Suspect, "suspeita de leitura congelada");
+    Some(*reading)
 }

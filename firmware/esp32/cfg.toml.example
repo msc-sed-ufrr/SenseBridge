@@ -5,21 +5,21 @@
 wifi_ssid = ""
 wifi_password = ""
 
-# Local da consulta à Open-Meteo, em graus (PRD, D6; padrão: Boa Vista/RR).
+# Local da consulta à Open-Meteo, em graus (BR-35, D6; padrão: Boa Vista/RR).
 latitude = 2.82
 longitude = -60.67
 
-# Intervalo entre ciclos (PRD, D5b: 5 s). Mínimo de 1000 ms, o intervalo de
+# Intervalo entre ciclos (BR-04, D5b: 5 s). Mínimo de 1000 ms, o intervalo de
 # amostragem do DHT11.
 cycle_interval_ms = 5000
 
-# Tempo limite da consulta à Open-Meteo (PRD, D5c: 3 s). Deve ser menor que o
+# Tempo limite da consulta à Open-Meteo (BR-03, D5c: 3 s). Deve ser menor que o
 # intervalo entre ciclos, para que uma consulta lenta não atrase o ciclo seguinte.
 http_timeout_ms = 3000
 
-# Intervalo entre consultas à Open-Meteo (PRD, D5a: 15 min). Nos experimentos C3–C5, 5000,
+# Intervalo entre consultas à Open-Meteo (BR-05, D5a: 15 min). Nos experimentos C3–C5, 5000,
 # para observar falha e recuperação externas a cada ciclo, sem esperar a próxima consulta
-# (PRD, D10).
+# (BR-31, D10).
 external_refresh_ms = 900000
 
 # GPIO de dados do DHT11 (padrão: 4, rotulado D4 no DevKit). O build aceita só GPIOs
@@ -31,3 +31,24 @@ dht11_gpio = 4
 # desliga e religa o sensor a cada 3 falhas seguidas de leitura. O build aceita os mesmos
 # GPIOs de dht11_gpio, exceto o próprio, e avisa sobre os pinos de strapping.
 # dht11_power_gpio = 23
+
+# Suspeita de leitura congelada (opcional; padrão: 0, desligado). Com N > 0, a leitura local
+# válida repetida, idêntica, por N ciclos seguidos sai com local_suspect = true no CSV; a
+# leitura continua válida e o estado não muda. Com a resolução do DHT11, repetições legítimas
+# de até 64 ciclos de 5 s foram observadas: use um valor bem acima, como 360 (30 min).
+# local_frozen_after = 360
+
+# Reinício do DHT11 por suspeita de leitura congelada (opcional; padrão: false). Exige
+# local_frozen_after > 0 e dht11_power_gpio. O sensor é desligado e religado quando a suspeita
+# começa e, enquanto a leitura não mudar, de novo a cada local_frozen_after ciclos; o log do
+# ciclo seguinte diz se a leitura mudou ou persistiu. O estado não muda.
+# local_frozen_restart = true
+
+# Injeção de falha do cenário C6 (opcional; padrão: 0, desligada). Com K > 0, a partir do ciclo
+# K o firmware devolve sempre a leitura abaixo, como um DHT11 travado em um valor plausível, até
+# o próximo reinício do sensor. Use um valor diferente do ambiente, dentro da faixa do DHT11
+# (0–50 °C, 20–90 %UR). Protocolo do C6: freeze_test_from_cycle = 2, local_frozen_after = 5,
+# local_frozen_restart = true e dht11_power_gpio ligado. Só para o experimento.
+# freeze_test_from_cycle = 2
+# freeze_test_temperature = 40
+# freeze_test_humidity = 80

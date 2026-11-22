@@ -1,4 +1,4 @@
-//! Correspondência entre o estado esperado e o observado nas capturas de C1–C6 (PRD, UC-008)
+//! Correspondência entre o estado esperado e o observado nas capturas de C1–C6 (UC-008)
 //! e, para calibrar o limiar da suspeita de leitura congelada, as sequências de leituras
 //! locais iguais em qualquer captura.
 //!
@@ -190,7 +190,7 @@ struct Frozen {
     restarted: u64,
 }
 
-/// Leitura congelada em C6 (PRD, D14): a captura tem as colunas do detector; a suspeita
+/// Leitura congelada em C6 (BR-18, D14): a captura tem as colunas do detector; a suspeita
 /// coincide, em todo ciclo, com a contagem igual ou acima do limiar; depois da primeira
 /// suspeita há um reinício por suspeita; e o ciclo seguinte a ele traz uma leitura nova.
 fn frozen(cycles: &[Cycle]) -> Result<Frozen, &'static str> {
@@ -230,7 +230,7 @@ fn both_valid(cycle: &Cycle) -> bool {
     cycle.local.is_ok() && cycle.external.is_ok()
 }
 
-/// Recuperação em C5 (PRD, §12): a captura começa com falha, e o primeiro ciclo com as duas
+/// Recuperação em C5 (BR-30): a captura começa com falha, e o primeiro ciclo com as duas
 /// fontes válidas está em `Normal` e marcado como recuperação. Devolve o número desse ciclo.
 fn recovery(cycles: &[Cycle]) -> Result<u64, &'static str> {
     if cycles.first().is_some_and(both_valid) {

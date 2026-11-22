@@ -1,6 +1,6 @@
 # Firmware de referência — ESP32
 
-Caso de uso da biblioteca [`sense_bridge`](../../sense-bridge) no ESP32 clássico (ESP32-WROOM-32), com ESP-IDF e `std` (PRD, D12). O DHT11 é a fonte local, a Open-Meteo é a fonte externa, e cada ciclo emite uma linha CSV pela serial.
+Caso de uso da biblioteca [`sense_bridge`](../../sense-bridge) no ESP32 clássico (ESP32-WROOM-32), com ESP-IDF e `std` (D12). O DHT11 é a fonte local, a Open-Meteo é a fonte externa, e cada ciclo emite uma linha CSV pela serial.
 
 Este diretório fica fora do workspace da raiz: usa a toolchain Xtensa e compila apenas para o ESP32.
 
@@ -49,19 +49,19 @@ cp cfg.toml.example cfg.toml
 
 Preencha `wifi_ssid` e `wifi_password`. O `cfg.toml` é ignorado pelo git; as credenciais nunca vão para o repositório. O build valida os valores: um ciclo abaixo de 1000 ms (intervalo mínimo do DHT11) ou um tempo limite igual ou maior que o ciclo interrompem a compilação com uma mensagem.
 
-| Chave | Padrão | Decisão no PRD |
+| Chave | Padrão | Regra ([product.md](../../docs/knowledge/product.md)) |
 | --- | --- | --- |
-| `latitude`, `longitude` | 2.82, −60.67 (Boa Vista/RR) | D6, fechada |
-| `cycle_interval_ms` | 5000 | D5b, fechada |
-| `http_timeout_ms` | 3000 | D5c, fechada |
-| `external_refresh_ms` | 900000 (15 min) | D5a, fechada |
+| `latitude`, `longitude` | 2.82, −60.67 (Boa Vista/RR) | BR-35 (D6) |
+| `cycle_interval_ms` | 5000 | BR-04 (D5b) |
+| `http_timeout_ms` | 3000 | BR-03 (D5c) |
+| `external_refresh_ms` | 900000 (15 min) | BR-05 (D5a) |
 | `dht11_gpio` | 4 | — |
 | `dht11_power_gpio` | ausente (VCC no 3V3) | — |
-| `local_frozen_after` | 0 (desligado) | D14 |
-| `local_frozen_restart` | false | D14 |
-| `freeze_test_from_cycle`, `freeze_test_temperature`, `freeze_test_humidity` | 0 (desligada), 40, 80 | D14, cenário C6 |
+| `local_frozen_after` | 0 (desligado) | BR-18 (D14) |
+| `local_frozen_restart` | false | BR-18 (D14) |
+| `freeze_test_from_cycle`, `freeze_test_temperature`, `freeze_test_humidity` | 0 (desligada), 40, 80 | BR-32, cenário C6 |
 
-Para observar falha e recuperação da fonte externa sem esperar 15 minutos, reduza `external_refresh_ms` para 5000, como nos experimentos C3–C5 (PRD, D10): com o ciclo de 5 s, a fonte externa passa a ser consultada aproximadamente a cada ciclo. Uma falha de rede durante a reutilização só aparece na consulta seguinte.
+Para observar falha e recuperação da fonte externa sem esperar 15 minutos, reduza `external_refresh_ms` para 5000, como nos experimentos C3–C5 (BR-31, D10): com o ciclo de 5 s, a fonte externa passa a ser consultada aproximadamente a cada ciclo. Uma falha de rede durante a reutilização só aparece na consulta seguinte.
 
 A validação de faixa aceita um DHT11 travado em um valor plausível. Com `local_frozen_after = N`, N > 0, o `FreezeDetector` da biblioteca marca `local_suspect = true` quando a mesma leitura local válida se repete em N ciclos seguidos. A leitura continua válida e o estado não muda. Com a resolução de 1 °C e 1 %UR, repetições legítimas são comuns: nas capturas, houve até 64 ciclos de 5 s iguais com o sensor funcionando, e em C1 e C3 as 10 leituras foram idênticas em 9 das 10 repetições. Por isso, use um valor bem acima, como 360 (30 min). Os experimentos C1–C5 foram feitos sem o detector.
 

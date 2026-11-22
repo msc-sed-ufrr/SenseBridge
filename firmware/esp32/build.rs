@@ -149,7 +149,7 @@ impl Config {
         if self.freeze_test_from_cycle < 0 {
             fail("freeze_test_from_cycle não pode ser negativo (0 desliga a injeção)");
         }
-        // O valor congelado precisa passar pela validação de faixa do DHT11 (PRD, D3): é um
+        // O valor congelado precisa passar pela validação de faixa do DHT11 (BR-10, D3): é um
         // sensor travado em um valor plausível, não uma leitura fora de faixa.
         if !(0.0..=50.0).contains(&self.freeze_test_temperature) {
             fail("freeze_test_temperature deve estar na faixa do DHT11, de 0 a 50 °C");

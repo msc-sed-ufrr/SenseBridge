@@ -60,7 +60,7 @@ flowchart TB
     Log["Console e logs<br/>ciclos · tempo · heap e pilha · medições"]
 ```
 
-Componentes, fluxo do ciclo, princípios e decisões de arquitetura estão em [docs/02-arch.md](docs/02-arch.md).
+Componentes, fluxo do ciclo, princípios e decisões de arquitetura estão em [docs/knowledge/architecture.md](docs/knowledge/architecture.md).
 
 ## Estrutura
 
@@ -77,7 +77,7 @@ SenseBridge/
 │   └── console/        # console de host: acompanha os ciclos pela serial e grava as capturas
 ├── firmware/           # casos de uso, um projeto por placa (não publicados)
 │   └── esp32/          # DHT11 + Open-Meteo
-├── docs/               # projeto de pesquisa, PRD, arquitetura, avaliação, relatório e evidências
+├── docs/               # projeto de pesquisa, produto e arquitetura (knowledge/), histórico e decisões (memory/), avaliação, relatório e evidências
 ├── scripts/
 │   └── evidencias.sh   # gera docs/evidencias/verificacao.md
 ├── capturas/           # capturas de trabalho gravadas pelo console (ignoradas pelo git)
@@ -167,8 +167,9 @@ Em 21/10/2026, com macOS em Apple Silicon:
 | Documento | Conteúdo |
 | --- | --- |
 | [Projeto de pesquisa](docs/00-Projeto%20de%20Pesquisa%20-%20PTT4.pdf) | Proposta aprovada: problema, objetivos, escopo e entregáveis |
-| [PRD](docs/01-prd.md) | Requisitos, regras de negócio, casos de uso e decisões de projeto |
-| [Arquitetura](docs/02-arch.md) | Componentes, fluxo de dados, princípios e ADRs |
+| [Produto](docs/knowledge/product.md) | Propósito, regras de negócio com o motivo, casos de uso e perguntas em aberto |
+| [Arquitetura](docs/knowledge/architecture.md) | Componentes, fluxo do ciclo, stack e invariantes |
+| [Decisões](docs/memory/decisions/) | ADR-001 a ADR-010, uma por arquivo |
 | [Avaliação experimental](docs/03-avaliacao-experimental.md) | Protocolo e resultados de C1–C5, latência, Flash e RAM |
 | [Relatório técnico](docs/04-relatorio-tecnico.md) | Rascunho do relatório conclusivo |
 | [Roteiro do vídeo](docs/05-roteiro-video.md) | Demonstração de 3–5 minutos |

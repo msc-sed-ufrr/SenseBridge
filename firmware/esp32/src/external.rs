@@ -66,7 +66,7 @@ impl ExternalSource for OpenMeteo<'_> {
         let mut body = [0; MAX_BODY];
         let result = self.get(&mut body);
 
-        // O `timeout_ms` do ESP-IDF vale por operação de socket; o tempo limite do PRD vale
+        // O `timeout_ms` do ESP-IDF vale por operação de socket; o tempo limite de BR-03 vale
         // para a consulta inteira, e uma resposta que chega depois dele não é usada.
         if start.elapsed() > self.timeout {
             return Err(ExternalFailure::Timeout);

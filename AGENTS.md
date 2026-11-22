@@ -21,6 +21,14 @@ The firmware is outside the root workspace and outside CI: build it with the ESP
 2. `docs/knowledge/product.md`, `docs/knowledge/architecture.md`, and the code the task touches, with its tests.
 3. Before changing a rule: its reason and the ADRs that cite it (`grep -rl BR-xx docs/memory`).
 
+| Area | File |
+| --- | --- |
+| Product, rules (BR-xx, D1–D14), use cases, open questions | `docs/knowledge/product.md` |
+| Components, cycle, stack, invariants | `docs/knowledge/architecture.md` |
+| Publishing a crate version | `docs/knowledge/release.md` |
+| Firmware configuration, wiring, CSV format, C6 protocol | `firmware/esp32/README.md` |
+| Library API | `sense-bridge/README.md` |
+
 Do not read all of `docs/` without a reason. `docs/memory/` is history: read a log only when the task is about how something got where it is. `docs/evidencias/` holds the official captures and verification records; `docs/00-Projeto de Pesquisa - PTT4.pdf` is the approved research project the scope comes from.
 
 ## Where to write
@@ -64,7 +72,7 @@ ADR template: `docs/memory/decisions/_template.md`. ADR IDs are sequential (`ADR
 | --- | --- |
 | Iterating | `cargo test -p sense_bridge` or `cargo test -p sense_bridge_console`, for what you touched |
 | Firmware change | `cargo build --release` in `firmware/esp32/`, with the ESP toolchain; CI does not build it |
-| Before finishing | `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, `cargo test`, and `git grep -nE '\{\{[[:alnum:]]' -- ':!docs/memory/decisions/_template.md'` |
+| Before finishing | `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, `cargo test`, and `git grep -nIE '\{\{[[:alnum:]]' -- '*.md' ':!docs/memory/decisions/_template.md'` (no leftover template placeholder) |
 
 ## Critical conventions
 

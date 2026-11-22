@@ -46,7 +46,7 @@ A biblioteca é `no_std`, não aloca memória e não tem dependências. O uso da
 - **Latência:** ciclos sem consulta externa entre 18 e 22 ms.
 - **Memória:** cerca de 23,5 KiB de Flash e 13,4 KiB de RAM estática a mais que um firmware-base equivalente sem a biblioteca.
 
-A metodologia e os números completos estão na [avaliação experimental](docs/03-avaliacao-experimental.md). O projeto não inclui medição de consumo energético.
+A metodologia e os números completos estão na [avaliação experimental](docs/memory/2026-10-24-avaliacao-experimental.md). O projeto não inclui medição de consumo energético.
 
 ## Arquitetura
 
@@ -170,10 +170,10 @@ Em 21/10/2026, com macOS em Apple Silicon:
 | [Produto](docs/knowledge/product.md) | Propósito, regras de negócio com o motivo, casos de uso e perguntas em aberto |
 | [Arquitetura](docs/knowledge/architecture.md) | Componentes, fluxo do ciclo, stack e invariantes |
 | [Decisões](docs/memory/decisions/) | ADR-001 a ADR-010, uma por arquivo |
-| [Avaliação experimental](docs/03-avaliacao-experimental.md) | Protocolo e resultados de C1–C5, latência, Flash e RAM |
-| [Relatório técnico](docs/04-relatorio-tecnico.md) | Rascunho do relatório conclusivo |
+| [Avaliação experimental](docs/memory/2026-10-24-avaliacao-experimental.md) | Protocolo e resultados de C1–C5, latência, Flash e RAM |
+| [Relatório técnico](docs/memory/2026-10-28-relatorio-tecnico.md) | Relatório conclusivo, com a versão entregue em [PDF](docs/memory/2026-11-03-entrega-final-ptt4.pdf) |
 | [Roteiro do vídeo](docs/05-roteiro-video.md) | Demonstração de 3–5 minutos |
-| [Publicação no crates.io](docs/06-publicacao-crates-io.md) | Publicação da 0.1.0 e passo a passo para as próximas versões |
+| [Publicação de uma versão](docs/knowledge/release.md) | Passo a passo para publicar a crate; o registro da 0.1.0 está em [docs/memory](docs/memory/2026-10-28-publicacao-sense-bridge-0.1.0.md) |
 | [Evidências](docs/evidencias/README.md) | Verificação do código e capturas dos experimentos |
 
 ## Tecnologias

@@ -172,7 +172,6 @@ Em 21/10/2026, com macOS em Apple Silicon:
 | [Decisões](docs/memory/decisions/) | ADR-001 a ADR-010, uma por arquivo |
 | [Avaliação experimental](docs/memory/2026-10-24-avaliacao-experimental.md) | Protocolo e resultados de C1–C5, latência, Flash e RAM |
 | [Relatório técnico](docs/memory/2026-10-28-relatorio-tecnico.md) | Relatório conclusivo, com a versão entregue em [PDF](docs/memory/2026-11-03-entrega-final-ptt4.pdf) |
-| [Roteiro do vídeo](docs/05-roteiro-video.md) | Demonstração de 3–5 minutos |
 | [Publicação de uma versão](docs/knowledge/release.md) | Passo a passo para publicar a crate; o registro da 0.1.0 está em [docs/memory](docs/memory/2026-10-28-publicacao-sense-bridge-0.1.0.md) |
 | [Evidências](docs/evidencias/README.md) | Verificação do código e capturas dos experimentos |
 

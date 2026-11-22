@@ -145,7 +145,7 @@ flowchart LR
 | Tipos `Copy` e `Result` por fonte | Nada vai para o heap, e a indisponibilidade de uma fonte fica no tipo, não em sentinela ou flag paralela ([ADR-006](../memory/decisions/ADR-006.md)) |
 | `f32` para temperatura e umidade | Precisão suficiente para as grandezas e mais barato que `f64` no ESP32; a finitude é checada na validação |
 | Leitor JSON próprio para a Open-Meteo | A resposta é a entrada com mais casos de borda, e uma crate de JSON violaria a ADR-002 ([ADR-008](../memory/decisions/ADR-008.md)) |
-| (D12) Firmware sobre ESP-IDF v5.5.5 e `esp-idf-svc`, com `std`, Wi-Fi, TLS e HTTP, toolchain `esp` do espup, alvo Xtensa ESP32 | Não informado |
+| (D12) Firmware sobre ESP-IDF v5.5.5 e `esp-idf-svc`, com `std`, Wi-Fi, TLS e HTTP (a consulta atual usa `http://`; ver as perguntas em aberto), toolchain `esp` do espup, alvo Xtensa ESP32 | Não informado |
 | (D13) DHT11 lido pela crate `dht11-trace`, de autoria própria | Identifica a etapa do protocolo em que a leitura falhou e lê o quadro sem interrupções, mantendo o protocolo fora da biblioteca ([ADR-009](../memory/decisions/ADR-009.md)) |
 | Console lê o `espflash monitor` pela entrada padrão | O espflash cuida da porta, do reset e dos símbolos, e a ferramenta não precisa de crate serial nem de dependência nativa (commit `936818d`) |
 
@@ -189,9 +189,9 @@ A biblioteca não registra log, não aloca e não imprime: **o próprio `Record`
 | A biblioteca não entra em pânico nem para de tentar, inclusive em `Error` | BR-27 | `c4_simultaneous_failure_reports_error_and_keeps_polling` (`sense-bridge/tests/scenarios.rs`) |
 | Um registro por ciclo, com identificador que cresce de um em um; transição só quando o estado muda | BR-19, BR-20, BR-25 | `cycle_ids_increase_by_one`, `transitions_are_reported_only_when_state_changes` (`sense-bridge/tests/scenarios.rs`) |
 | O `FreezeDetector` não altera validade nem estado | BR-18, [ADR-010](../memory/decisions/ADR-010.md) | `c6_frozen_reading_is_suspect_but_stays_valid_and_normal` (`sense-bridge/tests/frozen.rs`) |
-| Os nomes de estados e falhas de `as_str()` são contrato (o CSV e o console dependem deles); a saída de `Debug` não é | Mudar um nome quebra as capturas versionadas e o `--analyze` | `state_names_are_stable` (`sense-bridge/src/state.rs`), `failure_names_are_stable` (`sense-bridge/src/reading.rs`) |
-| Todo item público da crate é documentado | A documentação da API é um entregável e vai para o docs.rs | `#![warn(missing_docs)]` em `sense-bridge/src/lib.rs`, com `cargo clippy --all-targets -- -D warnings` na CI |
-| O caminho da consulta gravado nas respostas de teste é o mesmo que o firmware usa | As respostas gravadas só valem se corresponderem à consulta real | `request_path_matches_the_query_used_to_record_the_fixtures` (`sense-bridge/tests/open_meteo.rs`) |
+| Os nomes de estados e falhas de `as_str()` são contrato (o CSV e o console dependem deles); a saída de `Debug` não é | Os nomes fazem parte da API (documento de arquitetura anterior); mudar um quebra as capturas versionadas e o `--analyze` | `state_names_are_stable` (`sense-bridge/src/state.rs`), `failure_names_are_stable` (`sense-bridge/src/reading.rs`) |
+| Todo item público da crate é documentado | A API documentada é um entregável do projeto de pesquisa (§6.1) | `#![warn(missing_docs)]` em `sense-bridge/src/lib.rs`, com `cargo clippy --all-targets -- -D warnings` na CI |
+| O caminho da consulta gravado nas respostas de teste é o mesmo que o firmware usa | Suposição, não confirmada: as respostas gravadas só valem se corresponderem à consulta real | `request_path_matches_the_query_used_to_record_the_fixtures` (`sense-bridge/tests/open_meteo.rs`) |
 
 ## Convenções
 

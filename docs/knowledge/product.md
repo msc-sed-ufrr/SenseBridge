@@ -51,11 +51,14 @@ Critérios observáveis:
 | Ciclos sem registro produzido | 0 |
 | Transições de estado sem evento emitido | 0 |
 | Ciclos até a recuperação após o restabelecimento das duas fontes (C5) | 1, o primeiro ciclo com as duas válidas |
-| Cenários cobertos por testes sem hardware | Todos (C1–C6) |
-| Cenários executados no ESP32 | Todos |
+| Cenários C1–C5 cobertos por testes sem hardware | 5 de 5 |
+| Cenários C1–C5 executados no ESP32 | 5 de 5 |
 | Testes automatizados passando e avisos não justificados da análise estática | 100% e 0 |
 | Latência por operação, RAM em execução e Flash | Medidas e relatadas, com média e dispersão; sem meta prévia |
 | Reprodução | Uma pessoa de fora do projeto reproduz os testes e ao menos um cenário no ESP32 seguindo apenas o README |
+| Estado reportado | Corresponde sempre à disponibilidade das fontes (BR-23), e falhas e recuperações são identificáveis pelos registros e eventos, sem inspecionar o código |
+| Fontes independentes | A queda de uma fonte não interrompe a entrega dos dados da outra |
+| Verificação sem hardware | O núcleo da biblioteca é verificável inteiramente no computador de desenvolvimento |
 | Vídeo de demonstração | 3 a 5 min |
 
 ## Regras
@@ -70,7 +73,7 @@ Critérios observáveis:
 | BR-02 | Toda tentativa de leitura termina com um resultado explícito: leitura obtida ou falha de tipo identificado. Falhas locais: `NoResponse`, `Checksum`. Falhas externas: `NoConnectivity`, `Timeout`, `ServiceError`, `MalformedResponse`. Leituras reprovadas na validação: `Invalid`, com o motivo. | O escopo mínimo exige "identificar falhas de leitura ou comunicação" (projeto de pesquisa, §6.1). |
 | BR-03 | (D5c) A consulta externa tem tempo limite configurável, de 3 s por padrão. Ao excedê-lo, a fonte externa fica indisponível no ciclo. | O tempo limite "deve ser menor que o intervalo entre ciclos, para que uma consulta lenta não atrase o ciclo seguinte" (`firmware/esp32/cfg.toml.example`). O motivo do valor de 3 s: não informado. |
 | BR-04 | (D5b) O ciclo local tem intervalo configurável, de 5 s por padrão, e nunca menor que 1000 ms. | O mínimo de 1000 ms é o intervalo de amostragem do DHT11 indicado no manual do sensor (`firmware/esp32/cfg.toml.example`). O motivo do valor de 5 s: não informado. |
-| BR-05 | (D5a) A consulta à Open-Meteo tem intervalo configurável, independente do ciclo local, de 15 min por padrão. | A consulta "deve respeitar os limites de uso da API"; o risco previsto era o de consultas frequentes excederem esses limites ([plano da disciplina](../memory/2026-10-22-plano-da-disciplina.md)). O motivo do valor de 15 min: não informado. |
+| BR-05 | (D5a) A consulta à Open-Meteo tem intervalo configurável, independente do ciclo local, de 15 min por padrão, e respeita os limites de uso da API. | O risco previsto era o de consultas frequentes excederem os limites de uso da API ([plano da disciplina](../memory/2026-10-22-plano-da-disciplina.md)). O motivo do valor de 15 min: não informado. |
 | BR-06 | Entre duas consultas bem-sucedidas, a última leitura externa válida é reutilizada, sem consultar a fonte, e o registro informa a idade dessa leitura. | Não informado. |
 | BR-07 | Enquanto a leitura externa é reutilizada, uma falha da fonte só é identificada na consulta seguinte. | Consequência aceita de BR-06; a arquitetura foi mantida (D10, em BR-31, e [ADR-005](../memory/decisions/ADR-005.md)). |
 | BR-08 | Uma consulta externa que falha descarta a leitura externa guardada, e a fonte só volta a ficar disponível depois de uma nova consulta bem-sucedida. | "Um valor anterior à falha apresentado como atual é exatamente o tipo de propagação silenciosa que o projeto existe para evitar" ([ADR-005](../memory/decisions/ADR-005.md)). |
@@ -82,8 +85,8 @@ Critérios observáveis:
 | --- | --- | --- |
 | BR-10 | (D3) Uma leitura local fora de 0–50 °C ou de 20–90 %UR é inválida. | É a faixa de medição do manual do DHT11 (`sense-bridge/src/validation.rs`). |
 | BR-11 | (D4) Uma leitura externa fora de −90 a 60 °C ou de 0–100 %UR é inválida. | São "limites físicos plausíveis para dados meteorológicos" (`sense-bridge/src/validation.rs`). A origem dos valores: não informado. |
-| BR-12 | Valores não numéricos (NaN ou infinito) são inválidos em qualquer fonte. | Meta Q1: nenhum dado inválido apresentado como válido. |
-| BR-13 | Uma resposta externa sem temperatura ou sem umidade é uma resposta malformada e deixa a fonte externa indisponível no ciclo. | Meta Q1. |
+| BR-12 | Valores não numéricos (NaN ou infinito) são inválidos em qualquer fonte. | Suposição, não confirmada: decorre da meta Q1, nenhum dado inválido apresentado como válido. |
+| BR-13 | Uma resposta externa sem temperatura ou sem umidade é uma resposta malformada e deixa a fonte externa indisponível no ciclo. | Suposição, não confirmada: decorre da meta Q1. |
 | BR-14 | Valores exatamente nos limites da faixa são válidos; valores imediatamente fora são inválidos. | Não informado. |
 | BR-15 | Uma leitura inválida deixa a sua fonte indisponível no ciclo, e o motivo da invalidação (`OutOfRange`, `NotANumber`) fica registrado. | Meta Q1 e o escopo mínimo: "evitar a propagação silenciosa de valores inválidos" (projeto de pesquisa, §6.1). |
 | BR-16 | A divergência entre DHT11 e Open-Meteo não altera a validade de nenhuma leitura nem o estado. A Open-Meteo é contexto, nunca referência de verdade para o DHT11, nem nas análises. | "A Open-Meteo será utilizada como fonte externa de contexto e não como padrão absoluto de verdade para as leituras do DHT11" (projeto de pesquisa, §6.3). |
@@ -94,8 +97,8 @@ Critérios observáveis:
 
 | ID | Regra | Por quê |
 | --- | --- | --- |
-| BR-19 | Cada ciclo produz exatamente um registro integrado, inclusive no estado `Error`. | Meta Q2: comportamento observável; critério de sucesso "ciclos sem registro produzido: 0". |
-| BR-20 | Todo registro contém: identificador de ciclo que só cresce, instante relativo da aquisição, resultado de cada fonte (leitura válida ou tipo de falha), idade da leitura externa e, quando houver, a transição. O estado é derivado dos dois resultados. | O escopo mínimo pede "registrar a origem e o estado de validade dos dados" (projeto de pesquisa, §6.1). |
+| BR-19 | Cada ciclo produz exatamente um registro integrado, inclusive no estado `Error`. | Suposição, não confirmada: decorre da meta Q2, comportamento definido e observável quando as fontes falham. |
+| BR-20 | Todo registro contém: identificador de ciclo que só cresce, instante relativo da aquisição, resultado de cada fonte (leitura válida ou tipo de falha), idade da leitura externa e, quando houver, a transição. O estado é derivado dos dois resultados. | O escopo mínimo pede "registrar a origem e o estado de validade dos dados" (projeto de pesquisa, §6.1). O motivo dos demais campos: não informado. |
 | BR-21 | Todo valor identifica a sua origem, e os valores de cada fonte ficam separados: não há média nem substituição de uma fonte pela outra. | A aplicação deve tratar as duas fontes explicitamente, sem valor sem origem ([ADR-006](../memory/decisions/ADR-006.md)), e a fonte externa é só contexto (BR-16). |
 | BR-22 | Um registro nunca apresenta como atual um valor de fonte indisponível, nem um valor obtido antes da última falha identificada dessa fonte. | O mesmo motivo de BR-08 ([ADR-005](../memory/decisions/ADR-005.md)). |
 
@@ -103,11 +106,11 @@ Critérios observáveis:
 
 | ID | Regra | Por quê |
 | --- | --- | --- |
-| BR-23 | O estado de cada ciclo é função da disponibilidade das fontes naquele ciclo: as duas disponíveis, `Normal`; só a externa, `DegradedLocal`; só a local, `DegradedExternal`; nenhuma, `Error`. | São os comportamentos esperados dos cenários C1–C4 do projeto de pesquisa (§6.3). |
+| BR-23 | O estado de cada ciclo é função da disponibilidade das fontes naquele ciclo: as duas disponíveis, `Normal`; só a externa, `DegradedLocal`; só a local, `DegradedExternal`; nenhuma, `Error`. | A tabela de cenários do projeto de pesquisa (§6.3) define esse comportamento esperado para C1–C4. |
 | BR-24 | (D1) A máquina tem quatro estados; a recuperação é o evento de transição para `Normal`, não um quinto estado. (D2) Não há histerese: a reação acontece no próprio ciclo. | Mantém o estado como função da disponibilidade do ciclo, verificável linha a linha, e sustenta "recuperação em 1 ciclo" em C5; histerese atrasaria a detecção que o experimento quer medir ([ADR-004](../memory/decisions/ADR-004.md)). |
-| BR-25 | Qualquer estado pode seguir qualquer outro, inclusive `Normal` → `Error` em um ciclo. Toda transição gera um evento com o estado anterior, o novo estado e o identificador do ciclo. | Consequência de BR-23 e BR-24; critério de sucesso "transições sem evento emitido: 0". |
+| BR-25 | Qualquer estado pode seguir qualquer outro, inclusive `Normal` → `Error` em um ciclo. Toda transição gera um evento com o estado anterior, o novo estado e o identificador do ciclo. | Suposição, não confirmada: decorre de BR-23 e BR-24, já que o estado depende só do ciclo corrente. |
 | BR-26 | O primeiro estado vem do primeiro ciclo concluído. Nenhum estado `Normal` é presumido antes dele, e o primeiro ciclo não tem transição. | Não informado. |
-| BR-27 | O estado `Error` não interrompe a biblioteca: os ciclos seguintes continuam tentando as duas fontes. A recuperação é automática, sem reiniciar o dispositivo nem exigir ação da aplicação. | Meta Q2 e o cenário C5 do projeto de pesquisa: "retorno ao estado normal sem inconsistências" (§6.3). |
+| BR-27 | O estado `Error` não interrompe a biblioteca: os ciclos seguintes continuam tentando as duas fontes. A recuperação é automática, sem reiniciar o dispositivo nem exigir ação da aplicação. | A meta Q2 pede "erro explícito e recuperação automática", e o cenário C5 do projeto de pesquisa, "retorno ao estado normal sem inconsistências" (§6.3). |
 
 ### Verificação e experimentos
 
@@ -118,10 +121,10 @@ Critérios observáveis:
 | BR-30 | Em cada repetição de C5: iniciar com falha, mantê-la nos 3 primeiros ciclos, restabelecer as fontes e observar os 7 ciclos seguintes. O primeiro ciclo com as duas fontes válidas deve estar em `Normal` e marcado como recuperação. | Não informado. |
 | BR-31 | (D10) Nos experimentos C3–C5, `external_refresh_ms = 5000`, para consultar a fonte externa aproximadamente a cada ciclo; nos demais vale o padrão de BR-05. | Observar falha e recuperação externas a cada ciclo, sem esperar a próxima consulta (`firmware/esp32/cfg.toml.example`), mantendo a arquitetura de BR-07. |
 | BR-32 | As falhas são induzidas por procedimento documentado e reproduzível. C6 usa a injeção de falha no firmware (`freeze_test_from_cycle`), não a manipulação física. | O risco previsto era a indução manual pouco reproduzível ([plano da disciplina](../memory/2026-10-22-plano-da-disciplina.md)). |
-| BR-33 | (D8) São medidas a latência da leitura local, da obtenção externa e do ciclo completo, a RAM em execução e a Flash do firmware final. RAM e Flash são relatadas para o firmware completo e pela diferença contra um firmware-base equivalente, sem a biblioteca. | O risco previsto era o custo da pilha de rede mascarar o custo próprio da biblioteca ([plano da disciplina](../memory/2026-10-22-plano-da-disciplina.md)). |
+| BR-33 | (D8) São medidas a latência das operações principais (leitura local, obtenção externa, validação e integração, e ciclo completo), a RAM em execução e a Flash do firmware final. RAM e Flash são relatadas para o firmware completo e pela diferença contra um firmware-base equivalente, sem a biblioteca. | O risco previsto era o custo da pilha de rede mascarar o custo próprio da biblioteca ([plano da disciplina](../memory/2026-10-22-plano-da-disciplina.md)). |
 | BR-34 | Os resultados são guardados em CSV com, no mínimo: cenário, repetição, ciclo, estado esperado, estado observado, validade e tipo de falha por fonte e latências. A correspondência entre estado esperado e observado é calculada automaticamente a partir do CSV. | O projeto de pesquisa pede formato estruturado, "preferencialmente CSV, para posterior análise" (§6.3). |
 | BR-35 | (D6) As coordenadas da consulta à Open-Meteo são configuráveis; os experimentos usam latitude `2.82` e longitude `-60.67` (Boa Vista/RR). | Não informado. |
-| BR-36 | (D9) O código é licenciado sob `MIT OR Apache-2.0`. A titularidade e a licença são confirmadas com o orientador e o núcleo de inovação da UFRR antes de cada publicação. | A confirmação evita conflito com a política de propriedade intelectual da UFRR e com o registro de software previsto ([plano da disciplina](../memory/2026-10-22-plano-da-disciplina.md)). O motivo da escolha da licença dupla: não informado. |
+| BR-36 | (D9) O código é licenciado sob `MIT OR Apache-2.0`. A titularidade e a licença foram confirmadas com o orientador e o núcleo de inovação da UFRR antes da publicação da 0.1.0. | A confirmação evitou conflito com a política de propriedade intelectual da UFRR e com o registro de software previsto ([plano da disciplina](../memory/2026-10-22-plano-da-disciplina.md)). O motivo da escolha da licença dupla: não informado. |
 
 ## Casos de uso
 
@@ -144,7 +147,11 @@ O ator dos casos UC-001 a UC-006 é a aplicação embarcada, que chama um ciclo 
 | Desde | Pergunta ou pedido | Quem pediu |
 | --- | --- | --- |
 | 2026-11-22 | Qual é o motivo de: a) a faixa externa de −90 a 60 °C e 0–100 %UR (D4, BR-11); b) o intervalo externo de 15 min (D5a, BR-05); c) o ciclo de 5 s (D5b, BR-04); d) o tempo limite de 3 s (D5c, BR-03); e) as 5 repetições de 10 ciclos (D7, BR-29); f) a nova tentativa a cada ciclo (D11, BR-09); g) o ESP-IDF com `std` (D12, [architecture.md](architecture.md))? O projeto de pesquisa não traz esses motivos. | Adoção da documentação |
-| 2026-11-22 | Qual é o motivo de BR-06, BR-14, BR-17, BR-26, BR-30, BR-35 e da escolha da licença dupla em BR-36? | Adoção da documentação |
+| 2026-11-22 | Qual é o motivo de BR-06, BR-14, BR-17, BR-26, BR-30, BR-35, dos campos do registro em BR-20, da escolha da licença dupla em BR-36 e da versão mínima Rust 1.85 ([architecture.md](architecture.md))? | Adoção da documentação |
+| 2026-11-22 | Confirmar os motivos marcados como "suposição, não confirmada" em BR-12, BR-13, BR-19 e BR-25 e no invariante do caminho da consulta em [architecture.md](architecture.md). | Adoção da documentação |
+| 2026-11-22 | A titularidade e a licença precisam ser confirmadas de novo antes de cada versão, ou a confirmação da 0.1.0 vale para as próximas? | Adoção da documentação |
+| 2026-11-22 | BR-33 pede a latência de "validação e integração", mas o CSV só tem `read_us`, `fetch_us` e `cycle_us`. Ela é obtida pela diferença, ou falta medi-la? | Adoção da documentação |
+| 2026-11-22 | D12 fala em Wi-Fi, TLS e HTTP, mas o firmware consulta a Open-Meteo por `http://` (`firmware/esp32/src/external.rs`). A consulta deveria usar HTTPS, ou a D12 deve ser corrigida? | Adoção da documentação |
 | 2026-11-22 | Gravar o vídeo de demonstração de 3 a 5 min e inserir o link no Quadro 12 do relatório, antes da entrega de 26/11/2026. O [roteiro](../05-roteiro-video.md) ainda cita 62 testes (hoje são 83) e não mostra o C6. | Projeto de pesquisa, §10.1 |
 | 2026-11-22 | Executar o C6 no ESP32 (5 repetições de 10 ciclos, capturas `c6-r1` a `c6-r5`) e calibrar o limiar de `local_frozen_after` com capturas longas e `--repeats`. O limiar sugerido, 360 ciclos (30 min), e o reinício por suspeita ainda não foram validados em hardware. É a próxima entrega depois de 26/11. | Autores (D14) |
 | 2026-11-22 | Quando o C6 rodar no ESP32, registrar os resultados em um log datado em `docs/memory/`, sem editar o relatório entregue. | Adoção da documentação |

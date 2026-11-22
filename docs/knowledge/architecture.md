@@ -145,7 +145,7 @@ flowchart LR
 | Tipos `Copy` e `Result` por fonte | Nada vai para o heap, e a indisponibilidade de uma fonte fica no tipo, não em sentinela ou flag paralela ([ADR-006](../memory/decisions/ADR-006.md)) |
 | `f32` para temperatura e umidade | Precisão suficiente para as grandezas e mais barato que `f64` no ESP32; a finitude é checada na validação |
 | Leitor JSON próprio para a Open-Meteo | A resposta é a entrada com mais casos de borda, e uma crate de JSON violaria a ADR-002 ([ADR-008](../memory/decisions/ADR-008.md)) |
-| (D12) Firmware sobre ESP-IDF v5.5.5 e `esp-idf-svc`, com `std`, Wi-Fi, TLS e HTTP (a consulta atual usa `http://`; ver as perguntas em aberto), toolchain `esp` do espup, alvo Xtensa ESP32 | Não informado |
+| (D12) Firmware sobre ESP-IDF v5.5.5 e `esp-idf-svc`, com `std`, Wi-Fi e cliente HTTP, toolchain `esp` do espup, alvo Xtensa ESP32 | Não informado |
 | (D13) DHT11 lido pela crate `dht11-trace`, de autoria própria | Identifica a etapa do protocolo em que a leitura falhou e lê o quadro sem interrupções, mantendo o protocolo fora da biblioteca ([ADR-009](../memory/decisions/ADR-009.md)) |
 | Console lê o `espflash monitor` pela entrada padrão | O espflash cuida da porta, do reset e dos símbolos, e a ferramenta não precisa de crate serial nem de dependência nativa (commit `936818d`) |
 
@@ -155,10 +155,12 @@ Não há banco nem persistência no dispositivo: o estado vive em memória duran
 
 | Serviço | Usado para | Configuração |
 | --- | --- | --- |
-| Open-Meteo (`api.open-meteo.com`, por HTTP) | Temperatura e umidade atuais do local configurado, como contexto (BR-16) | `latitude`, `longitude`, `http_timeout_ms` e `external_refresh_ms` em `firmware/esp32/cfg.toml` |
+| Open-Meteo (`api.open-meteo.com`, por HTTP sem TLS) | Temperatura e umidade atuais do local configurado, como contexto (BR-16) | `latitude`, `longitude`, `http_timeout_ms` e `external_refresh_ms` em `firmware/esp32/cfg.toml` |
 | Wi-Fi de 2,4 GHz | Acesso à Open-Meteo | `wifi_ssid` e `wifi_password` em `firmware/esp32/cfg.toml`, ignorado pelo git; o modelo é `cfg.toml.example` |
 
 Quando a Open-Meteo ou o Wi-Fi falham, a fonte externa fica indisponível, o estado passa a `DegradedExternal` ou `Error`, e a consulta é repetida a cada ciclo (BR-08, BR-09). Os testes usam respostas reais gravadas em `sense-bridge/tests/fixtures/open_meteo/`, nunca a rede.
+
+A consulta usa `http://` desde o primeiro firmware (commit `70c6411`, "Open-Meteo over HTTP"), e o firmware-base também usa HTTP. Assim, as latências de C1–C5 e o custo de Flash e RAM (D8) foram medidos sem TLS. O PRD descrevia a pilha da D12 como "Wi-Fi, TLS e HTTP", mas o código nunca usou TLS; o texto foi corrigido aqui para refletir o código. Passar a usar HTTPS está nas perguntas em aberto de [product.md](product.md).
 
 ## Observabilidade
 
@@ -167,7 +169,7 @@ A biblioteca não registra log, não aloca e não imprime: **o próprio `Record`
 | O quê | Onde olhar |
 | --- | --- |
 | Registros e transições | `Record` devolvido por `cycle`; uma linha CSV por ciclo na serial, com o cabeçalho em `firmware/esp32/src/csv_header.in`, compartilhado pelo firmware e pelo console |
-| Latência da leitura local, da consulta externa e do ciclo | Colunas `read_us`, `fetch_us` e `cycle_us` do CSV |
+| Latência da leitura local, da consulta externa e do ciclo | Colunas `read_us`, `fetch_us` e `cycle_us` do CSV; validação e integração são `cycle_us − read_us − fetch_us` (BR-33) |
 | RAM em execução | Heap livre, menor heap livre e folga mínima da pilha, no CSV |
 | Flash e RAM estática | `xtensa-esp32-elf-size` do firmware completo e do firmware-base, em `docs/evidencias/firmware/` |
 | Suspeita de leitura congelada e reinício do DHT11 | Colunas `local_repeat`, `local_suspect` e `local_restart` no fim do CSV e aviso no log, com `local_frozen_after` e `local_frozen_restart` |

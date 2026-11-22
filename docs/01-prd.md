@@ -431,7 +431,7 @@ A integração real do DHT11 já foi concluída e validada. Em uma montagem post
 - avaliar registro de software;
 - avaliar publicação do conjunto de dados experimental;
 - testar outros sensores e plataformas sem alterar o núcleo da biblioteca;
-- avaliar em hardware o detector de leitura congelada e o reinício por suspeita (cenário C6) e calibrar o limiar com capturas longas (D14).
+- executar no ESP32 o cenário C6 (leitura congelada por injeção de falha, suspeita e reinício), já preparado no firmware e no console, e calibrar o limiar com capturas longas e `--repeats` (D14).
 
 ---
 
@@ -505,7 +505,7 @@ Registro das decisões que moldam o comportamento da biblioteca e o protocolo ex
 | D11 | Nova tentativa após falha externa | Nova tentativa em cada ciclo enquanto a fonte estiver indisponível |
 | D12 | Pilha ESP32 | `esp-idf` / `esp-idf-svc`, com `std`, Wi-Fi, TLS e HTTP |
 | D13 | Leitura do DHT11 no firmware de referência | Crate `dht11-trace`, de autoria própria e publicada à parte no crates.io, que identifica a etapa do protocolo em que a leitura falhou; o protocolo continua fora da biblioteca (projeto de pesquisa, §6.2) |
-| D14 | Leitura local congelada (após a v0.1.0) | Detector opcional (`FreezeDetector`), desligado por padrão, que marca como suspeita a leitura local válida repetida, idêntica, por N ciclos seguidos. A suspeita não altera a validade nem o estado, porque a resolução do DHT11 torna repetições legítimas comuns (até 64 ciclos de 5 s nas capturas). Limiar sugerido: 360 ciclos (30 min), ainda não validado. Opcionalmente (`local_frozen_restart`), o firmware reinicia o DHT11 pelo GPIO de alimentação no máximo uma vez por limiar e registra se a leitura mudou ou persistiu. Estímulo: lacuna apontada na validação do laboratório SENTINELA (UFRR/PPCA, Arquitetura e Organização de Computadores, 2026) |
+| D14 | Leitura local congelada (após a v0.1.0) | Detector opcional (`FreezeDetector`), desligado por padrão, que marca como suspeita a leitura local válida repetida, idêntica, por N ciclos seguidos. A suspeita não altera a validade nem o estado, porque a resolução do DHT11 torna repetições legítimas comuns (até 64 ciclos de 5 s nas capturas). Limiar sugerido: 360 ciclos (30 min), ainda não validado. Opcionalmente (`local_frozen_restart`), o firmware reinicia o DHT11 pelo GPIO de alimentação no máximo uma vez por limiar e registra se a leitura mudou ou persistiu; o CSV marca o reinício em `local_restart`. O cenário C6 usa injeção de falha no firmware (`freeze_test_from_cycle`) e é conferido pelo console. Estímulo: lacuna apontada na validação do laboratório SENTINELA (UFRR/PPCA, Arquitetura e Organização de Computadores, 2026) |
 
 ### Protocolo experimental consolidado
 

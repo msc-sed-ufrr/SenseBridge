@@ -9,6 +9,8 @@ use std::time::Duration;
 use esp_idf_svc::sys;
 use sense_bridge::{FreezeDetector, Record};
 
+use crate::local::Restart;
+
 pub const HEADER: &str = include!("csv_header.in");
 
 /// Duração das operações de um ciclo. `read` e `fetch` ficam vazias quando a fonte não foi
@@ -20,11 +22,17 @@ pub struct Timing {
 }
 
 /// `freeze` já observou `record`. Sem ele (`local_frozen_after = 0`), `local_repeat` e
-/// `local_suspect` ficam vazias.
-pub fn row(record: &Record, timing: &Timing, freeze: Option<&FreezeDetector>) -> String {
-    let mut line = String::with_capacity(200);
+/// `local_suspect` ficam vazias. `restart` é o reinício do sensor feito depois do ciclo
+/// anterior, se houve.
+pub fn row(
+    record: &Record,
+    timing: &Timing,
+    freeze: Option<&FreezeDetector>,
+    restart: Option<Restart>,
+) -> String {
+    let mut line = String::with_capacity(208);
     // Escrever em uma String não falha.
-    let _ = write_row(&mut line, record, timing, freeze);
+    let _ = write_row(&mut line, record, timing, freeze, restart);
     line
 }
 
@@ -33,6 +41,7 @@ fn write_row(
     record: &Record,
     timing: &Timing,
     freeze: Option<&FreezeDetector>,
+    restart: Option<Restart>,
 ) -> std::fmt::Result {
     write!(
         line,
@@ -82,12 +91,11 @@ fn write_row(
     write!(line, "{heap_free},{heap_min_free},{stack_min_free},")?;
 
     match freeze {
-        Some(freeze) => write!(line, "{},{}", freeze.run(), freeze.is_suspect()),
-        None => {
-            line.push(',');
-            Ok(())
-        }
+        Some(freeze) => write!(line, "{},{},", freeze.run(), freeze.is_suspect())?,
+        None => line.push_str(",,"),
     }
+    line.push_str(restart.map_or("", Restart::as_str));
+    Ok(())
 }
 
 fn micros(duration: Option<Duration>) -> String {

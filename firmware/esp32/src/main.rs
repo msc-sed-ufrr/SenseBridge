@@ -12,7 +12,7 @@ mod config {
     include!(concat!(env!("OUT_DIR"), "/config.rs"));
 }
 
-use std::num::NonZeroU32;
+use std::num::{NonZeroU32, NonZeroU64};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -27,7 +27,7 @@ use sense_bridge::{Config, FreezeDetector, LocalFailure, LocalReading, SenseBrid
 
 use crate::csv::Timing;
 use crate::external::OpenMeteo;
-use crate::local::Dht11;
+use crate::local::{Dht11, FreezeTest, Restart};
 use crate::timed::Timed;
 
 type Bridge = SenseBridge<Timed<Dht11<'static>>, Timed<OpenMeteo<'static>>>;
@@ -54,9 +54,25 @@ fn main() -> Result<(), EspError> {
         None => info!("DHT11 no GPIO{}", config::DHT11_GPIO),
     }
     let (data_pin, power_pin) = config::dht11_pins(peripherals.pins);
+    // Injeção de falha do C6 (`freeze_test_from_cycle`), desligada fora do experimento.
+    let freeze_test = NonZeroU64::new(config::FREEZE_TEST_FROM_CYCLE).map(|from| FreezeTest {
+        from: from.get(),
+        reading: LocalReading::new(
+            config::FREEZE_TEST_TEMPERATURE,
+            config::FREEZE_TEST_HUMIDITY,
+        ),
+    });
+    if freeze_test.is_some() {
+        warn!(
+            "C6: injeção de falha ligada (freeze_test_from_cycle = {}); não use este firmware \
+             fora do experimento",
+            config::FREEZE_TEST_FROM_CYCLE
+        );
+    }
     let dht11 = Dht11::new(
         PinDriver::input_output_od(data_pin, Pull::Up)?,
         power_pin.map(PinDriver::output).transpose()?,
+        freeze_test,
     )?;
 
     // O ESP-IDF não reassocia sozinho: a cada queda, ou tentativa frustrada, uma nova
@@ -172,7 +188,8 @@ fn run(bridge: &mut Bridge) -> ! {
         if let Some(freeze) = &mut freeze {
             freeze.observe(&record.local);
         }
-        println!("{}", csv::row(&record, &timing, freeze.as_ref()));
+        let restart = bridge.local_mut().source_mut().take_restart();
+        println!("{}", csv::row(&record, &timing, freeze.as_ref(), restart));
         // Fora da janela medida: o log da falha do DHT11 e, se preciso, o reinício do sensor.
         bridge.local_mut().source_mut().after_cycle();
         if let Some(freeze) = &freeze {
@@ -228,6 +245,6 @@ fn react_to_freeze(
     if !config::LOCAL_FROZEN_RESTART {
         return None;
     }
-    dht11.power_cycle("suspeita de leitura congelada");
+    dht11.power_cycle(Restart::Suspect, "suspeita de leitura congelada");
     Some(*reading)
 }

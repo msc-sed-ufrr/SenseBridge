@@ -42,7 +42,7 @@ A biblioteca é `no_std`, não aloca memória e não tem dependências. O uso da
 | C4 — Falha simultânea | Indisponível | Indisponível | `Error` | 50/50 ciclos em `Error` |
 | C5 — Recuperação | Recuperado | Recuperado | Retorno a `Normal` | 5/5 recuperações no primeiro ciclo com as duas fontes válidas |
 
-- **Testes automatizados:** 62 na versão avaliada (77 com o detector de leitura congelada, acrescentado depois), executados sem hardware, cobrindo C1–C5, validação, transições e a interpretação de respostas reais da Open-Meteo.
+- **Testes automatizados:** 62 na versão avaliada (83 com o detector de leitura congelada e o cenário C6, acrescentados depois), executados sem hardware, cobrindo C1–C5, validação, transições e a interpretação de respostas reais da Open-Meteo.
 - **Latência:** ciclos sem consulta externa entre 18 e 22 ms.
 - **Memória:** cerca de 23,5 KiB de Flash e 13,4 KiB de RAM estática a mais que um firmware-base equivalente sem a biblioteca.
 
@@ -94,7 +94,7 @@ SenseBridge/
 Requer apenas o Rust, instalado pelo [rustup](https://rustup.rs) (versão 1.85 ou mais recente). Na raiz do repositório:
 
 ```sh
-cargo test                                     # 77 testes da biblioteca e do console, com C1–C6
+cargo test                                     # 83 testes da biblioteca e do console, com C1–C6
 cargo clippy --all-targets -- -D warnings      # análise estática
 cargo run -p sense_bridge --example simulate   # imprime os cenários simulados em CSV
 scripts/evidencias.sh                          # registra tudo em docs/evidencias/verificacao.md
@@ -149,7 +149,7 @@ O protocolo usa 5 repetições de 10 ciclos por cenário, com ciclo de 5 s (`cyc
 | C4 | C2 e C3 ao mesmo tempo | `Error` |
 | C5 | Iniciar com o DHT11 desconectado e religá-lo depois do ciclo 2 | Transição para `Normal`, marcada como recuperação, no primeiro ciclo com as duas fontes válidas |
 
-O console mostra o estado de cada ciclo e, ao final, um resumo com a contagem por estado e por tipo de falha. Uma captura gravada pode ser revista com `cargo run -q -p sense_bridge_console -- --no-save < capturas/c2-r1.txt`, e `cargo run -q -p sense_bridge_console -- --analyze capturas/c*.csv` confere cada captura com o estado esperado no seu cenário, identificado pelo nome do arquivo. As capturas oficiais ficam em [docs/evidencias](docs/evidencias/README.md).
+O console mostra o estado de cada ciclo e, ao final, um resumo com a contagem por estado e por tipo de falha. Uma captura gravada pode ser revista com `cargo run -q -p sense_bridge_console -- --no-save < capturas/c2-r1.txt`, e `cargo run -q -p sense_bridge_console -- --analyze capturas/c*.csv` confere cada captura com o estado esperado no seu cenário, identificado pelo nome do arquivo. O cenário C6, leitura congelada por injeção de falha, tem a configuração no [README do firmware](firmware/esp32/README.md#cenário-c6-leitura-congelada-por-injeção-de-falha). Para calibrar o limiar de `local_frozen_after`, `cargo run -q -p sense_bridge_console -- --repeats capturas/*.csv` mede a maior sequência de leituras locais iguais em capturas de qualquer nome. As capturas oficiais ficam em [docs/evidencias](docs/evidencias/README.md).
 
 ### Versões verificadas
 

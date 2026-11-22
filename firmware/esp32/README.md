@@ -59,6 +59,7 @@ Preencha `wifi_ssid` e `wifi_password`. O `cfg.toml` é ignorado pelo git; as cr
 | `dht11_power_gpio` | ausente (VCC no 3V3) | — |
 | `local_frozen_after` | 0 (desligado) | D14 |
 | `local_frozen_restart` | false | D14 |
+| `freeze_test_from_cycle`, `freeze_test_temperature`, `freeze_test_humidity` | 0 (desligada), 40, 80 | D14, cenário C6 |
 
 Para observar falha e recuperação da fonte externa sem esperar 15 minutos, reduza `external_refresh_ms` para 5000, como nos experimentos C3–C5 (PRD, D10): com o ciclo de 5 s, a fonte externa passa a ser consultada aproximadamente a cada ciclo. Uma falha de rede durante a reutilização só aparece na consulta seguinte.
 
@@ -74,6 +75,21 @@ W (...) sense_bridge_esp32: DHT11: a leitura persistiu após o reinício (361 ci
 ```
 
 Uma leitura que muda depois do reinício indica um sensor travado; uma que persiste indica, mais provavelmente, um ambiente estável, ou um defeito que o reinício não resolve, como um sensor obstruído. Esse resultado serve também para calibrar o limiar. Sem `local_frozen_restart`, a suspeita só gera o aviso `mesma leitura há N ciclos; suspeita de leitura congelada`.
+
+### Cenário C6: leitura congelada por injeção de falha
+
+Um DHT11 real não trava quando se quer. Para executar o C6, `freeze_test_from_cycle = K`, K > 0, faz o firmware devolver, a partir do ciclo K, sempre a leitura `freeze_test_temperature` / `freeze_test_humidity` (padrão: 40 °C e 80 %UR), como um sensor travado em um valor plausível. A transação com o sensor continua acontecendo, para que a duração da leitura siga a de um sensor real. A injeção termina no primeiro reinício do sensor depois de começar, que é o que destrava um DHT11 real; sem reinício, ela dura a captura inteira. O build avisa quando a injeção está ligada, e o log marca o início e o fim dela com `C6:`. O valor congelado deve diferir do ambiente e ficar na faixa do DHT11, que o build confere.
+
+Configuração do protocolo, com limiar curto só para o experimento:
+
+```toml
+freeze_test_from_cycle = 2
+local_frozen_after = 5
+local_frozen_restart = true
+dht11_power_gpio = 23
+```
+
+Com ela, os ciclos 2 a 6 trazem a leitura congelada, a suspeita começa no ciclo 6, o sensor é reiniciado depois dele e o ciclo 7 já traz a leitura real, com `local_restart = suspect`. O estado fica em `Normal` o tempo todo.
 
 ## Compilar e gravar
 
@@ -98,8 +114,9 @@ Depois dos logs de inicialização, a serial mostra o cabeçalho e uma linha por
 | `read_us`, `fetch_us`, `cycle_us` | Duração da leitura local, da consulta externa (vazia quando a leitura é reutilizada) e do ciclo inteiro; validação e integração correspondem a `cycle_us - read_us - fetch_us` |
 | `heap_free`, `heap_min_free`, `stack_min_free` | Heap livre, mínimo de heap livre desde o boot e folga mínima da pilha da tarefa principal, em bytes |
 | `local_repeat`, `local_suspect` | Ciclos seguidos com a mesma leitura local válida e a suspeita de leitura congelada; vazias com `local_frozen_after = 0` |
+| `local_restart` | Reinício do DHT11 feito antes deste ciclo: `failures` (3 falhas seguidas) ou `suspect` (suspeita de leitura congelada); vazia sem reinício |
 
-As duas últimas colunas vieram depois da v0.1.0. O console aceita linhas sem elas, como as das capturas oficiais de C1–C5.
+As três últimas colunas vieram depois da v0.1.0. O console aceita linhas sem elas, a partir da última, como as das capturas oficiais de C1–C5, que não têm nenhuma.
 
 As linhas de dados começam por um número, e as de log por `I (`, `W (` ou `E (`. Para separar os dados de uma captura:
 

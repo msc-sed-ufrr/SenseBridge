@@ -24,7 +24,7 @@ A troca de driver veio de melhorias na experiência de desenvolvimento (DX) feit
 | Placa | ESP32 com `Chip rev: v3.1`, a placa de Marcelo; as capturas oficiais usaram outra placa, `v1.0` |
 | Configuração | a de C1: ciclo de 5 s, tempo limite de 3 s, `external_refresh_ms = 900000`, detector de leitura congelada desligado |
 | Protocolo | 5 repetições de 10 ciclos registrados (BR-29), cada uma a partir de um reinício da placa |
-| Dados | [`docs/evidencias/complementares/2026-11-25-c1-firmware-atual/`](../evidencias/complementares/2026-11-25-c1-firmware-atual/), um CSV por repetição |
+| Dados | [`docs/evidencias/complementares/2026-11-25-c1-firmware-atual/`](../evidencias/complementares/2026-11-25-c1-firmware-atual/), o CSV e a saída bruta descaracterizada de cada repetição |
 
 ## Resultados
 
@@ -53,4 +53,4 @@ RAM em execução, pelo `--analyze`: menor `heap_free` 206.356 B, menor `heap_mi
 
 ## Limitações
 
-Só C1 foi repetido; C2–C5 continuam com o firmware anterior. A ligação serial desta placa perdeu 5 linhas de ciclo, que chegaram corrompidas e foram descartadas pelo console: o ciclo 9 em r2, os ciclos 4 e 10 em r3 e o ciclo 3 em r4 e em r5. Os ciclos aconteceram (a numeração segue), só não foram gravados; cada CSV tem 10 ciclos registrados, até o ciclo 10 ou 11, e as estatísticas acima usam esses 50. As capturas oficiais não têm nenhuma linha corrompida. As duas medições usaram placas e redes Wi-Fi diferentes. A saída bruta da serial (`.txt`) ficou fora do repositório, em `capturas/2026-11-25-c1-firmware-atual/`, porque traz o SSID e o BSSID da rede usada; versioná-la depende dos autores.
+Só C1 foi repetido; C2–C5 continuam com o firmware anterior. A ligação serial desta placa perdeu 5 linhas de ciclo, que chegaram corrompidas e foram descartadas pelo console: o ciclo 9 em r2, os ciclos 4 e 10 em r3 e o ciclo 3 em r4 e em r5. Os ciclos aconteceram (a numeração segue), só não foram gravados; cada CSV tem 10 ciclos registrados, até o ciclo 10 ou 11, e as estatísticas acima usam esses 50. As capturas oficiais não têm nenhuma linha corrompida. As duas medições usaram placas e redes Wi-Fi diferentes. A saída bruta da serial (`.txt`) está versionada descaracterizada: o SSID virou `<rede-A>`, o MAC da placa virou `<mac-placa>`, os MACs dos pontos de acesso viraram `<bssid-N>`, os IPs viraram `<ip-N>` e o tamanho da senha no aviso do Wi-Fi virou `<omitido>`. Cada valor distinto tem o seu marcador, nas mesmas pastas do dia; o resto das linhas, inclusive as corrompidas, ficou como chegou. O CSV não tem dados de rede e não foi alterado.

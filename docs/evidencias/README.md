@@ -93,12 +93,12 @@ Tiradas da saída bruta (`.txt`) de cada captura: a revisão do chip, o ELF e o 
 
 ## Capturas complementares
 
-Medições feitas fora do conjunto oficial, cada uma em `complementares/<data>-<assunto>/`, com o mesmo nome `c<cenário>-r<repetição>` para que o `--analyze` as confira. O registro de cada uma, com as condições e a leitura dos resultados, fica em `docs/memory/`.
+Medições feitas fora do conjunto oficial, cada uma em `complementares/<data>-<assunto>/`, com o mesmo nome `c<cenário>-r<repetição>` para que o `--analyze` as confira. O registro de cada uma, com as condições e a leitura dos resultados, fica em `docs/memory/`. A saída bruta (`.txt`) das complementares é versionada descaracterizada: SSID, MAC, IP e tamanho da senha do Wi-Fi trocados por marcadores como `<rede-A>`, `<mac-placa>`, `<bssid-1>` e `<ip-1>`, um por valor distinto. As capturas oficiais estão como foram gravadas.
 
 | Pasta | O que mede | Registro |
 | --- | --- | --- |
-| `complementares/2026-11-25-c1-firmware-atual/` | C1 com o firmware atual (`dht11-trace`, commit `5c653f2`), na placa `v3.1`; só os CSVs | [C1 com o firmware atual](../memory/2026-11-25-c1-firmware-atual.md) |
-| `complementares/2026-11-25-c5-externa/` | C5 com a queda e a volta da rede, firmware `5c653f2`, placa `v3.1`; os CSVs, o log do procedimento e, em `tentativa/`, a tentativa descartada | [C5 com a fonte externa](../memory/2026-11-25-c5-externa.md) |
+| `complementares/2026-11-25-c1-firmware-atual/` | C1 com o firmware atual (`dht11-trace`, commit `5c653f2`), na placa `v3.1`; CSVs e saída bruta descaracterizada | [C1 com o firmware atual](../memory/2026-11-25-c1-firmware-atual.md) |
+| `complementares/2026-11-25-c5-externa/` | C5 com a queda e a volta da rede, firmware `5c653f2`, placa `v3.1`; CSVs, saída bruta descaracterizada, o log do procedimento e, em `tentativa/`, a tentativa descartada | [C5 com a fonte externa](../memory/2026-11-25-c5-externa.md) |
 
 ## Pendências
 

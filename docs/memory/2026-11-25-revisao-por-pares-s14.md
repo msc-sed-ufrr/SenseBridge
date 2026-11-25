@@ -29,7 +29,7 @@ grep -h 'ELF file SHA256' docs/evidencias/experimentos/*.txt | sort | uniq -c
 #  10 1db5893aa  (C3, C4)    10 8b6adf2ea  (C1, C2)    5 08774303e  (C5)
 ```
 
-Três binários com o mesmo rótulo e o mesmo horário de compilação mostram que o rótulo ficou preso a um build anterior e não identifica o commit. O log identifica: desde `6e03d74` (06/10/2026), o firmware escreve `DHT11: <etapa> (falha N seguida)` depois de cada ciclo com falha local (`firmware/esp32/src/local.rs`, `after_cycle`). As capturas têm 116 ciclos com `local_failure = NoResponse` e nenhuma linha `DHT11:`, embora os avisos `W (...)` do Wi-Fi apareçam. Em `3725e20`, `local.rs` lê o sensor com a `dht-sensor` 0.3 e não registra falha nenhuma.
+Os três ELF não vêm de placas diferentes: as 25 capturas mostram a mesma revisão de chip, `v1.0`. Eles coincidem com as três configurações do `cfg.toml`, que o `build.rs` compila no binário (rede e `external_refresh_ms` de C1–C2, C3–C4 e C5; detalhes no [README das evidências](../evidencias/README.md)). Três binários com o mesmo rótulo e o mesmo horário de compilação mostram que o rótulo ficou preso a um build anterior e não identifica o commit. O log identifica: desde `6e03d74` (06/10/2026), o firmware escreve `DHT11: <etapa> (falha N seguida)` depois de cada ciclo com falha local (`firmware/esp32/src/local.rs`, `after_cycle`). As capturas têm 116 ciclos com `local_failure = NoResponse` e nenhuma linha `DHT11:`, embora os avisos `W (...)` do Wi-Fi apareçam. Em `3725e20`, `local.rs` lê o sensor com a `dht-sensor` 0.3 e não registra falha nenhuma.
 
 ```sh
 grep -c 'DHT11:' docs/evidencias/experimentos/*.txt            # 0 em todas

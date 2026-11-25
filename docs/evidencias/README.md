@@ -56,37 +56,39 @@ O cenário e a repetição vêm do nome do arquivo. Em C1–C4, todos os ciclos 
 
 ### Condições de cada captura
 
-Tiradas da saída bruta (`.txt`) de cada captura: o ELF e o `external_refresh_ms` vêm do boot, e a recuperação, do `--analyze`. A data de cada execução não consta no repositório; as capturas foram versionadas em 24/10/2026, no commit `14c0300`.
+Tiradas da saída bruta (`.txt`) de cada captura: a revisão do chip, o ELF e o `external_refresh_ms` vêm do boot, e a recuperação, do `--analyze`. As 25 capturas mostram a mesma revisão de silício, `v1.0`: foram feitas numa única placa ESP32. As capturas de trabalho de um dos autores, fora do repositório, mostram `v3.1`, de outra placa; elas não fazem parte do conjunto oficial. A data de cada execução não consta no repositório; as capturas foram versionadas em 24/10/2026, no commit `14c0300`.
 
-| Arquivo | ELF SHA256 (prefixo no boot) | `external_refresh_ms` | Rede no boot | Observação |
-| --- | --- | --- | --- | --- |
-| `c1-r1` | `8b6adf2ea` | 900000 | rede disponível após 5705 ms | — |
-| `c1-r2` | `8b6adf2ea` | 900000 | rede disponível após 5820 ms | — |
-| `c1-r3` | `8b6adf2ea` | 900000 | rede disponível após 5714 ms | — |
-| `c1-r4` | `8b6adf2ea` | 900000 | rede disponível após 5692 ms | — |
-| `c1-r5` | `8b6adf2ea` | 900000 | rede disponível após 5830 ms | — |
-| `c2-r1` | `8b6adf2ea` | 900000 | rede disponível após 5704 ms | — |
-| `c2-r2` | `8b6adf2ea` | 900000 | rede disponível após 5715 ms | — |
-| `c2-r3` | `8b6adf2ea` | 900000 | rede disponível após 5714 ms | — |
-| `c2-r4` | `8b6adf2ea` | 900000 | rede disponível após 5692 ms | — |
-| `c2-r5` | `8b6adf2ea` | 900000 | rede disponível após 5702 ms | — |
-| `c3-r1` | `1db5893aa` | 5000 | rede indisponível após 30 s | — |
-| `c3-r2` | `1db5893aa` | 5000 | rede indisponível após 30 s | — |
-| `c3-r3` | `1db5893aa` | 5000 | rede indisponível após 30 s | — |
-| `c3-r4` | `1db5893aa` | 5000 | rede indisponível após 30 s | — |
-| `c3-r5` | `1db5893aa` | 5000 | rede indisponível após 30 s | — |
-| `c4-r1` | `1db5893aa` | 5000 | rede indisponível após 30 s | — |
-| `c4-r2` | `1db5893aa` | 5000 | rede indisponível após 30 s | — |
-| `c4-r3` | `1db5893aa` | 5000 | rede indisponível após 30 s | — |
-| `c4-r4` | `1db5893aa` | 5000 | rede indisponível após 30 s | — |
-| `c4-r5` | `1db5893aa` | 5000 | rede indisponível após 30 s | — |
-| `c5-r1` | `08774303e` | 5000 | rede disponível após 5714 ms | recuperação no ciclo 3 |
-| `c5-r2` | `08774303e` | 5000 | rede disponível após 5703 ms | recuperação no ciclo 3 |
-| `c5-r3` | `08774303e` | 5000 | rede disponível após 5715 ms | recuperação no ciclo 4 |
-| `c5-r4` | `08774303e` | 5000 | rede disponível após 5704 ms | recuperação no ciclo 3 |
-| `c5-r5` | `08774303e` | 5000 | rede disponível após 5715 ms | recuperação no ciclo 3 |
+| Arquivo | Chip rev | ELF SHA256 (prefixo no boot) | `external_refresh_ms` | Rede no boot | Observação |
+| --- | --- | --- | --- | --- | --- |
+| `c1-r1` | v1.0 | `8b6adf2ea` | 900000 | rede disponível após 5705 ms | — |
+| `c1-r2` | v1.0 | `8b6adf2ea` | 900000 | rede disponível após 5820 ms | — |
+| `c1-r3` | v1.0 | `8b6adf2ea` | 900000 | rede disponível após 5714 ms | — |
+| `c1-r4` | v1.0 | `8b6adf2ea` | 900000 | rede disponível após 5692 ms | — |
+| `c1-r5` | v1.0 | `8b6adf2ea` | 900000 | rede disponível após 5830 ms | — |
+| `c2-r1` | v1.0 | `8b6adf2ea` | 900000 | rede disponível após 5704 ms | — |
+| `c2-r2` | v1.0 | `8b6adf2ea` | 900000 | rede disponível após 5715 ms | — |
+| `c2-r3` | v1.0 | `8b6adf2ea` | 900000 | rede disponível após 5714 ms | — |
+| `c2-r4` | v1.0 | `8b6adf2ea` | 900000 | rede disponível após 5692 ms | — |
+| `c2-r5` | v1.0 | `8b6adf2ea` | 900000 | rede disponível após 5702 ms | — |
+| `c3-r1` | v1.0 | `1db5893aa` | 5000 | rede indisponível após 30 s | — |
+| `c3-r2` | v1.0 | `1db5893aa` | 5000 | rede indisponível após 30 s | — |
+| `c3-r3` | v1.0 | `1db5893aa` | 5000 | rede indisponível após 30 s | — |
+| `c3-r4` | v1.0 | `1db5893aa` | 5000 | rede indisponível após 30 s | — |
+| `c3-r5` | v1.0 | `1db5893aa` | 5000 | rede indisponível após 30 s | — |
+| `c4-r1` | v1.0 | `1db5893aa` | 5000 | rede indisponível após 30 s | — |
+| `c4-r2` | v1.0 | `1db5893aa` | 5000 | rede indisponível após 30 s | — |
+| `c4-r3` | v1.0 | `1db5893aa` | 5000 | rede indisponível após 30 s | — |
+| `c4-r4` | v1.0 | `1db5893aa` | 5000 | rede indisponível após 30 s | — |
+| `c4-r5` | v1.0 | `1db5893aa` | 5000 | rede indisponível após 30 s | — |
+| `c5-r1` | v1.0 | `08774303e` | 5000 | rede disponível após 5714 ms | recuperação no ciclo 3 |
+| `c5-r2` | v1.0 | `08774303e` | 5000 | rede disponível após 5703 ms | recuperação no ciclo 3 |
+| `c5-r3` | v1.0 | `08774303e` | 5000 | rede disponível após 5715 ms | recuperação no ciclo 4 |
+| `c5-r4` | v1.0 | `08774303e` | 5000 | rede disponível após 5704 ms | recuperação no ciclo 3 |
+| `c5-r5` | v1.0 | `08774303e` | 5000 | rede disponível após 5715 ms | recuperação no ciclo 3 |
 
-**Firmware das capturas.** As 25 capturas mostram `App version: 3725e20` e o mesmo `Compile time` (`Oct  3 2026 11:28:54`), mas três ELF diferentes, um por grupo de configuração (C1–C2, C3–C4, C5). Três binários diferentes com o mesmo rótulo e o mesmo horário de compilação mostram que o rótulo ficou preso a um build anterior: ele não identifica o commit do firmware. O que identifica é o log: desde `6e03d74` (06/10/2026), o firmware escreve `DHT11: <etapa> (falha N seguida)` a cada leitura local com falha, e as capturas têm 116 ciclos com `NoResponse` e nenhuma dessas linhas, embora os avisos do Wi-Fi apareçam. As capturas foram feitas, portanto, com o firmware anterior a `6e03d74`, que lê o DHT11 com a crate `dht-sensor` 0.3, como em `3725e20`, e não com a `dht11-trace` (D13, [ADR-009](../memory/decisions/ADR-009.md)). A medição de Flash e RAM estática (D8) usou outro firmware, o de `cff24c3`, já com a `dht11-trace`. A análise completa está na [revisão por pares de 25/11/2026](../memory/2026-11-25-revisao-por-pares-s14.md).
+**Por que há três ELF.** O `firmware/esp32/build.rs` lê o `cfg.toml` e compila os valores dentro do binário: SSID e senha do Wi-Fi, coordenadas, intervalos, tempo limite e GPIO. Uma mudança no `cfg.toml` gera, portanto, um ELF diferente, mesmo sem mudança de código nem de placa. Os três ELF coincidem com as três configurações do protocolo: C1–C2 com `external_refresh_ms = 900000` e rede disponível; C5 com `external_refresh_ms = 5000` (D10) e rede disponível; C3–C4 com `external_refresh_ms = 5000` e uma rede inexistente, o que o boot confirma com `Wi-Fi desconectado (motivo 201)`, AP não encontrado. Só pelo log não é possível excluir outra diferença de código entre os três builds, mas os três são anteriores a `6e03d74` (abaixo).
+
+**Firmware das capturas.** As 25 capturas mostram `App version: 3725e20` e o mesmo `Compile time` (`Oct  3 2026 11:28:54`) nos três ELF. Três binários diferentes com o mesmo rótulo e o mesmo horário de compilação mostram que o rótulo ficou preso a um build anterior: ele não identifica o commit do firmware. O que identifica é o log: desde `6e03d74` (06/10/2026), o firmware escreve `DHT11: <etapa> (falha N seguida)` a cada leitura local com falha, e as capturas têm 116 ciclos com `NoResponse` e nenhuma dessas linhas, embora os avisos do Wi-Fi apareçam. As capturas foram feitas, portanto, com o firmware anterior a `6e03d74`, que lê o DHT11 com a crate `dht-sensor` 0.3, como em `3725e20`, e não com a `dht11-trace` (D13, [ADR-009](../memory/decisions/ADR-009.md)). A medição de Flash e RAM estática (D8) usou outro firmware, o de `cff24c3`, já com a `dht11-trace`. A análise completa está na [revisão por pares de 25/11/2026](../memory/2026-11-25-revisao-por-pares-s14.md).
 
 ## Pendências
 

@@ -12,6 +12,8 @@ git diff -U0 3725e20 sense_bridge-v0.1.0 -- sense-bridge/src
 
 Entre `3725e20` e `6e03d74` há um único commit, o próprio `6e03d74`, que não toca a biblioteca; o firmware das capturas oficiais é, portanto, o código de `3725e20`, salvo alterações locais não commitadas. A lógica de ciclo, de validação e de estado avaliada nas capturas oficiais é a da 0.1.0. O que mudou foi o firmware: o driver do DHT11 e o registro da etapa em que a leitura falhou.
 
+A troca de driver veio de melhorias na experiência de desenvolvimento (DX) feitas por um dos autores. O `dht-sensor` só informava tempo esgotado ou checksum inválido, e o firmware precisava de um adaptador de atraso que dependia da ordem interna das chamadas da crate para proteger o quadro da preempção pelo Wi-Fi. Primeiro o firmware passou a registrar a etapa do protocolo em que a leitura falhou (`6e03d74`, 06/10/2026); depois o driver foi reescrito no próprio firmware e extraído para a crate `dht11-trace`, publicada à parte (`c22d3d2` e `07204c9`, 22/10/2026). Os motivos estão no [ADR-009](decisions/ADR-009.md).
+
 ## Condições
 
 | Item | Valor |

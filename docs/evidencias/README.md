@@ -26,6 +26,8 @@ scripts/evidencias.sh               # biblioteca e console
 . ~/export-esp.sh && scripts/evidencias.sh --firmware   # inclui o firmware e o tamanho dele
 ```
 
+O tamanho do firmware em `verificacao.md` é o do commit registrado nele, não o da medição D8 (`cff24c3`, em `firmware/`): o firmware mudou depois dela, com o detector de leitura congelada (C6), e os dois números não devem ser comparados.
+
 A CI do GitHub (`.github/workflows/ci.yml`) roda as mesmas verificações de host a cada push e pull request.
 
 ## Capturas dos experimentos
@@ -54,7 +56,7 @@ O cenário e a repetição vêm do nome do arquivo. Em C1–C4, todos os ciclos 
 
 ### Condições de cada captura
 
-Tiradas da saída bruta (`.txt`) de cada captura: o ELF e o `external_refresh_ms` vêm do boot, e a recuperação, do `--analyze`. A data de cada execução não foi registrada; as capturas foram versionadas em 24/10/2026, no commit `14c0300`.
+Tiradas da saída bruta (`.txt`) de cada captura: o ELF e o `external_refresh_ms` vêm do boot, e a recuperação, do `--analyze`. A data de cada execução não consta no repositório; as capturas foram versionadas em 24/10/2026, no commit `14c0300`.
 
 | Arquivo | ELF SHA256 (prefixo no boot) | `external_refresh_ms` | Rede no boot | Observação |
 | --- | --- | --- | --- | --- |
@@ -89,7 +91,8 @@ Tiradas da saída bruta (`.txt`) de cada captura: o ELF e o `external_refresh_ms
 ## Pendências
 
 - [x] Versionar as 25 capturas oficiais (`c1-r1` a `c5-r5`, `.txt` e `.csv`). O conjunto oficial foi validado automaticamente: **25/25 capturas e 250/250 ciclos no estado esperado**.
-- [x] Registrar o commit do firmware e a versão da toolchain `esp` usados nos experimentos e na medição de Flash e RAM. As 25 capturas oficiais registram `App version: 3725e20` (`3725e2016747999582f5d94229695f7d051c341a`). Esse rótulo não identifica o commit; o firmware das capturas é o anterior a `6e03d74`, com `dht-sensor` (ver Condições de cada captura). A medição final D8 foi feita na árvore local em `cff24c3c8fa118a3cf23dd2e5601b1ba6727b88b`, com `rustc +esp 1.90.0-nightly (abf50ae2e 2025-09-16) (1.90.0.0)` e `cargo +esp 1.90.0-nightly (840b83a10 2025-07-30) (1.90.0.0)`.
+- [ ] Registrar o commit exato do firmware usado nas capturas e a data de cada execução. As 25 capturas oficiais registram `App version: 3725e20` (`3725e2016747999582f5d94229695f7d051c341a`), mas esse rótulo não identifica o commit: o log mostra só que o firmware é anterior a `6e03d74`, com `dht-sensor` (ver Condições de cada captura). O commit e as datas precisam ser confirmados por quem executou as capturas.
 - [x] Versionar o código do firmware-base equivalente (D8) e as saídas do `xtensa-esp32-elf-size` do baseline e do firmware SenseBridge.
+- [x] Registrar a toolchain `esp` da medição de Flash e RAM: feita em `cff24c3c8fa118a3cf23dd2e5601b1ba6727b88b`, com `rustc +esp 1.90.0-nightly (abf50ae2e 2025-09-16) (1.90.0.0)` e `cargo +esp 1.90.0-nightly (840b83a10 2025-07-30) (1.90.0.0)`.
 - [x] Repetir a medição D8 com baseline equivalente ao firmware atual. SenseBridge: `text` 931.968 B, `data` 192.906 B, `bss` 19.891 B; baseline: `text` 921.620 B, `data` 179.162 B, `bss` 19.883 B. Diferença: **+24.092 B de Flash (+2,19%)** e **+13.752 B de RAM estática (+6,91%)**.
 - [x] Calcular automaticamente a correspondência entre estado esperado e observado (PRD, UC-008): `sense_bridge_console --analyze`, com o cenário e a repetição tirados do nome do arquivo.

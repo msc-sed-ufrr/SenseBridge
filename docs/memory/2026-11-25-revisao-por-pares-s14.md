@@ -5,7 +5,7 @@ Duas duplas da disciplina revisaram o SenseBridge pelo formulário de design rev
 - **Dupla 1:** Matheus Naranjo e Pedro Ribeiro. Cinco achados: A1 a A5.
 - **Dupla 2:** Filipe Matias e Guilherme Lucas. Três achados: A1 a A3.
 
-As duas duplas reproduziram no host o que não depende do ESP32: `cargo test` com 83 testes aprovados, `--analyze` com 25/25 capturas e 250/250 ciclos no estado esperado, e as médias de latência do relatório a partir dos CSVs. Nenhuma das duas tinha ESP32, então a parte na placa foi avaliada pelas capturas versionadas.
+As duas duplas reproduziram no host o que não depende do ESP32: `cargo test`, com 83 testes aprovados, e `--analyze`, com 25/25 capturas e 250/250 ciclos no estado esperado. A dupla 2 também reproduziu as médias de latência do relatório a partir dos CSVs. Nenhuma das duas tinha ESP32, então a parte na placa foi avaliada pelas capturas versionadas.
 
 ## Achados, consolidados
 
@@ -41,11 +41,11 @@ Conclusão: o comportamento (C1–C5) e a latência (`read_us`, `fetch_us`, `cyc
 
 ### F2. Execução de C5 excluída
 
-A [avaliação experimental](2026-10-24-avaliacao-experimental.md) (§2.5) e o relatório entregue (§6.3 e §7.4) dizem que uma execução prevista como repetição 4 teve um `Timeout` externo durante a falha local, foi excluída e "preservada separadamente". O arquivo não está no repositório nem na pasta `capturas/` desta máquina (que vai até 07/10/2026). Nenhum documento define um critério de exclusão anterior à coleta. A dupla 2 observa que um `Timeout` real com a fonte local em falha deveria levar a `Error` (BR-23), o que seria comportamento correto e não motivo de descarte.
+A [avaliação experimental](2026-10-24-avaliacao-experimental.md) (§2.5) e o relatório entregue (§6.3 e §7.4) dizem que uma execução prevista como repetição 4 teve um `Timeout` externo durante a falha local, foi excluída e "preservada separadamente". O arquivo não está no repositório nem na pasta de trabalho `capturas/` do computador de Marcelo, que vai até 07/10/2026; as capturas oficiais vieram do computador de Ezequias. Nenhum documento define um critério de exclusão anterior à coleta. A dupla 2 observa que um `Timeout` real com a fonte local em falha deveria levar a `Error` (BR-23), o que seria comportamento correto e não motivo de descarte.
 
 ### F3. Recuperação da fonte externa
 
-O projeto de pesquisa define C5 com as duas fontes "Recuperado" (§6.3), e BR-30 manda "restabelecer as fontes". Nas cinco capturas de C5, só o DHT11 falha e volta; a fonte externa está disponível em todos os ciclos. Em C3 e C4, o firmware já sobe sem rede (`rede indisponível após 30 s`) e ela não volta durante a captura. A recuperação externa está coberta só pelos testes sem hardware. A dupla 1 aponta ainda que, com o intervalo padrão de 15 min (BR-05), uma queda da rede leva até 15 min para ser identificada; isso é a consequência aceita em BR-07 ([ADR-005](decisions/ADR-005.md)), mas o relatório não a cita entre as limitações.
+O projeto de pesquisa define C5 com as duas fontes "Recuperado" (§6.3), e BR-30 manda "restabelecer as fontes". Nas cinco capturas de C5, só o DHT11 falha e volta; a fonte externa está disponível em todos os ciclos. Em C3 e C4, o firmware já sobe sem rede (`rede indisponível após 30 s`) e ela não volta durante a captura. A recuperação externa só é verificada sem hardware, no teste [`c5_recovery_returns_to_normal_on_first_cycle_with_both_sources`](../../sense-bridge/tests/scenarios.rs), que sai de `Error`, com a fonte externa em `NoConnectivity`, para `Normal`. A dupla 1 aponta ainda que, com o intervalo padrão de 15 min (BR-05), uma queda da rede leva até 15 min para ser identificada; isso é a consequência aceita em BR-07 ([ADR-005](decisions/ADR-005.md)), mas o relatório não a cita entre as limitações.
 
 ### F5. RAM em execução por cenário
 

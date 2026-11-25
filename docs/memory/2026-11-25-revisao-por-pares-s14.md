@@ -37,7 +37,7 @@ git show 3725e20:firmware/esp32/Cargo.toml | grep dht            # dht-sensor = 
 git grep -n 'warn!("DHT11' 6e03d74 -- firmware/esp32/src/local.rs
 ```
 
-Conclusão: o comportamento (C1–C5) e a latência (`read_us`, `fetch_us`, `cycle_us`) foram medidos com o firmware anterior a `6e03d74`, com `dht-sensor`. A Flash e a RAM estática (D8) foram medidas com o firmware de `cff24c3`, já com `dht11-trace` ([ADR-009](decisions/ADR-009.md)). O relatório entregue diz, no §6.1, "firmware no commit 3725e20" e descreve, no §4.5, a leitura pela `dht11-trace`. A biblioteca também mudou entre `3725e20` e `sense_bridge-v0.1.0` (`git diff --stat 3725e20 sense_bridge-v0.1.0 -- sense-bridge/src`, 8 arquivos). A tabela de condições de cada captura está no [README das evidências](../evidencias/README.md).
+Conclusão: o comportamento (C1–C5) e a latência (`read_us`, `fetch_us`, `cycle_us`) foram medidos com o firmware anterior a `6e03d74`, com `dht-sensor`. A Flash e a RAM estática (D8) foram medidas com o firmware de `cff24c3`, já com `dht11-trace` ([ADR-009](decisions/ADR-009.md)). O relatório entregue diz, no §6.1, "firmware no commit 3725e20" e descreve, no §4.5, a leitura pela `dht11-trace`. Entre `3725e20` e `sense_bridge-v0.1.0`, a biblioteca ganhou só os métodos `as_str()`, um atributo de lint, documentação e testes (8 arquivos), sem mudança de lógica. O C1 repetido com o firmware atual mostrou o mesmo `read_us` ([C1 com o firmware atual](2026-11-25-c1-firmware-atual.md)). A tabela de condições de cada captura está no [README das evidências](../evidencias/README.md).
 
 ### F2. Execução de C5 excluída
 

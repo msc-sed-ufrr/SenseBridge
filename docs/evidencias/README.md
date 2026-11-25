@@ -14,6 +14,7 @@ docs/evidencias/
 │   ├── ...
 │   ├── c5-r5.csv
 │   └── c5-r5.txt
+├── complementares/      # medições fora do conjunto oficial, uma pasta por medição
 └── firmware/            # baseline equivalente e saídas de tamanho da D8, versionados
 ```
 
@@ -88,7 +89,15 @@ Tiradas da saída bruta (`.txt`) de cada captura: a revisão do chip, o ELF e o 
 
 **Por que há três ELF.** O `firmware/esp32/build.rs` lê o `cfg.toml` e compila os valores dentro do binário: SSID e senha do Wi-Fi, coordenadas, intervalos, tempo limite e GPIO. Uma mudança no `cfg.toml` gera, portanto, um ELF diferente, mesmo sem mudança de código nem de placa. Os três ELF coincidem com as três configurações do protocolo: C1–C2 com `external_refresh_ms = 900000` e rede disponível; C5 com `external_refresh_ms = 5000` (D10) e rede disponível; C3–C4 com `external_refresh_ms = 5000` e uma rede inexistente, o que o boot confirma com `Wi-Fi desconectado (motivo 201)`, AP não encontrado. Só pelo log não é possível excluir outra diferença de código entre os três builds, mas os três são anteriores a `6e03d74` (abaixo).
 
-**Firmware das capturas.** As 25 capturas mostram `App version: 3725e20` e o mesmo `Compile time` (`Oct  3 2026 11:28:54`) nos três ELF. Três binários diferentes com o mesmo rótulo e o mesmo horário de compilação mostram que o rótulo ficou preso a um build anterior: ele não identifica o commit do firmware. O que identifica é o log: desde `6e03d74` (06/10/2026), o firmware escreve `DHT11: <etapa> (falha N seguida)` a cada leitura local com falha, e as capturas têm 116 ciclos com `NoResponse` e nenhuma dessas linhas, embora os avisos do Wi-Fi apareçam. As capturas foram feitas, portanto, com o firmware anterior a `6e03d74`, que lê o DHT11 com a crate `dht-sensor` 0.3, como em `3725e20`, e não com a `dht11-trace` (D13, [ADR-009](../memory/decisions/ADR-009.md)). A medição de Flash e RAM estática (D8) usou outro firmware, o de `cff24c3`, já com a `dht11-trace`. A análise completa está na [revisão por pares de 25/11/2026](../memory/2026-11-25-revisao-por-pares-s14.md).
+**Firmware das capturas.** As 25 capturas mostram `App version: 3725e20` e o mesmo `Compile time` (`Oct  3 2026 11:28:54`) nos três ELF. Três binários diferentes com o mesmo rótulo e o mesmo horário de compilação mostram que o rótulo ficou preso a um build anterior: ele não identifica o commit do firmware. O que identifica é o log: desde `6e03d74` (06/10/2026), o firmware escreve `DHT11: <etapa> (falha N seguida)` a cada leitura local com falha, e as capturas têm 116 ciclos com `NoResponse` e nenhuma dessas linhas, embora os avisos do Wi-Fi apareçam. As capturas foram feitas, portanto, com o firmware anterior a `6e03d74`. Como `6e03d74` é o único commit depois de `3725e20` nessa linha, o código é o de `3725e20`, salvo alterações locais não commitadas: lê o DHT11 com a crate `dht-sensor` 0.3, e não com a `dht11-trace` (D13, [ADR-009](../memory/decisions/ADR-009.md)). A medição de Flash e RAM estática (D8) usou outro firmware, o de `cff24c3`, já com a `dht11-trace`. A análise completa está na [revisão por pares de 25/11/2026](../memory/2026-11-25-revisao-por-pares-s14.md).
+
+## Capturas complementares
+
+Medições feitas fora do conjunto oficial, cada uma em `complementares/<data>-<assunto>/`, com o mesmo nome `c<cenário>-r<repetição>` para que o `--analyze` as confira. O registro de cada uma, com as condições e a leitura dos resultados, fica em `docs/memory/`.
+
+| Pasta | O que mede | Registro |
+| --- | --- | --- |
+| `complementares/2026-11-25-c1-firmware-atual/` | C1 com o firmware atual (`dht11-trace`, commit `5c653f2`), na placa `v3.1`; só os CSVs | [C1 com o firmware atual](../memory/2026-11-25-c1-firmware-atual.md) |
 
 ## Pendências
 

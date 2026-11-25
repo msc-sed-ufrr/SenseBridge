@@ -1,0 +1,11 @@
+cycle,timestamp_ms,state,local_temperature_c,local_humidity_pct,local_failure,external_temperature_c,external_humidity_pct,external_age_ms,external_failure,transition,recovery,read_us,fetch_us,cycle_us,heap_free,heap_min_free,stack_min_free,local_repeat,local_suspect,local_restart
+0,24,DegradedExternal,27.0,41.0,,,,,NoConnectivity,,,21996,142,22312,208412,208380,12776,,,
+1,5002,DegradedExternal,27.0,41.0,,,,,NoConnectivity,,,21991,178,22372,208412,208368,12776,,,
+2,10002,DegradedExternal,27.0,41.0,,,,,NoConnectivity,,,21995,170,22368,208412,208368,12776,,,
+3,15002,DegradedExternal,27.0,41.0,,,,,NoConnectivity,,,21991,178,22372,208412,208368,12776,,,
+4,20002,DegradedExternal,27.0,41.0,,,,,NoConnectivity,,,21991,174,22376,208412,208368,12776,,,
+5,25002,DegradedExternal,27.0,41.0,,,,,NoConnectivity,,,22003,351,22560,207012,201876,12776,,,
+6,30002,Normal,27.0,41.0,,36.9,40.0,0,,DegradedExternal->Normal,true,21987,924675,946903,206348,201876,12212,,,
+7,35002,Normal,27.0,41.0,,36.9,40.0,0,,,,23079,836111,859449,206120,200716,12212,,,
+8,40002,Normal,27.0,41.0,,36.9,40.0,0,,,,22163,751900,774297,205908,200504,12212,,,
+9,45002,Normal,27.0,41.0,,36.9,40.0,0,,,,22159,869211,891601,205304,200292,12212,,,

@@ -54,7 +54,7 @@ A biblioteca é o único ponto que combina as duas fontes, e o ciclo conhece cad
 | Fontes simuladas | Resultado ajustável entre ciclos, com contagem de consultas, para reproduzir falha e recuperação sem hardware | `sense-bridge/src/sim.rs` |
 | Testes de cenário | C1–C5, limites de validação, transições e intervalo de consulta externa; C6 simulado; respostas reais gravadas da Open-Meteo | `sense-bridge/tests/` |
 | Exemplo | Percorre C1–C5 com fontes simuladas e imprime um registro por ciclo em CSV | `sense-bridge/examples/simulate.rs` |
-| Console de host (`sense_bridge_console`) | Lê a saída do `espflash monitor`, mostra os ciclos, grava as capturas em TXT e CSV, confere cada captura com o estado esperado do seu cenário (`--analyze`) e mede sequências de leituras iguais (`--repeats`) | `tools/console/` |
+| Console de host (`sense_bridge_console`) | Lê a saída do `espflash monitor`, mostra os ciclos, grava as capturas em TXT e CSV, confere cada captura com o estado esperado do seu cenário e resume a RAM em execução por cenário (`--analyze`) e mede sequências de leituras iguais (`--repeats`) | `tools/console/` |
 | Firmware ESP32 (`sense_bridge_esp32`, não publicado) | Driver do DHT11, Wi-Fi, cliente Open-Meteo com tempo limite, relógio monotônico, cadência dos ciclos, instrumentação, saída CSV, reinício do DHT11 e injeção de falha do C6 | `firmware/esp32/` |
 | Firmware-base | Firmware equivalente sem a biblioteca, usado só para medir o custo de Flash e RAM (D8) | `docs/evidencias/firmware/baseline/` |
 | Evidências | Capturas oficiais dos experimentos e registro das verificações do código | `docs/evidencias/`, gerado em parte por `scripts/evidencias.sh` |
@@ -174,7 +174,7 @@ A biblioteca não registra log, não aloca e não imprime: **o próprio `Record`
 | Flash e RAM estática | `xtensa-esp32-elf-size` do firmware completo e do firmware-base, em `docs/evidencias/firmware/` |
 | Suspeita de leitura congelada e reinício do DHT11 | Colunas `local_repeat`, `local_suspect` e `local_restart` no fim do CSV e aviso no log, com `local_frozen_after` e `local_frozen_restart` |
 | Etapa do protocolo em que a leitura do DHT11 falhou | Log do firmware, a partir da `dht11-trace` |
-| Resumo e conferência de uma captura | `sense_bridge_console`: resumo por estado e por tipo de falha; `--analyze` para o estado esperado de C1–C6 |
+| Resumo e conferência de uma captura | `sense_bridge_console`: resumo por estado e por tipo de falha; `--analyze` para o estado esperado de C1–C6 e a RAM em execução por cenário |
 | Verificações do código | `docs/evidencias/verificacao.md`, gerado por `scripts/evidencias.sh` |
 
 ## Invariantes

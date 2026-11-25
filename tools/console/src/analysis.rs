@@ -385,7 +385,38 @@ fn report(captures: &[Capture], out: &mut impl Write, style: Style) -> io::Resul
         )?;
     }
     writeln!(out, "{}", style.bold(&format!("── total: {total}")))?;
+    memory(captures, out, style)?;
     Ok(total.passed == total.captures)
+}
+
+/// RAM em execução por cenário, das colunas do próprio CSV (BR-33): o menor `heap_free`, o
+/// menor `heap_min_free` e o menor `stack_min_free` entre todos os ciclos do cenário, como na
+/// Tabela 5 do relatório entregue. É a RAM do firmware inteiro: sem um firmware-base rodando o
+/// mesmo cenário, não isola o custo da biblioteca.
+fn memory(captures: &[Capture], out: &mut impl Write, style: Style) -> io::Result<()> {
+    writeln!(
+        out,
+        "\n{}",
+        style.bold(&format!(
+            "{:<8}  {:>6}  {:>16}  {:>22}  {:>18}",
+            "cenário", "ciclos", "menor heap livre", "menor heap desde boot", "menor folga pilha"
+        ))
+    )?;
+    for group in captures.chunk_by(|a, b| a.scenario == b.scenario) {
+        let cycles: Vec<&Cycle> = group.iter().flat_map(|c| &c.cycles).collect();
+        // `read_cycles` recusa captura sem ciclos, então o grupo nunca fica vazio.
+        let min = |column: fn(&Cycle) -> u64| cycles.iter().map(|c| column(c)).min().unwrap_or(0);
+        writeln!(
+            out,
+            "{:<8}  {:>6}  {:>14} B  {:>20} B  {:>16} B",
+            format!("{:?}", group[0].scenario),
+            cycles.len(),
+            min(|c| c.heap_free),
+            min(|c| c.heap_min_free),
+            min(|c| c.stack_min_free)
+        )?;
+    }
+    Ok(())
 }
 
 /// Uma linha por captura e, abaixo dela, uma por sequência de ciclos com a mesma divergência.
@@ -597,7 +628,40 @@ mod tests {
              ── C2: 0/1 capturas aprovadas, 2/5 ciclos no estado esperado\n\
              c5-r1     recuperação           6/6  ok, recuperação no ciclo 4\n\
              ── C5: 1/1 capturas aprovadas, 6/6 ciclos no estado esperado\n\
-             ── total: 2/3 capturas aprovadas, 9/12 ciclos no estado esperado\n"
+             ── total: 2/3 capturas aprovadas, 9/12 ciclos no estado esperado\n\
+             \n\
+             cenário   ciclos  menor heap livre   menor heap desde boot   menor folga pilha\n\
+             C1             1          206948 B                201476 B             12436 B\n\
+             C2             5          206948 B                201476 B             12436 B\n\
+             C5             6          206948 B                201476 B             12436 B\n"
+        );
+    }
+
+    #[test]
+    fn reports_runtime_ram_by_scenario_br_33() {
+        // Duas repetições de C2: cada mínimo vem de um ciclo ou de uma captura diferente.
+        let with_ram = |number: u64, heap: u64, heap_min: u64, stack_min: u64| Cycle {
+            heap_free: heap,
+            heap_min_free: heap_min,
+            stack_min_free: stack_min,
+            ..cycle(number, "DegradedLocal", "NoResponse", "", "")
+        };
+        let captures = [
+            capture(
+                "c2-r1",
+                vec![
+                    with_ram(0, 200_000, 199_000, 12_500),
+                    with_ram(1, 201_000, 198_500, 12_400),
+                ],
+            ),
+            capture("c2-r2", vec![with_ram(0, 202_000, 199_200, 12_380)]),
+        ];
+        let mut out = Vec::new();
+        memory(&captures, &mut out, PLAIN).unwrap();
+        assert_eq!(
+            String::from_utf8(out).unwrap(),
+            "\ncenário   ciclos  menor heap livre   menor heap desde boot   menor folga pilha\n\
+             C2             3          200000 B                198500 B             12380 B\n"
         );
     }
 

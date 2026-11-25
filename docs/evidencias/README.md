@@ -50,7 +50,7 @@ Para conferir todas as capturas com o estado esperado em cada cenário (PRD, UC-
 cargo run -q -p sense_bridge_console -- --analyze docs/evidencias/experimentos/*.csv
 ```
 
-O cenário e a repetição vêm do nome do arquivo. Em C1–C4, todos os ciclos devem estar no estado do cenário. Em C5, cada ciclo deve estar no estado que corresponde à disponibilidade observada das fontes, a captura deve começar com falha e o primeiro ciclo com as duas fontes válidas deve estar em `Normal`, marcado como recuperação. O relatório mostra, por captura e por cenário, os ciclos no estado esperado e as divergências, e o comando termina com código 1 se alguma captura divergir.
+O cenário e a repetição vêm do nome do arquivo. Em C1–C4, todos os ciclos devem estar no estado do cenário. Em C5, cada ciclo deve estar no estado que corresponde à disponibilidade observada das fontes, a captura deve começar com falha e o primeiro ciclo com as duas fontes válidas deve estar em `Normal`, marcado como recuperação. O relatório mostra, por captura e por cenário, os ciclos no estado esperado e as divergências, e o comando termina com código 1 se alguma captura divergir. Ao final, uma tabela traz a RAM em execução de cada cenário, tirada das colunas do CSV: o menor `heap_min_free`, o menor `stack_min_free` e a média de `heap_free` entre todos os ciclos. É a RAM do firmware inteiro; o custo próprio da biblioteca fica na diferença de RAM estática contra o firmware-base (D8).
 
 Para cada captura, registrar nesta tabela as condições da execução:
 

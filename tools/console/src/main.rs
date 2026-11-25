@@ -7,8 +7,8 @@
 //! espflash monitor --non-interactive | cargo run -q -p sense_bridge_console
 //! ```
 //!
-//! Com `--analyze`, confere capturas gravadas com o estado esperado em cada cenário (C1–C6). Com
-//! `--repeats`, mede a maior sequência de leituras locais iguais em capturas de qualquer nome,
+//! Com `--analyze`, confere capturas gravadas com o estado esperado em cada cenário (C1–C6) e
+//! resume a RAM em execução de cada cenário. Com `--repeats`, mede a maior sequência de leituras locais iguais em capturas de qualquer nome,
 //! para calibrar o limiar de `local_frozen_after`.
 
 mod analysis;
@@ -42,7 +42,8 @@ Opções:
   --out <prefixo>   grava em <prefixo>.txt e <prefixo>.csv (padrão: capturas/<data UTC>)
   --no-save         não grava a captura
   --analyze         confere as capturas seguintes com o estado esperado em cada cenário
-                    (C1–C6) e termina com código 1 se alguma divergir
+                    (C1–C6), resume a RAM em execução por cenário e termina com código 1
+                    se alguma divergir
   --repeats         mede a maior sequência de leituras locais iguais nas capturas seguintes,
                     para calibrar local_frozen_after
   -h, --help        mostra esta ajuda";

@@ -75,6 +75,12 @@ Os valores coincidem com a Tabela 5 e com os que a dupla 2 calculou. É a RAM do
 - **Contagem de testes:** o relatório entregue cita 62 testes. Em `ceddc98` são 83, e o `verificacao.md` versionado até este registro era de 22/10/2026 (`86055dc`), com 55. O `verificacao.md` foi gerado de novo nesta revisão, com 84: os 83 e o teste da tabela de RAM do console.
 - **Duas versões do relatório:** [`2026-10-28-relatorio-tecnico.md`](2026-10-28-relatorio-tecnico.md) é o relatório de 28/10/2026; a versão entregue é a de 03/11/2026 ([PDF](2026-11-03-entrega-final-ptt4.pdf), [DOCX](2026-11-03-entrega-final-ptt4.docx)). `docs/memory/` só recebe acréscimos, então o Markdown não foi reescrito: onde os dois divergem, vale o entregue. A dupla 2 avaliou o Markdown, e é daí que vem F5.
 
-## O que ficou em aberto
+## Decisões dos autores
 
-As decisões que cabem aos autores (capturar de novo ou declarar a limitação em F1 e F3, o critério de descarte de F2, a leitura do ADR-009 diante do §6.2 e a resposta formal aos revisores) estão em [product.md › Perguntas em aberto](../knowledge/product.md).
+Os dois autores decidiram em 25/11/2026:
+
+- **F1 e F3:** declarar a origem de cada conjunto de dados e completar com medições complementares, sem refazer o conjunto oficial ([C1 com o firmware atual](2026-11-25-c1-firmware-atual.md), [C5 com a fonte externa](2026-11-25-c5-externa.md)).
+- **F2:** o critério de descarte definido antes da coleta passa a ser regra (BR-37, [ADR-011](decisions/ADR-011.md)).
+- **A3 da dupla 1:** manter a posição do [ADR-009](decisions/ADR-009.md); o protocolo do DHT11 continua fora da biblioteca.
+- **Resposta aos revisores:** um [adendo ao relatório](2026-11-25-adendo-relatorio-tecnico.md), sem alterar o relatório entregue.
+- **F4:** o vídeo acompanha a entrega de 26/11/2026 como anexo, produzido pelos autores.

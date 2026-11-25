@@ -139,7 +139,7 @@ Com o firmware gravado, o console do host acompanha os ciclos e grava a captura.
 espflash monitor --non-interactive | cargo run -q -p sense_bridge_console -- --out capturas/c2-r1
 ```
 
-O protocolo usa 5 repetições de 10 ciclos por cenário, com ciclo de 5 s (`cycle_interval_ms = 5000`) e tempo limite HTTP de 3 s. Em C3, C4 e C5, `external_refresh_ms = 5000` faz a fonte externa ser consultada aproximadamente a cada ciclo; nos demais, vale o padrão de 15 minutos. Alterações em `cfg.toml` exigem gravar o firmware de novo.
+O protocolo usa 5 repetições de 10 ciclos por cenário, com ciclo de 5 s (`cycle_interval_ms = 5000`) e tempo limite HTTP de 3 s. Em C3, C4 e C5, `external_refresh_ms = 5000` faz a fonte externa ser consultada aproximadamente a cada ciclo; nos demais, vale o padrão de 15 minutos. Alterações em `cfg.toml` exigem gravar o firmware de novo. Antes de uma captura oficial, rode `cargo clean --release -p esp-idf-sys` em `firmware/esp32/` e compile de novo: sem isso, o `App version` do boot pode ficar preso a um commit antigo ([lições](docs/memory/lessons.md)).
 
 | Cenário | Como induzir | Esperado |
 | --- | --- | --- |

@@ -18,7 +18,7 @@ A troca de driver veio de melhorias na experiência de desenvolvimento (DX) feit
 
 | Item | Valor |
 | --- | --- |
-| Firmware | commit `5c653f2`, compilado depois de `cargo clean --release -p esp-idf-sys`; o boot mostra `App version: 5c653f2` nas 5 capturas ([lições](lessons.md)) |
+| Firmware | commit `5c653f2`, com firmware e biblioteca idênticos aos da tag `sense_bridge-v0.1.1`, compilado depois de `cargo clean --release -p esp-idf-sys`; o boot mostra `App version: 5c653f2` nas 5 capturas ([lições](lessons.md)) |
 | Driver do DHT11 | `dht11-trace` 0.1 |
 | ELF | `4d3126626…`, o mesmo nas 5 capturas |
 | Placa | ESP32 com `Chip rev: v3.1`, a placa de Marcelo; as capturas oficiais usaram outra placa, `v1.0` |

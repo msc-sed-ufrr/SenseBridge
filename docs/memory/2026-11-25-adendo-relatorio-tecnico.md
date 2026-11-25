@@ -8,10 +8,10 @@ Este adendo complementa o [relatório técnico entregue em 03/11/2026](2026-11-0
 
 | Achado | Severidade | Resposta | Onde verificar |
 | --- | --- | --- | --- |
-| F1. As capturas de C1–C5 não foram feitas com o firmware descrito no relatório | Maior | Identificada a origem de cada conjunto de dados; a lógica da biblioteca nas capturas é a da 0.1.0; C1 repetido com o firmware entregue, com o mesmo tempo de leitura (seção 2) | [Condições de cada captura](../evidencias/README.md), [C1 com o firmware atual](2026-11-25-c1-firmware-atual.md) |
+| F1. As capturas de C1–C5 não foram feitas com o firmware descrito no relatório | Maior | Identificada a origem de cada conjunto de dados; a lógica da biblioteca nas capturas é a da 0.1.0; C1 repetido com o firmware da tag `sense_bridge-v0.1.1`, com o mesmo tempo de leitura (seção 2) | [Condições de cada captura](../evidencias/README.md), [C1 com o firmware atual](2026-11-25-c1-firmware-atual.md) |
 | F2. Uma execução de C5 foi excluída sem critério prévio e não está versionada | Maior | O arquivo se perdeu. Um novo C5 foi executado com critério de descarte definido antes da coleta e com a tentativa interrompida versionada (seção 3) | [C5 com a fonte externa](2026-11-25-c5-externa.md) |
 | F3. A recuperação da fonte externa nunca foi observada na placa | Maior | C5 executado com a queda e a volta da rede: 5/5 recuperações no primeiro ciclo depois de a placa obter IP (seção 4) | [C5 com a fonte externa](2026-11-25-c5-externa.md) |
-| F4. Vídeo de demonstração ausente | Maior | Entregue à parte, com o link no Quadro 12 e no README | README do repositório |
+| F4. Vídeo de demonstração ausente | Maior | Pendente: o vídeo será entregue à parte, com o link neste adendo e no README | README do repositório |
 | F5. RAM em execução não relatada por cenário | Menor | Já relatada na Tabela 5; o comando que a gera foi acrescentado ao console (seção 5) | `sense_bridge_console --analyze` |
 | F6. Números divergentes entre documentos | Menor | Errata (seção 6) | Seção 6 |
 
@@ -23,15 +23,15 @@ O §6.1 diz que o firmware das capturas é o do commit `3725e20`, "registrado em
 | --- | --- | --- | --- |
 | C1–C5 oficiais (Tabelas 1, 2, 3 e 5) | código de `3725e20` | crate `dht-sensor` 0.3 | ESP32 `v1.0` |
 | Flash e RAM estática, D8 (Tabela 4) | `cff24c3` | crate `dht11-trace` 0.1 | (medição do binário) |
-| C1 complementar, 25/11/2026 | `5c653f2` | crate `dht11-trace` 0.1 | ESP32 `v3.1` |
-| C5 com a fonte externa, 25/11/2026 | `5c653f2` | crate `dht11-trace` 0.1 | ESP32 `v3.1` |
+| C1 complementar, 25/11/2026 | `5c653f2`, igual à tag `sense_bridge-v0.1.1` | crate `dht11-trace` 0.1 | ESP32 `v3.1` |
+| C5 com a fonte externa, 25/11/2026 | `5c653f2`, igual à tag `sense_bridge-v0.1.1` | crate `dht11-trace` 0.1 | ESP32 `v3.1` |
 
 A troca do driver veio de melhorias na experiência de desenvolvimento feitas por um dos autores: o `dht-sensor` só informava tempo esgotado ou checksum inválido, e o firmware dependia de um adaptador que contava com a ordem interna das chamadas da crate para proteger a leitura da preempção pelo Wi-Fi. O driver foi reescrito no firmware e extraído para a crate `dht11-trace`, adotada em 22/10/2026 ([ADR-009](decisions/ADR-009.md)).
 
 **O que isso muda nos resultados.**
 
 - **Comportamento (Tabelas 1 e 2).** Fora comentários, documentação e testes, a biblioteca entre `3725e20` e a tag `sense_bridge-v0.1.0` ganhou só os métodos `as_str()`, com os nomes estáveis de estados e falhas, e um atributo de lint (`git diff 3725e20 sense_bridge-v0.1.0 -- sense-bridge/src`). A lógica de ciclo, de validação e de estado avaliada nas capturas é a da 0.1.0, e os 250 ciclos valem para ela.
-- **Latência (Tabela 3).** C1 foi repetido com o firmware entregue: `read_us` de 22,11 ± 0,20 ms, contra 22,06 ± 0,18 ms nas capturas oficiais. A troca de driver não muda o tempo de leitura. O trabalho próprio da biblioteca por ciclo (`cycle_us − read_us − fetch_us`) passou de 0,145 para 0,190 ms, ainda abaixo de 1% do ciclo; placa e firmware mudaram juntos, e a medição não separa a causa.
+- **Latência (Tabela 3).** C1 foi repetido com o firmware da tag `sense_bridge-v0.1.1`, que lê o sensor com a `dht11-trace`: `read_us` de 22,11 ± 0,20 ms, contra 22,06 ± 0,18 ms nas capturas oficiais. A troca de driver não muda o tempo de leitura. O trabalho próprio da biblioteca por ciclo (`cycle_us − read_us − fetch_us`) passou de 0,145 para 0,190 ms, ainda abaixo de 1% do ciclo; placa e firmware mudaram juntos, e a medição não separa a causa.
 - **Memória (Tabela 4).** O firmware SenseBridge e o firmware-base foram medidos com o mesmo driver, então a diferença continua valendo.
 
 ## 3. Execução excluída de C5 (F2)
@@ -42,7 +42,7 @@ O C5 com a fonte externa, executado em 25/11/2026, seguiu o procedimento que fal
 
 ## 4. Recuperação da fonte externa na placa (F3)
 
-No Quadro 11, C5 recupera só o DHT11; a fonte externa está disponível em todos os ciclos, e a recuperação externa só era verificada pelos testes sem hardware. Em 25/11/2026, C5 foi executado com a falha na rede: o Wi-Fi do roteador desligado antes do reinício da placa e religado depois do ciclo 2, com o DHT11 disponível e `external_refresh_ms = 5000` (D10).
+No Quadro 11, C5 recupera só o DHT11; a fonte externa está disponível em todos os ciclos, e a recuperação externa só era verificada pelos testes sem hardware. Em 25/11/2026, C5 foi executado com a falha na rede: o Wi-Fi do roteador desligado antes do reinício da placa e religado depois do ciclo 2 (em r4, depois do ciclo 3, por uma linha perdida na serial), com o DHT11 disponível e `external_refresh_ms = 5000` (D10).
 
 | Repetição | Recuperação no ciclo | Da placa obter IP ao ciclo de recuperação |
 | --- | ---: | ---: |
@@ -52,7 +52,7 @@ No Quadro 11, C5 recupera só o DHT11; a fonte externa está disponível em todo
 | r4 | 7 | 2,3 s |
 | r5 | 6 | 4,1 s |
 
-As 5 capturas foram aprovadas pelo `--analyze`, com 50/50 ciclos no estado esperado. A recuperação aconteceu sempre no primeiro ciclo depois de a rede voltar, menos de um ciclo (5 s) depois de a placa obter IP. A conclusão do §7.2, "recuperação no primeiro ciclo com as duas fontes válidas", vale agora para as duas fontes, na placa. A recuperação cai no ciclo 6 ou 7, e não no 3, porque a rede só fica disponível para a placa de 15 a 23 s depois de religada.
+As 5 capturas foram aprovadas pelo `--analyze`, com 50/50 ciclos no estado esperado. A recuperação aconteceu sempre no primeiro ciclo depois de a rede voltar, menos de um ciclo (5 s) depois de a placa obter IP. A conclusão do §7.2, "recuperação no primeiro ciclo com as duas fontes válidas", vale agora para as duas fontes, na placa. A recuperação cai no ciclo 6 ou 7, e não no 3, porque a rede só fica disponível para a placa de 15 a 18 s depois de religada.
 
 O tempo para *identificar* uma queda da rede durante a operação normal não foi medido, porque o protocolo (BR-30) começa com a falha. Ele decorre da regra BR-07: com `external_refresh_ms = 5000`, a queda é identificada na consulta seguinte, até um ciclo depois; com o intervalo padrão de 15 min, até 15 min depois.
 
@@ -84,7 +84,7 @@ Os caminhos que o relatório cita como fonte foram reorganizados em 22/11/2026 e
 
 ## 7. Limitações acrescentadas ao §7.4
 
-- C2–C5 não foram repetidos com o firmware entregue; o tempo de leitura das capturas oficiais é o do driver `dht-sensor`, que a repetição de C1 mostrou equivalente.
+- C2–C5 não foram repetidos com o firmware atual; o tempo de leitura das capturas oficiais é o do driver `dht-sensor`, que a repetição de C1 mostrou equivalente.
 - As medições complementares usaram outra placa (`v3.1`) e outra rede Wi-Fi que as capturas oficiais.
 - A ligação serial da placa das medições complementares perdeu 6 linhas de ciclo nas 10 capturas de C1 e de C5, que chegaram corrompidas e foram descartadas pelo console; os ciclos aconteceram, só não foram gravados. As capturas oficiais não têm nenhuma linha perdida.
 - Na tentativa interrompida antes do C5 com a fonte externa, a placa associou ao Wi-Fi e não obteve IP por 1,5 min, sem recuperação. A causa não foi determinada; não se sabe se a rede estava normal.
@@ -94,7 +94,7 @@ Os caminhos que o relatório cita como fonte foram reorganizados em 22/11/2026 e
 
 Seção de trabalho para os autores; sai da versão final.
 
-- [ ] Inserir o link do vídeo no Quadro 12 e no README, e conferir a linha F4 da seção 1.
+- [ ] Inserir o link do vídeo neste adendo e no README, e atualizar a linha F4 da seção 1. O Quadro 12 está no PDF entregue, que não muda.
 - [ ] Decidir se o critério de descarte da seção 3 passa a valer como regra para os próximos experimentos ([product.md](../knowledge/product.md) › Perguntas em aberto).
 - [ ] Decidir a posição sobre o A3 da dupla 1, que pede registrar a `dht11-trace` como desvio do §6.2 do projeto. O [ADR-009](decisions/ADR-009.md) sustenta que o protocolo continua fora da biblioteca, numa crate separada; se a posição for mantida, acrescentar um parágrafo à seção 2.
 - [ ] Decidir se a tentativa sem IP da seção 7 é investigada antes da entrega, repetindo com a rede sabidamente normal.

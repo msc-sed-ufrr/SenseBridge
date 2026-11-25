@@ -98,7 +98,7 @@ Medições feitas fora do conjunto oficial, cada uma em `complementares/<data>-<
 | Pasta | O que mede | Registro |
 | --- | --- | --- |
 | `complementares/2026-11-25-c1-firmware-atual/` | C1 com o firmware atual (`dht11-trace`, commit `5c653f2`), na placa `v3.1`; CSVs e saída bruta descaracterizada | [C1 com o firmware atual](../memory/2026-11-25-c1-firmware-atual.md) |
-| `complementares/2026-11-25-c5-externa/` | C5 com a queda e a volta da rede, firmware `5c653f2`, placa `v3.1`; CSVs, saída bruta descaracterizada, o log do procedimento e, em `tentativa/`, a tentativa descartada | [C5 com a fonte externa](../memory/2026-11-25-c5-externa.md) |
+| `complementares/2026-11-25-c5-externa/` | C5 com a queda e a volta da rede, firmware `5c653f2`, placa `v3.1`; CSVs, saída bruta descaracterizada, o script (`procedimento.sh`) e o log do procedimento e, em `tentativa/`, a tentativa descartada | [C5 com a fonte externa](../memory/2026-11-25-c5-externa.md) |
 
 ## Pendências
 

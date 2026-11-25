@@ -1,0 +1,112 @@
+2026-11-25T19:36:40.081+00:00 r1: pedido para DESLIGAR a rede; reinício em 25s
+2026-11-25T19:37:05.152+00:00 r1: placa reiniciada
+2026-11-25T19:37:49.192+00:00 r1: rede indisponível no boot, como previsto
+2026-11-25T19:37:49.745+00:00 r1: ciclo 0 recebido
+2026-11-25T19:37:54.438+00:00 r1: ciclo 1 recebido
+2026-11-25T19:37:59.134+00:00 r1: ciclo 2 recebido
+2026-11-25T19:37:59.161+00:00 r1: pedido para LIGAR a rede (depois do ciclo 2)
+2026-11-25T19:38:04.354+00:00 r1: ciclo 3 recebido
+2026-11-25T19:38:14.220+00:00 r1: ciclo 4 recebido
+2026-11-25T19:38:19.424+00:00 r1: ciclo 5 recebido
+2026-11-25T19:38:24.119+00:00 r1: ciclo 6 recebido
+2026-11-25T19:38:29.311+00:00 r1: ciclo 7 recebido
+2026-11-25T19:38:34.529+00:00 r1: ciclo 8 recebido
+2026-11-25T19:38:39.226+00:00 r1: ciclo 9 recebido
+2026-11-25T19:38:49.083+00:00 r1: ciclo 10 recebido
+2026-11-25T19:38:54.287+00:00 r1: ciclo 11 recebido
+2026-11-25T19:38:59.507+00:00 r1: ciclo 12 recebido
+2026-11-25T19:39:04.188+00:00 r1: ciclo 13 recebido
+2026-11-25T19:39:09.384+00:00 r1: ciclo 14 recebido
+2026-11-25T19:39:19.253+00:00 r1: ciclo 15 recebido
+2026-11-25T19:44:43.783+00:00 r1: pedido para DESLIGAR a rede; reinício em 25s
+2026-11-25T19:45:08.850+00:00 r1: placa reiniciada
+2026-11-25T19:45:49.019+00:00 r1: rede indisponível no boot, como previsto
+2026-11-25T19:45:49.592+00:00 r1: ciclo 0 recebido
+2026-11-25T19:45:53.769+00:00 r1: ciclo 1 recebido
+2026-11-25T19:45:58.981+00:00 r1: ciclo 2 recebido
+2026-11-25T19:45:59.007+00:00 r1: pedido para LIGAR a rede (depois do ciclo 2)
+2026-11-25T19:46:03.689+00:00 r1: ciclo 3 recebido
+2026-11-25T19:46:08.895+00:00 r1: ciclo 4 recebido
+2026-11-25T19:46:14.101+00:00 r1: ciclo 5 recebido
+2026-11-25T19:46:20.330+00:00 r1: ciclo 6 recebido
+2026-11-25T19:46:20.362+00:00 r1: recuperação no ciclo 6
+2026-11-25T19:46:24.514+00:00 r1: ciclo 7 recebido
+2026-11-25T19:46:29.684+00:00 r1: ciclo 8 recebido
+2026-11-25T19:46:34.856+00:00 r1: ciclo 9 recebido
+2026-11-25T19:46:34.910+00:00 r1: fim, 10 ciclos
+2026-11-25T19:46:38.327+00:00 r2: pedido para DESLIGAR a rede; reinício em 25s
+2026-11-25T19:47:03.412+00:00 r2: placa reiniciada
+2026-11-25T19:47:42.801+00:00 r2: rede indisponível no boot, como previsto
+2026-11-25T19:47:43.350+00:00 r2: ciclo 0 recebido
+2026-11-25T19:47:48.037+00:00 r2: ciclo 1 recebido
+2026-11-25T19:47:52.742+00:00 r2: ciclo 2 recebido
+2026-11-25T19:47:52.768+00:00 r2: pedido para LIGAR a rede (depois do ciclo 2)
+2026-11-25T19:47:57.983+00:00 r2: ciclo 3 recebido
+2026-11-25T19:48:02.685+00:00 r2: ciclo 4 recebido
+2026-11-25T19:48:07.890+00:00 r2: ciclo 5 recebido
+2026-11-25T19:48:13.612+00:00 r2: ciclo 6 recebido
+2026-11-25T19:48:13.644+00:00 r2: recuperação no ciclo 6
+2026-11-25T19:48:18.836+00:00 r2: ciclo 7 recebido
+2026-11-25T19:48:23.494+00:00 r2: ciclo 8 recebido
+2026-11-25T19:48:28.672+00:00 r2: ciclo 9 recebido
+2026-11-25T19:48:28.742+00:00 r2: fim, 10 ciclos
+2026-11-25T19:48:32.364+00:00 r3: pedido para DESLIGAR a rede; reinício em 25s
+2026-11-25T19:48:57.435+00:00 r3: placa reiniciada
+2026-11-25T19:49:36.835+00:00 r3: rede indisponível no boot, como previsto
+2026-11-25T19:49:37.386+00:00 r3: ciclo 0 recebido
+2026-11-25T19:49:42.070+00:00 r3: ciclo 1 recebido
+2026-11-25T19:49:46.757+00:00 r3: ciclo 2 recebido
+2026-11-25T19:49:46.782+00:00 r3: pedido para LIGAR a rede (depois do ciclo 2)
+2026-11-25T19:49:51.987+00:00 r3: ciclo 3 recebido
+2026-11-25T19:49:57.211+00:00 r3: ciclo 4 recebido
+2026-11-25T19:50:01.901+00:00 r3: ciclo 5 recebido
+2026-11-25T19:50:08.652+00:00 r3: ciclo 6 recebido
+2026-11-25T19:50:08.694+00:00 r3: recuperação no ciclo 6
+2026-11-25T19:50:11.818+00:00 r3: ciclo 7 recebido
+2026-11-25T19:50:17.505+00:00 r3: ciclo 8 recebido
+2026-11-25T19:50:22.688+00:00 r3: ciclo 9 recebido
+2026-11-25T19:50:22.750+00:00 r3: fim, 10 ciclos
+2026-11-25T19:50:26.177+00:00 r4: pedido para DESLIGAR a rede; reinício em 25s
+2026-11-25T19:50:51.248+00:00 r4: placa reiniciada
+2026-11-25T19:51:30.674+00:00 r4: rede indisponível no boot, como previsto
+2026-11-25T19:51:31.226+00:00 r4: ciclo 0 recebido
+2026-11-25T19:51:40.646+00:00 r4: ciclo 1 recebido
+2026-11-25T19:51:45.863+00:00 r4: ciclo 2 recebido
+2026-11-25T19:51:45.889+00:00 r4: pedido para LIGAR a rede (depois do ciclo 2)
+2026-11-25T19:51:50.568+00:00 r4: ciclo 3 recebido
+2026-11-25T19:51:55.783+00:00 r4: ciclo 4 recebido
+2026-11-25T19:52:00.489+00:00 r4: ciclo 5 recebido
+2026-11-25T19:52:06.742+00:00 r4: ciclo 6 recebido
+2026-11-25T19:52:06.778+00:00 r4: recuperação no ciclo 7
+2026-11-25T19:52:11.453+00:00 r4: ciclo 7 recebido
+2026-11-25T19:52:16.635+00:00 r4: ciclo 8 recebido
+2026-11-25T19:52:21.290+00:00 r4: ciclo 9 recebido
+2026-11-25T19:52:21.346+00:00 r4: fim, 10 ciclos
+2026-11-25T19:52:24.999+00:00 r5: pedido para DESLIGAR a rede; reinício em 25s
+2026-11-25T19:52:50.092+00:00 r5: placa reiniciada
+2026-11-25T19:53:29.453+00:00 r5: rede indisponível no boot, como previsto
+2026-11-25T19:53:29.999+00:00 r5: ciclo 0 recebido
+2026-11-25T19:53:34.187+00:00 r5: ciclo 1 recebido
+2026-11-25T19:53:39.402+00:00 r5: ciclo 2 recebido
+2026-11-25T19:53:39.431+00:00 r5: pedido para LIGAR a rede (depois do ciclo 2)
+2026-11-25T19:53:44.113+00:00 r5: ciclo 3 recebido
+2026-11-25T19:53:49.321+00:00 r5: ciclo 4 recebido
+2026-11-25T19:53:54.541+00:00 r5: ciclo 5 recebido
+2026-11-25T19:54:00.283+00:00 r5: ciclo 6 recebido
+2026-11-25T19:54:00.319+00:00 r5: recuperação no ciclo 6
+2026-11-25T19:54:04.990+00:00 r5: ciclo 7 recebido
+2026-11-25T19:54:10.176+00:00 r5: ciclo 8 recebido
+2026-11-25T19:54:15.857+00:00 r5: ciclo 9 recebido
+2026-11-25T19:54:15.919+00:00 r5: fim, 10 ciclos
+2026-11-25T19:54:19.436+00:00 fim das repetições
+captura   esperado           ciclos  resultado
+c5-r1     recuperação         10/10  ok, recuperação no ciclo 6
+c5-r2     recuperação         10/10  ok, recuperação no ciclo 6
+c5-r3     recuperação         10/10  ok, recuperação no ciclo 6
+c5-r4     recuperação         10/10  ok, recuperação no ciclo 7
+c5-r5     recuperação         10/10  ok, recuperação no ciclo 6
+── C5: 5/5 capturas aprovadas, 50/50 ciclos no estado esperado
+── total: 5/5 capturas aprovadas, 50/50 ciclos no estado esperado
+
+cenário   ciclos  menor heap livre   menor heap desde boot   menor folga pilha
+C5            50          205304 B                199168 B             12212 B

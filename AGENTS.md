@@ -29,7 +29,7 @@ The firmware is outside the root workspace and outside CI: build it with the ESP
 | Firmware configuration, wiring, CSV format, C6 protocol | `firmware/esp32/README.md` |
 | Library API | `sense-bridge/README.md` |
 
-Do not read all of `docs/` without a reason. `docs/memory/` is history: read a log only when the task is about how something got where it is. `docs/evidencias/` holds the official captures and verification records; `docs/memory/2026-09-17-projeto-de-pesquisa-ptt4.pdf` is the approved research project the scope comes from.
+Do not read all of `docs/` without a reason. `docs/memory/` is history: read a log only when the task is about how something got where it is. `docs/evidencias/` holds the official captures, the complementary measurements and the verification records; `docs/memory/2026-09-17-projeto-de-pesquisa-ptt4.pdf` is the approved research project the scope comes from.
 
 ## Where to write
 
@@ -52,9 +52,10 @@ The reason lives next to where it will be read. What the code and the tests alre
 | Pitfall that fits in neither a test nor a comment | `docs/memory/lessons.md` | Append only |
 | A measurement, an audit, a finished plan | `docs/memory/<YYYY-MM-DD>-<subject>.md`, dated | Append only; the current state goes to `docs/knowledge/` |
 | Official experiment captures | `docs/evidencias/experimentos/`, named `c<scenario>-r<repetition>` | Working captures stay in `capturas/`, ignored by git |
+| Complementary measurement | `docs/evidencias/complementares/<YYYY-MM-DD>-<subject>/`, same `c<scenario>-r<repetition>` names | Its record goes to `docs/memory/`; raw `.txt` is sanitized (SSID, MAC, IP, password length); discarded or interrupted runs are versioned too (BR-37) |
 | Change a user of the crate will notice | `sense-bridge/CHANGELOG.md` | Under `[Não lançado]` until the release |
 
-ADR template: `docs/memory/decisions/_template.md`. ADR IDs are sequential (`ADR-001` to `ADR-010` exist; the next is `ADR-011`), and the code cites them by ID. The decisions D1–D14 and the use cases UC-001–UC-009 keep their IDs too; each is defined once, in `product.md`, `architecture.md` or an ADR. When the folder passes ~50 ADRs, split it into one folder per theme (`decisions/<theme>/`).
+ADR template: `docs/memory/decisions/_template.md`. ADR IDs are sequential (`ADR-001` to `ADR-011` exist; the next is `ADR-012`), and the code cites them by ID. The decisions D1–D14 and the use cases UC-001–UC-009 keep their IDs too; each is defined once, in `product.md`, `architecture.md` or an ADR. When the folder passes ~50 ADRs, split it into one folder per theme (`decisions/<theme>/`).
 
 ## Rules
 

@@ -40,13 +40,14 @@ A biblioteca é `no_std`, não aloca memória e não tem dependências. O uso da
 | C2 — Falha local | Indisponível | Disponível | `DegradedLocal` | 50/50 ciclos em `DegradedLocal` |
 | C3 — Falha externa | Disponível | Indisponível | `DegradedExternal` | 50/50 ciclos em `DegradedExternal` |
 | C4 — Falha simultânea | Indisponível | Indisponível | `Error` | 50/50 ciclos em `Error` |
-| C5 — Recuperação | Recuperado | Recuperado | Retorno a `Normal` | 5/5 recuperações no primeiro ciclo com as duas fontes válidas |
+| C5 — Recuperação | Recuperado | Disponível | Retorno a `Normal` | 5/5 recuperações no primeiro ciclo com as duas fontes válidas |
+| C5 — Recuperação da fonte externa (complementar, 25/11/2026) | Disponível | Recuperado | Retorno a `Normal` | 5/5 recuperações no primeiro ciclo depois de a placa obter IP |
 
 - **Testes automatizados:** 62 na versão avaliada (84 hoje, com o detector de leitura congelada, o cenário C6 e a tabela de RAM do console, acrescentados depois), executados sem hardware, cobrindo C1–C5, validação, transições e a interpretação de respostas reais da Open-Meteo.
 - **Latência:** ciclos sem consulta externa entre 18 e 22 ms.
 - **Memória:** cerca de 23,5 KiB de Flash e 13,4 KiB de RAM estática a mais que um firmware-base equivalente sem a biblioteca.
 
-A metodologia e os números completos estão na [avaliação experimental](docs/memory/2026-10-24-avaliacao-experimental.md). O projeto não inclui medição de consumo energético.
+As capturas oficiais de C1–C5 foram feitas com o firmware de `3725e20`, que lê o DHT11 com a crate `dht-sensor`; a lógica da biblioteca nesse firmware é a mesma da `sense_bridge` 0.1.0. Em 25/11/2026, em resposta à revisão por pares, C1 foi repetido com o firmware atual (`dht11-trace`), com o mesmo tempo de leitura, e C5 foi executado com a falha na rede ([C1](docs/memory/2026-11-25-c1-firmware-atual.md), [C5](docs/memory/2026-11-25-c5-externa.md)). A metodologia e os números completos estão na [avaliação experimental](docs/memory/2026-10-24-avaliacao-experimental.md). O projeto não inclui medição de consumo energético.
 
 ## Arquitetura
 
@@ -171,9 +172,11 @@ Em 21/10/2026, com macOS em Apple Silicon:
 | [Arquitetura](docs/knowledge/architecture.md) | Componentes, fluxo do ciclo, stack e invariantes |
 | [Decisões](docs/memory/decisions/) | ADR-001 a ADR-010, uma por arquivo |
 | [Avaliação experimental](docs/memory/2026-10-24-avaliacao-experimental.md) | Protocolo e resultados de C1–C5, latência, Flash e RAM |
-| [Relatório técnico](docs/memory/2026-10-28-relatorio-tecnico.md) | Relatório conclusivo, com a versão entregue em [PDF](docs/memory/2026-11-03-entrega-final-ptt4.pdf) |
+| [Relatório técnico entregue](docs/memory/2026-11-03-entrega-final-ptt4.pdf) | Versão entregue em 03/11/2026 ([DOCX](docs/memory/2026-11-03-entrega-final-ptt4.docx)). O [Markdown de 28/10](docs/memory/2026-10-28-relatorio-tecnico.md) é uma versão anterior; onde os dois divergem, vale o entregue |
+| [Adendo ao relatório](docs/memory/2026-11-25-adendo-relatorio-tecnico.md) | Resposta à revisão por pares de 24/11/2026: origem dos dados, medições complementares, errata e limitações |
+| [Revisão por pares (S14)](docs/memory/2026-11-25-revisao-por-pares-s14.md) | Os achados das duas duplas revisoras e a conferência de cada um |
 | [Publicação de uma versão](docs/knowledge/release.md) | Passo a passo para publicar a crate; o registro da 0.1.0 está em [docs/memory](docs/memory/2026-10-28-publicacao-sense-bridge-0.1.0.md) |
-| [Evidências](docs/evidencias/README.md) | Verificação do código e capturas dos experimentos |
+| [Evidências](docs/evidencias/README.md) | Verificação do código, capturas oficiais dos experimentos e medições complementares |
 
 ## Tecnologias
 
@@ -202,7 +205,7 @@ Linha de Sistemas Embarcados e Distribuídos — SED
 
 ## Status
 
-Implementação, avaliação experimental e versionamento das capturas oficiais concluídos. Em preparação: revisão final do relatório técnico e vídeo de demonstração.
+Implementação, avaliação experimental e versionamento das capturas oficiais concluídos. Relatório técnico entregue em 03/11/2026; a revisão por pares de 24/11/2026 foi respondida com medições complementares e um adendo. Em preparação: vídeo de demonstração.
 
 **Entrega prevista:** 26 de novembro de 2026.
 

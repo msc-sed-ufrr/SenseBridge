@@ -1,6 +1,6 @@
 # Arquitetura
 
-Como o sistema é construído hoje, e por quê. O que ele faz e as regras de negócio estão em [product.md](product.md). As decisões com alternativa descartada estão em `docs/memory/decisions/` (ADR-001 a ADR-010). Os motivos sem outra fonte indicada vêm do documento de arquitetura escrito pelos autores até 21/10/2026 (`docs/02-arch.md`, hoje no histórico do git).
+Como o sistema é construído hoje, e por quê. O que ele faz e as regras de negócio estão em [product.md](product.md). As decisões com alternativa descartada estão em `docs/memory/decisions/` (ADR-001 a ADR-011). Os motivos sem outra fonte indicada vêm do documento de arquitetura escrito pelos autores até 21/10/2026 (`docs/02-arch.md`, hoje no histórico do git).
 
 ## Visão geral
 

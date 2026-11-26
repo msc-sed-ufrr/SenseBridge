@@ -87,7 +87,7 @@ Os caminhos que o relatório cita como fonte foram reorganizados em 22/11/2026 e
 
 ## 7. Limitações acrescentadas ao §7.4
 
-- C2–C5 não foram repetidos com o firmware atual; o tempo de leitura das capturas oficiais é o do driver `dht-sensor`, que a repetição de C1 mostrou equivalente.
+- C2, C3, C4 e o C5 do protocolo original, com o DHT11 desligado, não foram repetidos com o firmware atual. O tempo de leitura das capturas oficiais é o do driver `dht-sensor`, que a repetição de C1 mostrou equivalente, e a detecção de falha local com a `dht11-trace` (sensor desligado, `NoResponse`) não foi observada na placa.
 - As medições complementares usaram outra placa (`v3.1`) e outra rede Wi-Fi que as capturas oficiais.
 - A ligação serial da placa das medições complementares perdeu 6 linhas de ciclo nas 10 capturas de C1 e de C5, que chegaram corrompidas e foram descartadas pelo console; os ciclos aconteceram, só não foram gravados. As capturas oficiais não têm nenhuma linha perdida.
 - O arquivo da execução de C5 excluída em outubro se perdeu (seção 3).

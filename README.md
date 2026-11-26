@@ -170,12 +170,13 @@ Em 21/10/2026, com macOS em Apple Silicon:
 | [Projeto de pesquisa](docs/memory/2026-09-17-projeto-de-pesquisa-ptt4.pdf) | Proposta aprovada: problema, objetivos, escopo e entregáveis |
 | [Produto](docs/knowledge/product.md) | Propósito, regras de negócio com o motivo, casos de uso e perguntas em aberto |
 | [Arquitetura](docs/knowledge/architecture.md) | Componentes, fluxo do ciclo, stack e invariantes |
-| [Decisões](docs/memory/decisions/) | ADR-001 a ADR-010, uma por arquivo |
+| [Decisões](docs/memory/decisions/) | ADR-001 a ADR-011, uma por arquivo |
 | [Avaliação experimental](docs/memory/2026-10-24-avaliacao-experimental.md) | Protocolo e resultados de C1–C5, latência, Flash e RAM |
 | [Relatório técnico entregue](docs/memory/2026-11-03-entrega-final-ptt4.pdf) | Versão entregue em 03/11/2026 ([DOCX](docs/memory/2026-11-03-entrega-final-ptt4.docx)). O [Markdown de 28/10](docs/memory/2026-10-28-relatorio-tecnico.md) é uma versão anterior; onde os dois divergem, vale o entregue |
 | [Adendo ao relatório](docs/memory/2026-11-25-adendo-relatorio-tecnico.md) | Resposta à revisão por pares de 24/11/2026: origem dos dados, medições complementares, errata e limitações ([PDF](docs/memory/2026-11-25-adendo-relatorio-tecnico.pdf)) |
 | [Revisão por pares (S14)](docs/memory/2026-11-25-revisao-por-pares-s14.md) | Os achados das duas duplas revisoras e a conferência de cada um |
 | [Publicação de uma versão](docs/knowledge/release.md) | Passo a passo para publicar a crate; o registro da 0.1.0 está em [docs/memory](docs/memory/2026-10-28-publicacao-sense-bridge-0.1.0.md) |
+| [Vídeo de demonstração](https://drive.google.com/file/d/1QOOm1pnZYE3JukNmh4Nho3RAdCsDEtb8/view) | Demonstração do projeto pedida pelo projeto de pesquisa (§10.1), hospedada no Google Drive |
 | [Evidências](docs/evidencias/README.md) | Verificação do código, capturas oficiais dos experimentos e medições complementares |
 
 ## Tecnologias
@@ -205,7 +206,7 @@ Linha de Sistemas Embarcados e Distribuídos — SED
 
 ## Status
 
-Implementação, avaliação experimental e versionamento das capturas oficiais concluídos. Relatório técnico entregue em 03/11/2026; a revisão por pares de 24/11/2026 foi respondida com medições complementares e um adendo ao relatório. O vídeo de demonstração acompanha a entrega como anexo.
+Implementação, avaliação experimental e versionamento das capturas oficiais concluídos. Relatório técnico entregue em 03/11/2026; a revisão por pares de 24/11/2026 foi respondida com medições complementares e um adendo ao relatório. O [vídeo de demonstração](https://drive.google.com/file/d/1QOOm1pnZYE3JukNmh4Nho3RAdCsDEtb8/view) acompanha a entrega.
 
 **Entrega prevista:** 26 de novembro de 2026.
 
